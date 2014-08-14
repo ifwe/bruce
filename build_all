@@ -1,0 +1,188 @@
+#!/usr/bin/python
+
+# -----------------------------------------------------------------------------
+# Copyright 2014 Tagged
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# -----------------------------------------------------------------------------
+
+import argparse
+import fnmatch
+import os
+import subprocess
+import sys
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('target', nargs='*',
+            help='Target to build: one of {apps, tests, run_tests}.  If ' +
+                 'none specified, build all.')
+    parser.add_argument('-h', '--help',
+            help='Show this help message and exit.', action='store_true')
+    parser.add_argument('-v', '--verbose', help='Show verbose output.',
+            action='store_true')
+    parser.add_argument('-c', '--clean', help='Delete build results.',
+            action='store_true')
+    parser.add_argument('-m', '--mode', help='Specify build mode.',
+            action='store', dest='mode', choices=('debug', 'release'),
+            default='debug')
+    parser.add_argument('-f', '--filter', help='Specify path filter.',
+            action='store', dest='path_filter')
+    args = parser.parse_args()
+
+    if args.help:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
+
+
+def get_test_targets():
+    matches = []
+
+    for root_dir, dirnames, filenames in os.walk('src'):
+        for name in fnmatch.filter(filenames, '*.test.cc'):
+            matches.append(os.path.join(root_dir, name))
+
+    #  For each path, remove the leading 'src/' and the trailing '.cc'.
+    return [elem[4:-3] for elem in matches]
+
+
+def is_path_prefix(path1, path2):
+    if path1 is None:
+        return True
+
+    c1 = path1.split('/')
+
+    if c1[-1] == '':
+        # Eliminate empty item after trailing '/'.
+        c1 = c1[:-1]
+
+    c2 = path2.split('/')
+
+    if len(c1) > len(c2):
+        return False
+
+    for i in range(len(c1)):
+        if c2[i] != c1[i]:
+            return False
+
+    return True
+
+
+def apply_path_filter(targets, path_filter):
+    result = []
+
+    for t in targets:
+        if is_path_prefix(path_filter, t):
+            result.append(t)
+
+    return result
+
+
+def build_targets(targets, path_filter, verbose, mode, run_tests):
+    filtered_targets = apply_path_filter(targets, path_filter)
+
+    for tgt in filtered_targets:
+        print '------------------------------------------------------------'
+        print 'Building target ' + tgt + ':'
+        print ''
+        tgt = 'src/' + tgt
+        os.chdir(os.path.dirname(tgt))
+        cmd = ['scons', '-Q', '--up']
+
+        if not verbose:
+            cmd.append('-s')
+
+        if mode == 'release':
+            cmd.append('--release')
+
+        if run_tests:
+            cmd.append('--test')
+
+        cmd.append(os.path.basename(tgt))
+
+        try:
+            subprocess.check_call(cmd)
+        except subprocess.CalledProcessError:
+            sys.stderr.write('Stopping on failure\n')
+            sys.exit(1)
+
+        os.chdir(root)
+        print '------------------------------------------------------------'
+
+    if run_tests:
+        print 'All tests passed'
+
+
+args = parse_args()
+
+if not os.path.isfile('SConstruct') or not os.path.isdir('src'):
+    sys.stderr.write('This script must be executed from the root of the ' +
+            'tree (where the SConstruct file is).\n')
+    sys.exit(1)
+
+if args.clean:
+    try:
+        subprocess.check_call(['scons', '-c'])
+        sys.exit(0)
+    except subprocess.CalledProcessError:
+        sys.stderr.write('Stopping on failure\n')
+        sys.exit(1)
+
+target_set = {target for target in args.target}
+allowed_targets = {'apps', 'tests', 'run_tests'}
+
+if not target_set:
+    # By default, build everything but don't run the tests.
+    target_set = allowed_targets - {'run_tests'}
+
+for target in target_set:
+    if target not in allowed_targets:
+        sys.stderr.write('Unknown target: ' + target + '\n')
+        sys.exit(1)
+
+if 'run_tests' in target_set and 'tests' in target_set:
+    # 'tests' is redundant when specified with 'run_tests', so remove it.
+    target_set.remove('tests')
+
+all_apps = ['bruce/bruce',
+            'bruce/kafka_proto/v0/mdrequest',
+            'bruce/mock_kafka_server/mock_kafka_server',
+            'bruce/mock_kafka_server/inject_error/inject_error',
+            'bruce/simple_client/simple_bruce_client']
+root = os.getcwd()
+
+for target in target_set:
+    if target == 'apps':
+        print '============================================================'
+        print 'Building apps:'
+        print ''
+        build_targets(all_apps, args.path_filter, args.verbose, args.mode,
+                      False)
+        print '============================================================'
+    elif target == 'tests':
+        print '============================================================'
+        print 'Building tests:'
+        print ''
+        build_targets(get_test_targets(), args.path_filter, args.verbose,
+                      args.mode, False)
+        print '============================================================'
+    elif target == 'run_tests':
+        print '============================================================'
+        print 'Building and running tests:'
+        print ''
+        build_targets(get_test_targets(), args.path_filter, args.verbose,
+                      args.mode, True)
+        print '============================================================'

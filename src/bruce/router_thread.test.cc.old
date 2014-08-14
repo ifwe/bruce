@@ -1,0 +1,272 @@
+/* <bruce/router_thread.test.cc>
+
+   ----------------------------------------------------------------------------
+   Copyright 2013-2014 Tagged
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   ----------------------------------------------------------------------------
+
+   Unit test for <bruce/router_thread.h>.
+ */
+
+#include <bruce/router_thread.h>
+
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <boost/lexical_cast.hpp>
+
+#include <bruce/anomaly_tracker.h>
+#include <bruce/config.h>
+#include <bruce/debug/debug_setup.h>
+#include <bruce/kafka_proto/choose_proto.h>
+#include <bruce/kafka_proto/wire_protocol.h>
+#include <bruce/meta/metadata_timestamp.h>
+#include <bruce/metadata/meta.h>
+#include <bruce/msg.h>
+#include <bruce/msg_creator.h>
+#include <bruce/prod_mngr_factory.h>
+#include <bruce/router_thread.h>
+#include <bruce/test_util/mock_kafka_config.h>
+#include <bruce/test_util/mock_prod_mngr.h>
+#include <bruce/util/time_util.h>
+#include <capped/pool.h>
+#include <capped/reader.h>
+
+#include <test/kit.h>
+
+using namespace Base;
+using namespace Bruce;
+using namespace Bruce::Debug;
+using namespace Bruce::KafkaProto;
+using namespace Bruce::Meta;
+using namespace Bruce::Metadata;
+using namespace Bruce::MockKafkaServer;
+using namespace Bruce::TestUtil;
+using namespace Bruce::Util;
+using namespace Capped;
+
+struct TRouterThreadConfig {
+  private:
+  bool RouterThreadStarted;
+
+  public:
+  enum { POOL_BLOCK_SIZE = 128 };
+
+  std::vector<const char *> Args;
+
+  std::unique_ptr<Bruce::TConfig> Cfg;
+
+  std::unique_ptr<TWireProtocol> Protocol;
+
+  TAnomalyTracker AnomalyTracker;
+
+  TMetadataTimestamp MetadataTimestamp;
+
+  std::unique_ptr<TPool> Pool;
+
+  TProdMngrFactory ProdMngrFactory;
+
+  TDebugSetup DebugSetup;
+
+  std::unique_ptr<TRouterThread> RouterThread;
+
+  TRouterThreadConfig(in_port_t broker_port, size_t msg_buffer_max_kb);
+
+  ~TRouterThreadConfig() noexcept {
+    StopRouterThread();
+  }
+
+  void StartRouterThread() {
+    if (!RouterThreadStarted) {
+      TRouterThread &router_thread = *RouterThread;
+      router_thread.Start();
+      router_thread.GetInitWaitFd().IsReadable(-1);
+      RouterThreadStarted = true;
+    }
+  }
+
+  void StopRouterThread() {
+    if (RouterThreadStarted) {
+      TRouterThread &router_thread = *RouterThread;
+      router_thread.RequestShutdown();
+      router_thread.Join();
+      RouterThreadStarted = false;
+    }
+  }
+
+  TMsg::TPtr NewMsg(const std::string &topic, const std::string &body) {
+    return TMsgCreator::CreateMsg(GetEpochMilliseconds(), topic.data(),
+        topic.data() + topic.size(), body.data(), body.size(), false, *Pool);
+  }
+};  // TRouterThreadConfig
+
+static inline size_t
+ComputeBlockCount(size_t max_buffer_kb, size_t block_size) {
+  return std::max<size_t>(1, (1024 * max_buffer_kb) / block_size);
+}
+
+TRouterThreadConfig::TRouterThreadConfig(in_port_t broker_port,
+    size_t msg_buffer_max_kb)
+    : RouterThreadStarted(false),
+      AnomalyTracker(0, std::numeric_limits<size_t>::max()),
+      ProdMngrFactory(true),
+      DebugSetup("/unused/path", TDebugSetup::MAX_LIMIT,
+                 TDebugSetup::MAX_LIMIT) {
+  std::string msg_buffer_max_str =
+      boost::lexical_cast<std::string>(msg_buffer_max_kb);
+  std::string broker_port_str = boost::lexical_cast<std::string>(broker_port);
+  Args.push_back("bruce");
+  Args.push_back("--kafka_broker");
+  Args.push_back("localhost");
+  Args.push_back("--broker_port");
+  Args.push_back(broker_port_str.c_str());
+  Args.push_back("--kafka_version");
+  Args.push_back("0.8");
+  Args.push_back("--msg_buffer_max");
+  Args.push_back(msg_buffer_max_str.c_str());
+  Args.push_back("--receive_socket_name");
+  Args.push_back("dummy_value");
+  Args.push_back("--log_all");
+  Args.push_back("--log_echo");
+  Args.push_back(nullptr);
+  Cfg.reset(new Bruce::TConfig(Args.size() - 1,
+                               const_cast<char **>(&Args[0])));
+  Pool.reset(
+      new TPool(POOL_BLOCK_SIZE,
+                ComputeBlockCount(Cfg->MsgBufferMax, POOL_BLOCK_SIZE),
+                TPool::TSync::Mutexed));
+  Protocol.reset(ChooseProto(Cfg->KafkaVersion, Cfg->RequiredAcks,
+      static_cast<int32_t>(Cfg->ReplicationTimeout)));
+  RouterThread.reset(new TRouterThread(*Cfg, *Protocol,
+      AnomalyTracker, MetadataTimestamp, ProdMngrFactory, DebugSetup));
+}
+
+static std::string ToString(const TBlob &blob) {
+  std::vector<char> buf(blob.Size());
+  TReader(&blob).Read(&buf[0], blob.Size());
+  return std::string(&buf[0], &buf[blob.Size()]);
+}
+
+FIXTURE(Test1) {
+  std::string topic1("scooby_doo");
+  std::string topic2("zoinks");
+  std::vector<std::string> kafka_config;
+  kafka_config.push_back("ports 10000 4");
+  std::string s("topic ");
+  s += topic1;
+  s += " 8 0";
+  kafka_config.push_back(s);
+  s = "topic ";
+  s += topic2;
+  s += " 8 2";
+  kafka_config.push_back(s);
+  TMockKafkaConfig kafka(kafka_config);
+
+  kafka.StartKafka();
+  Bruce::MockKafkaServer::TMainThread &mock_kafka = *kafka.MainThread;
+
+  /* Translate virtual port from the mock Kafka server setup file into a
+     physical port.  See big comment in <bruce/mock_kafka_server/port_map.h>
+     for an explanation of what is going on here. */
+  in_port_t port = mock_kafka.VirtualPortToPhys(10000);
+  assert(port);
+
+  TRouterThreadConfig router_cfg(port, 1024);
+  router_cfg.StartRouterThread();
+  EXPECT_TRUE(!!router_cfg.RouterThread);
+  TRouterThread &router_thread = *router_cfg.RouterThread;
+
+  std::vector<std::string> msg_vec;
+
+  for (size_t i = 0; i < 16; ++i) {
+    s = "message number ";
+    s += boost::lexical_cast<std::string>(i);
+    msg_vec.push_back(s);
+  }
+
+  TRouterThreadApi::TMsgChannel &msg_channel = router_thread.GetMsgChannel();
+  TMsg::TPtr msg;
+
+  for (size_t i = 0; i < 8; ++i) {
+    msg = router_cfg.NewMsg(topic1, msg_vec[i]);
+    msg_channel.Put(std::move(msg));
+  }
+
+  for (size_t i = 8; i < 16; ++i) {
+    msg = router_cfg.NewMsg(topic2, msg_vec[i]);
+    msg_channel.Put(std::move(msg));
+  }
+
+  std::shared_ptr<TMockProdMngr> mock_prod_mngr =
+      router_cfg.ProdMngrFactory.GetMockProdMngr();
+  EXPECT_FALSE(mock_prod_mngr->WasCreatedFromOldProdMngr());
+
+  for (size_t i = 0;
+       (mock_prod_mngr->GetReceivedMsgCount() < msg_vec.size()) && (i < 3000);
+       ++i) {
+    SleepMilliseconds(10);
+  }
+
+  EXPECT_EQ(mock_prod_mngr->GetReceivedMsgCount(), msg_vec.size());
+  TMockProdMngr::TMsgMap msg_map =
+      std::move(mock_prod_mngr->TakeReceivedMsgs());
+
+  for (auto &map_item : msg_map) {
+    std::list<TMsg::TPtr> &msg_list = map_item.second;
+    EXPECT_EQ(msg_list.size(), 4U);
+    size_t topic1_count = 0;
+    size_t topic2_count = 0;
+
+    for (auto &msg_ptr : msg_list) {
+      const std::string &topic = msg_ptr->GetTopic();
+
+      if (topic == topic1) {
+        ++topic1_count;
+      } else if (topic == topic2) {
+        ++topic2_count;
+      } else {
+        EXPECT_TRUE(false);
+      }
+
+      std::string body = ToString(msg_ptr->GetBody());
+      auto iter = std::find(msg_vec.begin(), msg_vec.end(), body);
+
+      if (iter == msg_vec.end()) {
+        EXPECT_TRUE(false);
+      } else {
+        msg_vec.erase(iter);
+      }
+    }
+
+    EXPECT_EQ(topic1_count, 2U);
+    EXPECT_EQ(topic2_count, 2U);
+  }
+
+  EXPECT_TRUE(msg_vec.empty());
+  size_t create_count = TMockProdMngr::GetCreateCount();
+  mock_prod_mngr->PushPauseButton();
+
+  for (size_t i = 0;
+       (TMockProdMngr::GetCreateCount() == create_count) && (i < 3000);
+       ++i) {
+    SleepMilliseconds(10);
+  }
+
+  EXPECT_NE(TMockProdMngr::GetCreateCount(), create_count);
+  mock_prod_mngr = router_cfg.ProdMngrFactory.GetMockProdMngr();
+  EXPECT_TRUE(mock_prod_mngr->WasCreatedFromOldProdMngr());
+}

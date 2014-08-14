@@ -1,0 +1,128 @@
+/* <bruce/input_dg/any_partition/v0/v0_input_dg_reader.cc>
+
+   ----------------------------------------------------------------------------
+   Copyright 2013-2014 Tagged
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   ----------------------------------------------------------------------------
+
+   Implements <bruce/input_dg/any_partition/v0/v0_input_dg_reader.h>.
+ */
+
+#include <bruce/input_dg/any_partition/v0/v0_input_dg_reader.h>
+
+#include <bruce/input_dg/input_dg_common.h>
+#include <bruce/msg_creator.h>
+#include <bruce/util/field_access.h>
+
+using namespace Bruce;
+using namespace Bruce::InputDg;
+using namespace Bruce::InputDg::AnyPartition;
+using namespace Bruce::InputDg::AnyPartition::V0;
+using namespace Bruce::Util;
+
+TMsg::TPtr TV0InputDgReader::BuildMsg() {
+  assert(this);
+  const uint8_t *pos = DataBegin;
+
+  if ((DataEnd - pos) < FLAGS_FIELD_SIZE) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  int16_t flags = ReadInt16FromHeader(pos);
+
+  if (flags) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  pos += FLAGS_FIELD_SIZE;
+
+  if ((DataEnd - pos) < TOPIC_SZ_FIELD_SIZE) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  int8_t topic_sz = *pos;
+
+  if (topic_sz <= 0) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  pos += TOPIC_SZ_FIELD_SIZE;
+
+  if ((DataEnd - pos) < topic_sz) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  const char *topic_begin = reinterpret_cast<const char *>(pos);
+  const char *topic_end = topic_begin + topic_sz;
+  pos = reinterpret_cast<const uint8_t *>(topic_end);
+
+  if ((DataEnd - pos) < TS_FIELD_SIZE) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  int64_t ts = ReadInt64FromHeader(pos);
+  pos += TS_FIELD_SIZE;
+
+  if ((DataEnd - pos) < KEY_SZ_FIELD_SIZE) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  int32_t key_sz = ReadInt32FromHeader(pos);
+
+  if (key_sz < 0) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  pos += KEY_SZ_FIELD_SIZE;
+
+  if ((DataEnd - pos) < key_sz) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  const uint8_t *key_begin = pos;
+
+  pos += key_sz;
+
+  if ((DataEnd - pos) < VALUE_SZ_FIELD_SIZE) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  int32_t value_sz = ReadInt32FromHeader(pos);
+
+  if (value_sz < 0) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  pos += VALUE_SZ_FIELD_SIZE;
+
+  if ((DataEnd - pos) != value_sz) {
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    return TMsg::TPtr();
+  }
+
+  const uint8_t *value_begin = pos;
+  return TryCreateAnyPartitionMsg(ts, topic_begin, topic_end, key_begin,
+      key_sz, value_begin, value_sz, Pool, AnomalyTracker, MsgStateTracker);
+}

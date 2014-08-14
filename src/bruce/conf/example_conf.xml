@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<bruceConfig>
+    <batching>
+        <namedConfigs>
+            <!-- At least one of { time, messages, bytes } must be nonzero. -->
+            <config name="config1">
+                <!-- or value="disable" -->
+                <time value="50" />
+                <!-- or value="100k" or value="disable" -->
+                <messages value="100" />
+                <!-- or value="200k" or value="disable" -->
+                <bytes value="200" />
+            </config>
+            <config name="config2">
+                <time value="5" />
+                <messages value="disable" />
+                <bytes value="20k" />
+            </config>
+        </namedConfigs>
+
+        <!-- or value="100k" -->
+        <produceRequestDataLimit value="100" />
+
+        <!-- or value="200k" -->
+        <messageMaxBytes value="200" />
+
+        <!-- config is ignored (and optional) if enable is "false". -->
+        <combinedTopics enable="true" config="config1" />
+
+        <!-- or action="combinedTopics" or action="disable" -->
+        <!-- config is ignored (and optional) if action is "disable".  config
+             must be empty or missing if action is "combinedTopics". -->
+        <defaultTopic action="perTopic" config="config2" />
+
+        <topicConfigs>
+            <!-- or action="combinedTopics" or action="disable" -->
+            <!-- config is ignored (and optional) if action is "disable".
+                 config must be empty or missing if action is
+                 "combinedTopics". -->
+            <topic name="topic1" action="perTopic" config="config1" />
+            <topic name="topic2" action="perTopic" config="config2" />
+        </topicConfigs>
+    </batching>
+
+    <compression>
+        <namedConfigs>
+            <!-- minSize is ignored (and optional) if type in "none". -->
+            <config name="noComp" type="none" />
+            <!-- or minSize="512k" -->
+            <config name="snappy1" type="snappy" minSize="512" />
+            <config name="snappy2" type="snappy" minSize="1024" />
+        </namedConfigs>
+
+        <!-- must be integer value at least 0 and at most 100 -->
+        <sizeThresholdPercent value="100" />
+
+        <defaultTopic config="noComp" />
+
+        <topicConfigs>
+            <topic name="topic1" config="snappy1" />
+            <topic name="topic2" config="snappy2" />
+        </topicConfigs>
+    </compression>
+
+    <initialBrokers>
+        <broker host="host1" port="9092" />
+        <broker host="host2" port="9093" />
+    </initialBrokers>
+</bruceConfig>

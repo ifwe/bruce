@@ -1,0 +1,15 @@
+# This is the Kafka protocol version that Bruce uses.  Currently only 0 is
+# supported.
+PROTOCOL_VERSION=0
+
+# This is the amount of memory that bruce will reserve for storing messages
+# from clients.
+MSG_BUFFER_MAX=262144
+
+# This is the UNIX domain datagram socket that bruce monitors for messages from
+# web clients.
+INPUT_SOCKET_NAME=/var/run/bruce/bruce.socket
+
+# This is bruce's config file.  It mostly contains settings related to batching
+# and compression.
+CONFIG_FILE=/etc/bruce/bruce_conf.xml

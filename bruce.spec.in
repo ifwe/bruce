@@ -1,0 +1,51 @@
+%define _bindir /usr/bin
+
+Name:		bruce
+Version:	BRUCE_VERSION
+Release:	1%{?dist}
+Summary:	producer daemon for Apache Kafka
+
+Group:		System Environment/Daemons
+License:	ASL 2.0
+#URL:		
+Source0:	%{name}-%{version}.tar.gz
+
+#BuildRequires:	
+#Requires:	
+
+%description
+Bruce is a producer daemon for Apache Kafka.
+
+
+%prep
+%setup -q
+
+
+%build
+./build_all -m release -f bruce/bruce apps
+./build_all -m release -f bruce/simple_client/simple_bruce_client apps
+
+
+%install
+mkdir -p %{buildroot}/%_bindir
+cp out/release/bruce/bruce %{buildroot}/%_bindir
+cp out/release/bruce/simple_client/simple_bruce_client %{buildroot}/%_bindir
+mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig
+cp config/bruce.sysconfig %{buildroot}/%{_sysconfdir}/sysconfig/bruce
+mkdir -p %{buildroot}/%{_sysconfdir}/bruce
+cp config/bruce_conf.xml %{buildroot}/%{_sysconfdir}/bruce
+mkdir -p %{buildroot}/%{_sysconfdir}/init.d
+cp config/bruce.init %{buildroot}/%{_sysconfdir}/init.d/bruce
+
+
+%files
+%defattr(-,root,root)
+%_bindir/bruce
+%_bindir/simple_bruce_client
+%_sysconfdir/sysconfig/bruce
+%_sysconfdir/bruce/bruce_conf.xml
+%_sysconfdir/init.d/bruce
+
+
+%changelog
+

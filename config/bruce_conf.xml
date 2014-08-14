@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- example Bruce configuration -->
+<bruceConfig>
+    <batching>
+        <namedConfigs>
+            <config name="low_latency">
+                <!-- Set 100 milliseconds max batching delay for low latency
+                     topics. -->
+                <time value="100" />
+                <!-- no limit on message count -->
+                <messages value="disable" />
+                <!-- somewhat arbitrary upper bound on batch data size -->
+                <bytes value="256k" />
+            </config>
+            <config name="default_latency">
+                <!-- Set 1000 millisecond max batching delay for topics that
+                     are not low latency. -->
+                <time value="1000" />
+                <!-- no limit on message count -->
+                <messages value="disable" />
+                <!-- somewhat arbitrary upper bound on batch data size -->
+                <bytes value="256k" />
+            </config>
+        </namedConfigs>
+
+        <!-- somewhat arbitrary upper bound on produce request size -->
+        <produceRequestDataLimit value="1024k" />
+
+        <!-- This should have the same value as the message.max.bytes value in
+             the Kafka broker configuration.  A larger value will cause Kafka
+             to send MessageSizeTooLarge error ACKs to Bruce, which will cause
+             Bruce to discard messages.  A smaller value will not cause data
+             loss, but will unnecessarily restrict the size of a compressed
+             message set. -->
+        <messageMaxBytes value="1000000" />
+
+        <!-- This applies to all messages that are not low latency. -->
+        <combinedTopics enable="true" config="default_latency" />
+
+        <!-- config attribute is ignored (and optional) if action is "disable".
+             config must be empty or missing if action is "combinedTopics".
+             action may also be set to "perTopic". -->
+        <defaultTopic action="combinedTopics" config="" />
+
+        <topicConfigs>
+            <topic name="low_latency_topic_1" action="perTopic"
+                   config="low_latency" />
+            <topic name="low_latency_topic_2" action="perTopic"
+                   config="low_latency" />
+        </topicConfigs>
+    </batching>
+
+    <compression>
+        <namedConfigs>
+            <!-- minSize is ignored (and optional) if type in "none". -->
+            <config name="no_compression" type="none" />
+            <!-- Don't bother to compress a message set whose total size is
+                 less than minSize.  The value below is somewhat arbitrary, and
+                 not based on experimental data. -->
+            <config name="snappy_config" type="snappy" minSize="128" />
+        </namedConfigs>
+
+        <!-- This must be an integer value at least 0 and at most 100.  If the
+             compressed size of a message set is greater than this percentage
+             of the uncompressed size, then Bruce sends the data uncompressed,
+             so the Kafka brokers don't have to waste CPU cycles dealing with
+             the compression.  The value below is somewhat arbitrary, and not
+             based on experimental data. -->
+        <sizeThresholdPercent value="75" />
+
+        <!-- Enable compression for all topics except the two listed below
+             under topicConfigs. -->
+        <defaultTopic config="snappy_config" />
+
+        <topicConfigs>
+            <!-- Disable compression for these two topics. -->
+            <topic name="no_compression_topic_1" config="no_compression" />
+            <topic name="no_compression_topic_2" config="no_compression" />
+        </topicConfigs>
+    </compression>
+
+    <initialBrokers>
+        <!-- When Bruce starts, it chooses a broker in this list to contact for
+             metadata.  If Bruce cannot get metadata from this host, it tries
+             other hosts in the list until it succeeds.  Once Bruce
+             successfully gets metadata, the broker list in the metadata
+             determines which brokers Bruce will connect to for message
+             transmission. -->
+        <broker host="BROKER_HOST_1" port="9092" />
+        <broker host="BROKER_HOST_2" port="9092" />
+    </initialBrokers>
+</bruceConfig>

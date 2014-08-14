@@ -1,0 +1,11 @@
+alias build='scons -Q --up'
+
+# To build:
+#
+#     build <path/to/name/of/binary>
+#
+# To build and run a test:
+#
+#     build --test <path/to/name/of/test>
+#
+# Omit the --test to skip running the test.

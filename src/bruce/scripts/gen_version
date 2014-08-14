@@ -1,0 +1,246 @@
+#!/usr/bin/env python
+
+# -----------------------------------------------------------------------------
+# Copyright 2014 Tagged
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# -----------------------------------------------------------------------------
+#
+# This script is invoked during the build.  It has three modes of operation:
+#
+#     Mode 1: Generate 'bruce/version.cc'.  In this case, the script receives
+#         no command-line arguments.  It reads the contents of
+#         'bruce/version.cc.in' from standard input and writes the contents of
+#         'bruce/version.cc' to standard output.  The output has the string
+#         "VERSION_GOES_HERE" replaced with the actual version.
+#
+#     Mode 2: Verify that generated file is up to date.  In this case, the
+#         script receives a single command-line argument specifying the
+#         pathname of the generated file, which may not exist.  The script is
+#         invoked at the start of the build, and attempts to read the file.  If
+#         it exists, its contents are searched for Bruce's version string,
+#         which is compared with the actual version.  If the version does not
+#         match or can not be determined, the file is deleted.  This forces the
+#         file to be regenerated with a correct version string later in the
+#         build.
+#
+#     Mode 3: Write Bruce's version to standard output.  This is used for
+#         creating the file 'version.txt' (see below) in the case where we are
+#         building a tarball containing Bruce's source code.
+#
+# In the case where Bruce is being built from a tarball (for instance, when
+# building an RPM package), we obtain the version from a file 'version.txt' in
+# the root of the tree (where the SConstruct file lives).  In the case where we
+# are building from a Git repository, the 'version.txt' file will be missing
+# and we determine the version based on a tag stored in Git.
+
+import argparse
+import errno
+import os
+import re
+import subprocess
+import sys
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-h', '--help',
+            help='Show this help message and exit.', action='store_true')
+    parser.add_argument('-q', '--query',
+            help='Write the version to standard output.', action='store_true')
+    parser.add_argument('-g', '--generate',
+            help='Read "bruce/version.cc.in" from standard input and ' + \
+            'write "bruce/version.cc" to standard output.',
+            action='store_true')
+    parser.add_argument('-c', '--check', help='Check for generated file ' + \
+            '"bruce/version.cc", and delete it if the version is not correct.',
+            action='store', dest='check')
+    args = parser.parse_args()
+
+    if args.help:
+        parser.print_help()
+        sys.exit(0)
+
+    opt_count = 0
+
+    if args.query:
+        opt_count += 1
+
+    if args.generate:
+        opt_count += 1
+
+    if args.check is not None:
+        opt_count += 1
+
+    if opt_count != 1:
+        sys.stderr.write('Exactly one of {-q, -g, -c} must be specified.\n')
+        sys.exit(1)
+
+    return args
+
+
+def get_version_from_file():
+    # SCons executes this script from the root of the source tree (where the
+    # SConstruct file lives), so we need not specify a full pathname for
+    # 'version.txt'.
+    try:
+        is_open = False
+        infile = open('version.txt', 'r')
+        is_open = True
+        line = infile.readline()
+        line = line.lstrip().rstrip()
+
+        if line == '':
+            return None
+    except OSError as e:
+        sys.stderr.write('Error reading from "version.txt": ' + e.strerror + \
+                '\n')
+        sys.exit(1)
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            # The file does not exist, so we will get the version from Git.
+            return None
+
+        sys.stderr.write('Error reading from "version.txt": ' + e.strerror + \
+                '\n')
+        sys.exit(1)
+    finally:
+        if is_open:
+            infile.close()
+    return line
+
+
+# Return the current version of Bruce, which is based on a tag in Git.
+def get_version():
+    # First try to get the version from 'version.txt'.
+    version = get_version_from_file()
+
+    if version is None:
+        # We were unsuccessful getting the version from a file.  Assume that we
+        # are building from a Git repository, and get the version from Git.
+        try:
+            p = subprocess.Popen(['git', 'describe', 'master'],
+                                 stdout=subprocess.PIPE)
+            version, err = p.communicate()
+        except OSError:
+            sys.stderr.write(
+                    'Failed to execute Git command to get version tag\n')
+            sys.exit(1)
+
+        if not version:
+            sys.stderr.write('Got empty version information from Git\n')
+            sys.exit(1)
+
+        version = version.rstrip()
+        # At this point, <version> will be a string that looks something like
+        # either '1.0.0' or '1.0.0-1-g624d0b3'.  The former case occurs
+        # immediately after we tag a release in Git.  The latter case occurs
+        # when we commit additional changes after tagging a release.  In this
+        # case, Git adds the extra stuff.
+
+    # Replace each '-' character in the version with '.'.  For instance,
+    # '1.0.0-1-g624d0b3' becomes '1.0.0.1.g624d0b3'.  The motivation is that
+    # RPM doesn't like versions with '-' characters.
+    return version.replace('-', '.')
+
+
+# This implements Mode 1 of operation (see above).
+def generate_version_dot_cc():
+    version = get_version()
+
+    # Read 'bruce/version.cc.in' from standard input, substitute the version
+    # into its proper place, and write the contents of 'bruce/version.cc' to
+    # standard output.
+    for line in sys.stdin:
+        line = re.sub('VERSION_GOES_HERE', version, line)
+        sys.stdout.write(line)
+
+
+# This implements Mode 2 of operation (see above).
+def check_generated_file(path):
+    try:
+        infile = open(path, 'r')
+    except OSError as e:
+        sys.stderr.write('Failed to open generated version file for ' + \
+                'reading: ' + e.strerror + '\n')
+        sys.exit(1)
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            # The version file does not exist.  It will be generated later in
+            # the build.
+            return
+
+        sys.stderr.write('Failed to open generated version file for ' + \
+                'reading: ' + e.strerror + '\n')
+        sys.exit(1)
+
+    try:
+        ok = False
+        version = get_version()
+
+        # Search the file for a line of code that looks something like
+        # '  return "1.0.0";'.  If we find such a line, analyze it and stop
+        # iterating.  On loop termination, a True value for <ok> indicates that
+        # the file contains a version string that matches the version obtained
+        # from Git.
+        for line in infile:
+            (t, n) = re.subn(r'\s*return\s+\"', r'', line.rstrip())
+            # At this point, if the line is '  return "1.0.0";' then <t> is
+            # '1.0.0";'
+
+            if n == 1:
+                # Found regex match.  Look for double quote immediately
+                # following version.
+                quote_pos = t.find('"')
+
+                if quote_pos >= 0:
+                    # To isolate the version, remove everything from the double
+                    # quote onward.
+                    ver = t[:quote_pos]
+
+                    if ver == version:
+                        ok = True
+
+                break
+    finally:
+        infile.close()
+
+    if not ok:
+        # Matching version not found, so delete file.
+        try:
+            os.remove(path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                return
+
+            sys.stderr.write('Failed to delete old version file: ' + \
+                    e.strerror + '\n')
+            sys.exit(1)
+
+
+args = parse_args()
+
+if not os.path.isfile('SConstruct') or not os.path.isdir('src'):
+    sys.stderr.write('This script must be executed from the root of the ' +
+            'tree (where the SConstruct file is).\n')
+    sys.exit(1)
+
+if args.query:
+    print get_version()
+elif args.generate:
+    generate_version_dot_cc()
+elif args.check is not None:
+    check_generated_file(args.check)
+else:
+    sys.stderr.write('Internal error\n')
+    sys.exit(1)

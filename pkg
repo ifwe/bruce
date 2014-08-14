@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------------------
+# Copyright 2014 Tagged
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# -----------------------------------------------------------------------------
+
+usage() {
+    echo Usage: `basename $0` '[tar|rpm|rpm_noconfig]' 1>&2
+    exit 1
+}
+
+make_tar() {
+    echo ------------------------------------------------------------
+    echo Building tar archive
+    echo
+    rm -fr out/pkg/tar
+    mkdir -p out/pkg/tar/bruce-${version}
+
+    for f in `ls | grep -v out`; do
+        cp -a $f out/pkg/tar/bruce-${version}
+    done
+
+    cp .gitignore out/pkg/tar/bruce-${version}
+    src/bruce/scripts/gen_version -q > out/pkg/tar/bruce-${version}/version.txt
+
+    if [ "$?" -ne 0 ]; then
+        echo Failed to generate version.txt 1>&2
+        exit 1
+    fi
+
+    cwd=`pwd`
+    cd out/pkg/tar
+    tar cf bruce-${version}.tar bruce-${version}
+    gzip --best bruce-${version}.tar
+    rm -fr bruce-${version}
+    cd $cwd
+    echo ------------------------------------------------------------
+}
+
+make_rpm() {
+    echo ------------------------------------------------------------
+    echo Building RPM package
+    echo
+    cwd=`pwd`
+    rm -fr out/pkg/rpm
+    base=out/pkg/rpm/build
+    mkdir -p $base/BUILD
+    mkdir -p $base/BUILDROOT
+    mkdir -p $base/RPMS
+    mkdir -p $base/SOURCES
+    mkdir -p $base/SPECS
+    mkdir -p $base/SRPMS
+
+    if [ "$target" == "rpm_noconfig" ]; then
+        spec_in=bruce_noconfig.spec.in
+    else
+        spec_in=bruce.spec.in
+    fi
+
+    sed "s/BRUCE_VERSION/${version}/" < $spec_in > \
+            $base/SPECS/bruce.spec
+    cp out/pkg/tar/bruce-${version}.tar.gz $base/SOURCES
+    cd $base
+    rpmbuild --define "_topdir `pwd`" -ba SPECS/bruce.spec
+
+    if [ "$?" -ne 0 ]; then
+        echo RPM build failed 1>&2
+        exit 1
+    fi
+
+    for f in `find RPMS -type f`; do
+        mv $f ..
+    done
+
+    for f in `find SRPMS -type f`; do
+        mv $f ..
+    done
+
+    cd $cwd
+    rm -fr $base
+    echo ------------------------------------------------------------
+}
+
+if [ $# -ne 1 ]; then
+    usage
+fi
+
+target=$1
+
+if [ "$target" != "tar" ] && [ "$target" != "rpm" ] && \
+        [ "$target" != "rpm_noconfig" ]; then
+    usage
+fi
+
+if [ ! -f "SConstruct" ] || [ ! -d "src" ]; then
+    echo This script must be executed from the root of the tree 1>&2
+    exit 1
+fi
+
+version=`src/bruce/scripts/gen_version -q`
+echo Software version is $version
+echo
+
+# Always make a tarball, since that is required for building an RPM package.
+make_tar
+
+if [ "$target" == "rpm" ] || [ "$target" == "rpm_noconfig" ]; then
+    make_rpm
+fi

@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# bruce          Start/Stop the bruce daemon.
+#
+# chkconfig: 2345 79 20
+# description: Bruce is a producer daemon for Apache Kafka.
+
+### BEGIN INIT INFO
+# Provides: bruce
+# Required-Start: $local_fs $syslog
+# Required-Stop: $local_fs $syslog
+# Default-Start:  2345
+# Default-Stop: 99
+# Short-Description: run bruce daemon
+# Description: Bruce is a producer daemon for Apache Kafka.
+### END INIT INFO
+
+PATH=/usr/bin:/bin
+BRUCE=/usr/bin/bruce
+LOCKFILE=/var/lock/subsys/bruce
+STATUSPORT=9090
+
+. /etc/rc.d/init.d/functions
+. /etc/sysconfig/bruce
+
+RETVAL=0
+
+get_bruce_pid () {
+    pgrep -u nobody -f "bruce.*--status_port ${STATUSPORT}( |$)"
+}
+
+case "$1" in
+   start)
+      echo -n "Starting bruce: "
+      [ -f "$BRUCE" ] || exit 1
+      mkdir -p /var/run/bruce
+      chown nobody /var/run/bruce
+      chgrp nobody /var/run/bruce
+
+      daemon --user=nobody "$BRUCE" --daemon \
+            --protocol_version "$PROTOCOL_VERSION" \
+            --msg_buffer_max "$MSG_BUFFER_MAX" \
+            --status_port "$STATUSPORT" \
+            --receive_socket_name "$INPUT_SOCKET_NAME" \
+            --config_path $CONFIG_FILE
+
+      RETVAL=$?
+      echo
+      [ "$RETVAL" -eq 0 ] && touch "$LOCKFILE"
+        ;;
+
+  stop)
+      echo -n "Shutting down bruce: "
+      PID=$(get_bruce_pid)
+
+      if [ -z "PID" ]; then
+          echo bruce on port $STATUSPORT is not running 1>&2
+          RETVAL=1
+      else
+          kill -TERM "$PID"
+          i=0
+
+          while [ "$i" -lt 20 ] && [ ! -z "$(get_bruce_pid)" ]; do
+              sleep 1
+              ((++i))
+          done
+
+          if [ -z "$(get_bruce_pid)" ]; then
+              RETVAL=0
+          else
+              echo Failed to shut down bruce 1>&2
+              kill -9 "$PID" && /usr/bin/logger "Bruce failed to shut down cleanly and was killed."
+              RETVAL=1
+          fi
+      fi
+
+      echo
+      [ "$RETVAL" -eq 0 ] && rm -f "$LOCKFILE"
+        ;;
+
+  restart|reload)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+  status)
+        PID=$(get_bruce_pid)
+        if [ -n "$PID" ]; then
+            echo "bruce is running with PID $PID"
+            RETVAL=0
+        else
+            echo "bruce is not running"
+            RETVAL=3
+        fi
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit "$RETVAL"

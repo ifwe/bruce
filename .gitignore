@@ -1,0 +1,8 @@
+*.o
+*.so
+*.a
+*.pyc
+*.swp
+*~
+out
+.sconsign.dblite
