@@ -1,6 +1,6 @@
 (Note: This documentation is a work in progress.  More will be added soon.)
 
-# Bruce: A Producer Daemon for Apache Kafka
+# Bruce
 
 Bruce is a producer daemon for [Apache Kafka](http://kafka.apache.org), a
 high throughput publish/subscribe messaging system implemented as a distributed
