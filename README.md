@@ -1,6 +1,3 @@
-Bruce
-=====
-
 (Note: This documentation is a work in progress.  More will be added soon.)
 
 # Bruce: A Producer Daemon for Apache Kafka
