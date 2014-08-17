@@ -131,6 +131,7 @@ env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
                   TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
                   GENERATED_SOURCE_MAP={})
+env['ENV']['PATH'] = os.environ['PATH']
 
 
 def set_debug_options():
