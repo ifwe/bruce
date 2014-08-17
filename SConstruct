@@ -68,6 +68,9 @@ AddOption('--test',
 AddOption('--release',
           action='store_true',
           help='Build release targets (debug targets are built by default).')
+AddOption('--import_path',
+          action='store_true',
+          help='Import PATH environment variable into build environment.')
 
 # Our mode.
 if GetOption('release') is None:
@@ -131,7 +134,9 @@ env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
                   TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
                   GENERATED_SOURCE_MAP={})
-env['ENV']['PATH'] = os.environ['PATH']
+
+if GetOption('import_path'):
+    env['ENV']['PATH'] = os.environ['PATH']
 
 
 def set_debug_options():

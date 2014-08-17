@@ -34,6 +34,9 @@ def parse_args():
             action='store_true')
     parser.add_argument('-c', '--clean', help='Delete build results.',
             action='store_true')
+    parser.add_argument('-p', '--import_path',
+            help='Import PATH environment variable into build environment.',
+            action='store_true')
     parser.add_argument('-m', '--mode', help='Specify build mode.',
             action='store', dest='mode', choices=('debug', 'release'),
             default='debug')
@@ -106,7 +109,7 @@ def get_scons_path():
     return out.rstrip()
 
 
-def build_targets(targets, path_filter, verbose, mode, run_tests):
+def build_targets(targets, path_filter, verbose, mode, import_path, run_tests):
     filtered_targets = apply_path_filter(targets, path_filter)
     scons_path = get_scons_path()
 
@@ -127,6 +130,9 @@ def build_targets(targets, path_filter, verbose, mode, run_tests):
 
         if mode == 'release':
             cmd.append('--release')
+
+        if import_path:
+            cmd.append('--import_path')
 
         if run_tests:
             cmd.append('--test')
@@ -193,19 +199,19 @@ for target in target_set:
         print 'Building apps:'
         print ''
         build_targets(all_apps, args.path_filter, args.verbose, args.mode,
-                      False)
+                      args.import_path, False)
         print '============================================================'
     elif target == 'tests':
         print '============================================================'
         print 'Building tests:'
         print ''
         build_targets(get_test_targets(), args.path_filter, args.verbose,
-                      args.mode, False)
+                      args.mode, args.import_path, False)
         print '============================================================'
     elif target == 'run_tests':
         print '============================================================'
         print 'Building and running tests:'
         print ''
         build_targets(get_test_targets(), args.path_filter, args.verbose,
-                      args.mode, True)
+                      args.mode, args.import_path, True)
         print '============================================================'
