@@ -265,7 +265,7 @@ TConfig::TConfig(int argc, char *argv[])
       ProtocolVersion(0),
       StatusPort(9090),
       MsgBufferMax(256 * 1024),
-      MaxInputMsgSize(128 * 1024),
+      MaxInputMsgSize(64 * 1024),
       AllowLargeUnixDatagrams(false),
       MaxFailedDeliveryAttempts(5),
       Daemon(false),
