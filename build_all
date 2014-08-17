@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # -----------------------------------------------------------------------------
 # Copyright 2014 Tagged
@@ -91,8 +91,24 @@ def apply_path_filter(targets, path_filter):
     return result
 
 
+def get_scons_path():
+    try:
+        p = subprocess.Popen(['which', 'scons'], stdout=subprocess.PIPE)
+        out, err = p.communicate()
+    except OSError:
+        sys.stderr.write('Failed to determine scons path\n')
+        sys.exit(1)
+
+    if not out:
+        sys.stderr.write('Got empty scons path\n')
+        sys.exit(1)
+
+    return out.rstrip()
+
+
 def build_targets(targets, path_filter, verbose, mode, run_tests):
     filtered_targets = apply_path_filter(targets, path_filter)
+    scons_path = get_scons_path()
 
     for tgt in filtered_targets:
         print '------------------------------------------------------------'
@@ -100,7 +116,11 @@ def build_targets(targets, path_filter, verbose, mode, run_tests):
         print ''
         tgt = 'src/' + tgt
         os.chdir(os.path.dirname(tgt))
-        cmd = ['scons', '-Q', '--up']
+
+        # Doing things this way rather than directly executing scons command
+        # will cause us to use the desired version of python when inside a
+        # virtualenv.
+        cmd = ['python', scons_path, '-Q', '--up']
 
         if not verbose:
             cmd.append('-s')
@@ -135,7 +155,10 @@ if not os.path.isfile('SConstruct') or not os.path.isdir('src'):
 
 if args.clean:
     try:
-        subprocess.check_call(['scons', '-c'])
+        # Doing things this way rather than directly executing scons command
+        # will cause us to use the desired version of python when inside a
+        # virtualenv.
+        subprocess.check_call(['python', get_scons_path(), '-c'])
         sys.exit(0)
     except subprocess.CalledProcessError:
         sys.stderr.write('Stopping on failure\n')
