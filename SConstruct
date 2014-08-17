@@ -120,7 +120,7 @@ def check_version_file():
 check_version_file()
 
 # Environment.
-prog_libs = {'pthread', 'dl'}
+prog_libs = {'pthread', 'dl', 'rt'}
 gtest_libs = {'gtest', 'gtest_main', 'pthread'}
 env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
                   CPPDEFINES=[('SRC_ROOT', '\'"' + src.abspath + '"\'')],
