@@ -39,9 +39,13 @@ you are using.  Currently, instructions are available for
 [CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
 and [Ubuntu (14.04.1 LTS and 13.10)](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_and_13_env.md).
 
-## Building, Installing, and Configuring Bruce
+## Building and Installing Bruce
 
-Once your build environment is set up, the next steps are to
-[build](https://github.com/tagged/bruce/blob/master/doc/build.md),
-[install, and configure](https://github.com/tagged/bruce/blob/master/doc/config.md) Bruce.
+Once your build environment is set up, the next step is to
+[build and install](https://github.com/tagged/bruce/blob/master/doc/build_install.md)
+Bruce.
+
+## Configuring and Running Bruce
+
+Then you can [configure and run]((https://github.com/tagged/bruce/blob/master/doc/config_run.md) Bruce.
 
