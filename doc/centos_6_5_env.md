@@ -35,4 +35,4 @@ following:
    (content to be added here)
    ```
 
-Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#Building,-Installing,-and-Configuring-Bruce).
+Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-installing-and-configuring-bruce).
