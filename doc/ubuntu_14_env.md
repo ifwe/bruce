@@ -1,4 +1,4 @@
-## Setting Up a Ubuntu 14.01.1 LTS Build Environment
+## Setting Up a Ubuntu 14.04.1 LTS Build Environment
 
 Install software packages as follows:
 
