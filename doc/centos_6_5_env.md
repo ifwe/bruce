@@ -59,8 +59,8 @@ following:
    rpm -Uvh RPMS/x86_64/gcc482-4.8.2-1.el6.x86_64.rpm
    ```
 
-Once gcc 4.8.2 has been built and installed, you should do the following before
-attempting to build and execute programs with the new compiler version:
+Now that gcc 4.8.2 has been built and installed, you should do the following
+before attempting to build and execute programs with the new compiler version:
 ```
 export PATH=/opt/gcc/bin:$PATH
 export LD_LIBRARY_PATH=/opt/gcc/lib64
