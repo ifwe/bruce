@@ -1,10 +1,10 @@
 ## Setting Up a CentOS 6.5 Build Environment
 
-Bruce is implemented in C++, and makes extensive use of C++11 language
-features.  Therefore, it must be built using a more recent version of gcc than
-what CentOS 6.5 provides.  Likewise, a newer version of Python is required to
-support Bruce's SCons-based Python build scripts.  In addition, a few RPM
-packages are needed, which may be installed as follows:
+Bruce is implemented in C++, and makes extensive use of C++11 features.
+Therefore, it must be built using a more recent version of gcc than what CentOS
+6.5 provides.  Likewise, a newer version of Python is required to support
+Bruce's SCons-based Python build scripts.  A few RPM packages are also needed,
+which may be installed as follows:
 
 ```
 yum install scons
