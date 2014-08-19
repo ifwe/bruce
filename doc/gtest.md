@@ -1,6 +1,6 @@
 ## Setting Up the Google Test Framework
 
-To set up the google test framework, execute the following commands:
+To set up the Google Test Framework, execute the following commands:
 
 ```
 wget http://googletest.googlecode.com/files/gtest-1.7.0.zip
