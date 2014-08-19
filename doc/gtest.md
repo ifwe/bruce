@@ -1,6 +1,9 @@
 ## Setting Up the Google Test Framework
 
-To set up the Google Test Framework, execute the following commands:
+For simplicity, the following instructions assume that you are running on an
+x86-64 architecture Linux installation.  For 32-bit installations, the
+libraries would get copied to /usr/lib rather than /usr/lib64.  To set up the
+Google Test Framework, execute the following commands:
 
 ```
 wget http://googletest.googlecode.com/files/gtest-1.7.0.zip
