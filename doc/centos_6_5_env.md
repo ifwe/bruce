@@ -3,10 +3,11 @@
 Bruce is implemented in C++, and makes extensive use of C++11 features.
 Therefore, it must be built using a more recent version of gcc than what CentOS
 6.5 provides.  Likewise, a newer version of Python is required to support
-Bruce's SCons-based Python build scripts.  A few RPM packages are also needed,
+Bruce's SCons-based Python build scripts.  Some RPM packages are also needed,
 which may be installed as follows:
 
 ```
+yum groupinstall "Development tools"
 yum install scons
 yum install snappy-devel
 yum install boost-devel
@@ -26,7 +27,8 @@ following:
    multilib_policy=all
    ```
 
-   Next execute the following commands:
+   Now install the packages shown below.  This will cause 32-bit versions to
+   be installed in addition to the 64-bit versions that are already installed.
 
    ```
    yum install glibc
@@ -39,7 +41,6 @@ following:
 2. Next execute the following commands:
 
    ```
-   yum groupinstall "Development tools"
    yum install elfutils-devel
    yum install systemtap-runtime
    yum install zlib-devel
