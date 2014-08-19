@@ -29,4 +29,19 @@ written in.  Client code for writing to Bruce's socket will soon be available
 for Java, Python, PHP, and C.  Client code is currently available in C++,
 Bruce's implementation language.
 
-(more documentation will appear shortly...)
+## Setting Up a Build Environment
+
+Bruce currently runs only on Linux.  The first step in getting Bruce working is
+to set up a build environment.  This process differs depending on which Linux
+distribution you are using.  Currently, instructions are available for
+[CentOS 7](https://github.com/tagged/bruce/blob/master/docs/centos_7_env.md),
+[CentOS 6.5](https://github.com/tagged/bruce/blob/master/docs/centos_6_5_env.md),
+[Ubuntu 14.04.1 LTS](https://github.com/tagged/bruce/blob/master/docs/ubuntu_14_env.md),
+and [Ubuntu 13.10](https://github.com/tagged/bruce/blob/master/docs/ubuntu_13_env.md).
+
+## Building, Installing, and Configuring Bruce
+
+Once your build environment is set up, the next steps are to
+[build](https://github.com/tagged/bruce/blob/master/docs/build.md),
+[install, and configure](https://github.com/tagged/bruce/blob/master/docs/config.md) Bruce.
+
