@@ -1,8 +1,9 @@
-## Setting Up a Ubuntu 14.04.1 LTS Build Environment
+## Setting Up a Ubuntu Build Environment (14.04.1 LTS and 13.10)
 
 Install software packages as follows:
 
 ```
+sudo apt-get install build-essential
 sudo apt-get install scons
 sudo apt-get install libsnappy-dev
 sudo apt-get install libasan0

@@ -37,8 +37,7 @@ to set up a build environment.  A good starting point for this is to
 you are using.  Currently, instructions are available for
 [CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
 [CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
-[Ubuntu 14.04.1 LTS](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_env.md),
-and [Ubuntu 13.10](https://github.com/tagged/bruce/blob/master/doc/ubuntu_13_env.md).
+and [Ubuntu (14.04.1 LTS and 13.10)](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_and_13_env.md).
 
 ## Building, Installing, and Configuring Bruce
 
