@@ -47,5 +47,5 @@ Bruce.
 
 ## Configuring and Running Bruce
 
-Then you can [configure and run]((https://github.com/tagged/bruce/blob/master/doc/config_run.md) Bruce.
+Then you can [configure and run](https://github.com/tagged/bruce/blob/master/doc/config_run.md) Bruce.
 
