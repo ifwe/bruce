@@ -3,7 +3,14 @@
 Bruce is implemented in C++, and makes extensive use of C++11 language
 features.  Therefore, it must be built using a more recent version of gcc than
 what CentOS 6.5 provides.  Likewise, a newer version of Python is required to
-support Bruce's SCons-based Python build scripts.
+support Bruce's SCons-based Python build scripts.  In addition, a few RPM
+packages are needed, which may be installed as follows:
+
+```
+yum install scons
+yum install snappy-devel
+yum install boost-devel
+```
 
 ### Building and Installing gcc 4.8.2
 
@@ -49,7 +56,7 @@ following:
    rpm -Uvh libmpc-0.8-3.el6.x86_64.rpm
    rpm -Uvh libmpc-devel-0.8-3.el6.x86_64.rpm
    yum install rpm-build
-   mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+   mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}  # or use a directory of your choice
    git clone https://github.com/tagged/bruce.git
    cp bruce/centos6/gcc482.spec ~/rpmbuild/SPECS
    wget http://mirrors.kernel.org/gnu/gcc/gcc-4.8.2/gcc-4.8.2.tar.bz2
@@ -68,6 +75,49 @@ export LD_LIBRARY_PATH=/opt/gcc/lib64
 
 ### Building and Installing Python 2.7
 
-(content will be added here soon)
+To build and install Python 2.7.3, do the following:
+
+```
+yum install zlib-devel
+yum install bzip2-devel
+yum install openssl-devel
+yum install ncurses-devel
+yum install sqlite-devel
+yum install readline-devel
+yum install tk-devel
+wget http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2
+tar xf Python-2.7.3.tar.bz2
+cd Python-2.7.3
+./configure --prefix=/usr/local
+make
+make altinstall  # Warning: Do _not_ type "make install".
+cd ..
+wget http://pypi.python.org/packages/source/d/distribute/distribute-0.6.35.tar.gz
+tar xf distribute-0.6.35.tar.gz
+cd distribute-0.6.35
+python2.7 setup.py install
+easy_install-2.7 virtualenv
+```
+
+### Using Python 2.7 inside a virtualenv Environment
+
+For building Bruce, you need to create a Python 2.7 virtualenv environment,
+which may be done as follows:
+
+```
+virtualenv-2.7 --distribute ~/bruce_env  # or use a directory of your choice
+```
+
+Now activate the virtualenv environment as follows:
+
+```
+$ source ~/bruce_env/bin/activate
+$ python --version
+Python 2.7.3
+$
+```
+As shown above, when executing commands in the shell where you activated the
+virtualenv environment, Python 2.7.3 will be used by default.  Before building
+Bruce, you must perform this step in the shell where you are doing the build.
 
 Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-installing-and-configuring-bruce).
