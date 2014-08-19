@@ -3,8 +3,8 @@
 The following instructions assume that you are running on an x86-64
 architecture CentOS or RHEL installation.  For Ubuntu installations (64 or 32
 bit), or 32-bit CentOS/RHEL installations, the libraries would get copied to
-/usr/lib rather than /usr/lib64.  To set up the Google Test Framework, execute
-the following commands:
+`/usr/lib` rather than `/usr/lib64`.  To set up the Google Test Framework,
+execute the following commands:
 
 ```
 wget http://googletest.googlecode.com/files/gtest-1.7.0.zip

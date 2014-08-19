@@ -21,7 +21,7 @@ following:
 
 1. First install 32-bit versions of the glibc binaries (in addition to the
    existing 64-bit binaries).  To do this, start by appending the following
-   line to /etc/yum.conf:
+   line to `/etc/yum.conf`:
 
    ```
    multilib_policy=all
@@ -36,7 +36,7 @@ following:
    yum install glibc-static
    ```
 
-   Finally, remove the line you appended to /etc/yum.conf above.
+   Finally, remove the line you appended to `/etc/yum.conf` above.
 
 2. Next execute the following commands:
 
