@@ -66,7 +66,7 @@ export PATH=/opt/gcc/bin:$PATH
 export LD_LIBRARY_PATH=/opt/gcc/lib64
 ```
 
-### Installing Python 2.7
+### Building and Installing Python 2.7
 
 (content will be added here soon)
 
