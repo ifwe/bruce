@@ -32,8 +32,9 @@ Bruce's implementation language.
 ## Setting Up a Build Environment
 
 Bruce currently runs only on Linux.  The first step in getting Bruce working is
-to set up a build environment.  This process differs depending on which Linux
-distribution you are using.  Currently, instructions are available for
+to set up a build environment.  A good starting point for this is to
+[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md).  The remaining steps differ depending on which Linux distribution
+you are using.  Currently, instructions are available for
 [CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
 [CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
 [Ubuntu 14.04.1 LTS](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_env.md),
