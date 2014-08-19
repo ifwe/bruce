@@ -12,7 +12,21 @@ cd gtest-1.7.0
 ./configure
 make
 cd lib/.libs
+```
+
+If you are running on CentOS or RHEL then:
+
+```
 mv *.a *.lai *.so* ../*.la /usr/lib64
+```
+
+If you are running on Ubuntu then:
+
+```
+mv *.a *.lai *.so* ../*.la /usr/lib
+```
+
+```
 ldconfig
 cd ../..
 cp -a include/gtest /usr/include
