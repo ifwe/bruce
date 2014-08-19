@@ -54,20 +54,23 @@ make_rpm() {
     echo Building RPM package
     echo
     cwd=`pwd`
-    rm -fr out/pkg/rpm
-    base=out/pkg/rpm/build
+
+    if [ "$target" == "rpm_noconfig" ]; then
+        rpm_dir=out/pkg/rpm_noconfig
+        spec_in=bruce_noconfig.spec.in
+    else
+        rpm_dir=out/pkg/rpm
+        spec_in=bruce.spec.in
+    fi
+
+    rm -fr $rpm_dir
+    base=${rpm_dir}/build
     mkdir -p $base/BUILD
     mkdir -p $base/BUILDROOT
     mkdir -p $base/RPMS
     mkdir -p $base/SOURCES
     mkdir -p $base/SPECS
     mkdir -p $base/SRPMS
-
-    if [ "$target" == "rpm_noconfig" ]; then
-        spec_in=bruce_noconfig.spec.in
-    else
-        spec_in=bruce.spec.in
-    fi
 
     sed "s/BRUCE_VERSION/${version}/" < $spec_in > \
             $base/SPECS/bruce.spec
