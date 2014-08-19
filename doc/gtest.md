@@ -26,6 +26,8 @@ If you are running on Ubuntu then:
 mv *.a *.lai *.so* ../*.la /usr/lib
 ```
 
+Now evecute the following commands (for either distro):
+
 ```
 ldconfig
 cd ../..
