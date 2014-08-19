@@ -32,7 +32,42 @@ following:
 2. Next execute the following commands:
 
    ```
-   (content to be added here)
+   yum groupinstall "Development tools"
+   yum install elfutils-devel
+   yum install systemtap-runtime
+   yum install zlib-devel
+   yum install gettext
+   yum install dejagnu
+   yum install bison
+   yum install flex
+   yum install texinfo
+   yum install sharutils
+   yum install gmp-devel
+   yum install mpfr-devel
+   wget http://dl.fedoraproject.org/pub/epel/6/x86_64/libmpc-0.8-3.el6.x86_64.rpm
+   wget http://dl.fedoraproject.org/pub/epel/6/x86_64/libmpc-devel-0.8-3.el6.x86_64.rpm
+   rpm -Uvh libmpc-0.8-3.el6.x86_64.rpm
+   rpm -Uvh libmpc-devel-0.8-3.el6.x86_64.rpm
+   yum install rpm-build
+   mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+   git clone https://github.com/tagged/bruce.git
+   cp bruce/centos6/gcc482.spec ~/rpmbuild/SPECS
+   wget http://mirrors.kernel.org/gnu/gcc/gcc-4.8.2/gcc-4.8.2.tar.bz2
+   cp gcc-4.8.2.tar.bz2 ~/rpmbuild/SOURCES
+   cd ~/rpmbuild
+   rpmbuild --define "topdir `pwd`" -ba SPECS/gcc482.spec
+   rpm -Uvh RPMS/x86_64/gcc482-4.8.2-1.el6.x86_64.rpm
    ```
+
+Once gcc 4.8.2 has been built and installed, you should do the following before
+attempting to build and execute programs with the new compiler version:
+```
+export PATH=/opt/gcc/bin:$PATH
+export LD_LIBRARY_PATH=/opt/gcc/lib64
+```
+
+### Installing Python 2.7
+
+(content will be added here soon)
 
 Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-installing-and-configuring-bruce).
