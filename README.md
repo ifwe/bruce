@@ -34,14 +34,14 @@ Bruce's implementation language.
 Bruce currently runs only on Linux.  The first step in getting Bruce working is
 to set up a build environment.  This process differs depending on which Linux
 distribution you are using.  Currently, instructions are available for
-[CentOS 7](https://github.com/tagged/bruce/blob/master/docs/centos_7_env.md),
-[CentOS 6.5](https://github.com/tagged/bruce/blob/master/docs/centos_6_5_env.md),
-[Ubuntu 14.04.1 LTS](https://github.com/tagged/bruce/blob/master/docs/ubuntu_14_env.md),
-and [Ubuntu 13.10](https://github.com/tagged/bruce/blob/master/docs/ubuntu_13_env.md).
+[CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
+[CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
+[Ubuntu 14.04.1 LTS](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_env.md),
+and [Ubuntu 13.10](https://github.com/tagged/bruce/blob/master/doc/ubuntu_13_env.md).
 
 ## Building, Installing, and Configuring Bruce
 
 Once your build environment is set up, the next steps are to
-[build](https://github.com/tagged/bruce/blob/master/docs/build.md),
-[install, and configure](https://github.com/tagged/bruce/blob/master/docs/config.md) Bruce.
+[build](https://github.com/tagged/bruce/blob/master/doc/build.md),
+[install, and configure](https://github.com/tagged/bruce/blob/master/doc/config.md) Bruce.
 
