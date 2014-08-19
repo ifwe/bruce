@@ -1,8 +1,11 @@
 ## Building an RPM package
 
 Once you have finished [setting up your build environment](https://github.com/tagged/bruce#setting-up-a-build-environment),
-you are ready to build Bruce.  The first step is to clone Bruce's Git
-repository:
+you are ready to build Bruce.  If you are building on CentOS 6, remember to set
+your `PATH` and `LD_LIBRARY_PATH` environment variables and activate your
+Python virtualenv environment before building, as detailed
+[here](https://github.com/tagged/bruce#setting-up-a-build-environment).  The
+first step is to clone Bruce's Git repository:
 
 ```
 git clone https://github.com/tagged/bruce.git
