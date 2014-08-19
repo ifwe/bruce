@@ -4,7 +4,7 @@ Once you have finished [setting up your build environment](https://github.com/ta
 you are ready to build Bruce.  If you are building on CentOS 6, remember to set
 your `PATH` and `LD_LIBRARY_PATH` environment variables and activate your
 Python virtualenv environment before building, as detailed
-[here](https://github.com/tagged/bruce#setting-up-a-build-environment).  The
+[here](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md).  The
 first step is to clone Bruce's Git repository:
 
 ```
