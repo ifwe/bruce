@@ -77,7 +77,7 @@ separately.  Assuming you are in the root of the Git repository (where Bruce's
 
 ```
 cp config/bruce.init /etc/init.d/bruce
-cp config/bruce.init /etc/sysconfig/bruce
+cp config/bruce.sysconfig /etc/sysconfig/bruce
 mkdir /etc/bruce  # or some other suitable location
 cp config/bruce_conf.xml /etc/bruce
 ```
