@@ -70,10 +70,10 @@ package described [here](https://github.com/tagged/bruce/blob/master/doc/centos_
 must be installed, and `LD_LIBRARY_PATH` must contain `/opt/gcc/lib64` in the
 shell that you execute Bruce from.  If you built your RPM package using the
 `rpm_noconfig` option described above, or you built Bruce directly using SCons,
-you will probably want to install Bruce's init script, sysconfig file, and
-configuration file (which mostly contains settings related to batching and
-compression).  Assuming you are in the root of the Git repository (where
-Bruce's `SConstruct` file is found), you can do this as follows:
+you will need to install Bruce's init script, sysconfig file, and configuration
+file (which mostly contains settings related to batching and compression)
+separately.  Assuming you are in the root of the Git repository (where Bruce's
+`SConstruct` file is found), you can do this as follows:
 
 ```
 cp config/bruce.init /etc/init.d/bruce
