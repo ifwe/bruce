@@ -20,10 +20,10 @@ bruce --daemon --protocol_version 0 --msg_buffer_max 65536 \
 
 The above command line arguments have the following effects:
 * `--daemon` tells Bruce to run as a daemon.
-* `--protocol_version 0` tells bruce to use version of Kafka's protocol for
+* `--protocol_version 0` tells Bruce to use version 0 of Kafka's protocol for
 handling produce requests, which is specified
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).
-Currently, version 0 is the only supported version.
+Currently, 0 is the only supported version.
 * `--msg_buffer_max 65536` tells Bruce to reserve 65536 kbytes (or 64 * 1024 *
 1024 bytes) of memory for buffering message data to be sent to Kafka.
 * `--receive_socket_name /var/run/bruce/bruce.socket` specifies the location of

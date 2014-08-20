@@ -27,14 +27,16 @@ Bruce serves as a single intake point for a Kafka cluster, receiving messages
 from diverse clients regardless of what programming language a client is
 written in.  Client code for writing to Bruce's socket will soon be available
 for Java, Python, PHP, and C.  Client code is currently available in C++,
-Bruce's implementation language.
+Bruce's implementation language.  Bruce currently runs only on Linux.  Also, it
+does not support Kafka versions prior to 0.8.
 
 ## Setting Up a Build Environment
 
-Bruce currently runs only on Linux.  The first step in getting Bruce working is
-to set up a build environment.  A good starting point for this is to
-[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md).  The remaining steps differ depending on which Linux distribution
-you are using.  Currently, instructions are available for
+The first step in getting Bruce working is to set up a build environment.  A
+good starting point for this is to
+[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md), which Bruce uses for its unit tests.  The remaining steps differ
+depending on which Linux distribution you are using.  Currently, instructions
+are available for
 [CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
 [CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
 and [Ubuntu (14.04.1 LTS and 13.10)](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_and_13_env.md).
