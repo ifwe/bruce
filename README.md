@@ -45,7 +45,44 @@ Once your build environment is set up, the next step is to
 [build and install](https://github.com/tagged/bruce/blob/master/doc/build_install.md)
 Bruce.
 
-## Configuring and Running Bruce
+## Running Bruce with Basic Configuration
 
-Then you can [configure and run](https://github.com/tagged/bruce/blob/master/doc/config_run.md) Bruce.
+Simple instructions for running Bruce with a basic configuration can be found
+[here](https://github.com/tagged/bruce/blob/master/doc/basic_config.md).
 
+## Sending Messages
+
+Information on how to send messages to Bruce can be found
+[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md).
+
+## Status Monitoring
+
+Information on status monitoring can be found
+[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md).
+
+## Design Overview
+
+Before going into more details on Bruce's configuration options, it is helpful
+to have an understanding of Bruce's design, which is described
+[here](https://github.com/tagged/bruce/blob/master/doc/design.md).
+
+## Detailed Configuration
+
+Full details of Bruce's configuration options are provided
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+
+## Troubleshooting
+
+Information that may help with troubleshooting is provided
+[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
+
+## Modifying Bruce's Implementation
+
+Information for developers interested in making custom modifications or
+contributing code to Bruce is provided
+[here](https://github.com/tagged/bruce/blob/master/doc/dev_info.md).
+
+## Getting Help
+
+Information on getting help with Bruce is provided
+[here](https://github.com/tagged/bruce/blob/master/doc/getting_help.md).
