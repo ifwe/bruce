@@ -82,4 +82,4 @@ mkdir /etc/bruce  # or some other suitable location
 cp config/bruce_conf.xml /etc/bruce
 ```
 
-At this point, you are ready to [configure and run Bruce](https://github.com/tagged/bruce#configuring-and-running-bruce).
+At this point, you are ready to [run Bruce with a basic configuration](https://github.com/tagged/bruce#running-bruce-with-basic-configuration).
