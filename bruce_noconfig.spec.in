@@ -1,5 +1,10 @@
 %define _bindir /usr/bin
 
+# Trying to build the debuginfo package on CentOS 6 causes problems.
+%if 0%{?rhel} == 6
+%define debug_package %{nil}
+%endif
+
 Name:		bruce
 Version:	BRUCE_VERSION
 Release:	1%{?dist}
@@ -22,8 +27,20 @@ Bruce is a producer daemon for Apache Kafka.
 
 
 %build
-./build_all -m release -f bruce/bruce apps
-./build_all -m release -f bruce/simple_client/simple_bruce_client apps
+%if 0%{?rhel} == 6
+    # For CentOS 6, we must build using gcc 4.8.2 and Python 2.7.
+    IMPORT_PATH=--import_path
+    mkdir out
+    virtualenv-2.7 --distribute out/python_2_7_env
+    source out/python_2_7_env/bin/activate
+    export PATH=/opt/gcc/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/gcc/lib64
+%else
+    IMPORT_PATH=
+%endif
+
+./build_all -m release -f bruce/bruce $IMPORT_PATH apps
+./build_all -m release -f bruce/simple_client/simple_bruce_client $IMPORT_PATH apps
 
 
 %install
