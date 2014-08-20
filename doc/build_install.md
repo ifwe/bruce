@@ -40,3 +40,46 @@ The init script for bruce (see `config/bruce.init`) is an older System V type
 of script.  Scripts that work with the newer *systemd* included in CentOS 7 and
 *upstart* included in recent Ubuntu distributions are currently not available.
 Contributions from the community would be much appreciated.
+
+### Building Bruce Directly
+
+Bruce may be built directly using SCons as follows:
+
+```
+cd bruce
+source bash_defs
+cd src/bruce
+build --release bruce
+cd ../..
+```
+
+The path to the newly built Bruce executable is now `out/release/bruce/bruce`.
+
+### Installing Bruce
+
+If you built an RPM package containing bruce, they you can install it using an
+RPM command such as:
+
+```
+rpm -Uvh out/pkg/rpm/bruce-1.0.6.38.g66c5a2d-1.el6.x86_64.rpm
+```
+
+Otherwise, you can copy the Bruce executable to a location of your choice, such
+as `/usr/bin`.  If you are running on CentOS 6, remember that the gcc482 RPM
+package described [here](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md#building-and-installing-gcc-482)
+must be installed and `LD_LIBRARY_PATH` must contain `/opt/gcc/lib64`.  If you
+built your RPM package using the `rpm_noconfig` option described above, or you
+build Bruce directly using SCons, you will probably want to install bruce's
+init script, sysconfig file, and configuration file (which mostly contains
+settings related to batching and compression).  Assuming you are in the root of
+the Git repository (where Bruce's `SConstruct` file is found), you can do this
+as follows:
+
+```
+cp config/bruce.init /etc/init.d/bruce
+cp config/bruce.init /etc/sysconfig/bruce
+mkdir /etc/bruce  # or some other suitable location
+cp config/bruce_conf.xml /etc/bruce
+```
+
+At this point, you are ready to [configure and run Bruce](https://github.com/tagged/bruce#configuring-and-running-bruce).
