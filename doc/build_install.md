@@ -1,4 +1,4 @@
-## Building an RPM package
+## Building and Installing Bruce
 
 Once you have finished [setting up your build environment](https://github.com/tagged/bruce#setting-up-a-build-environment),
 you are ready to build Bruce.  If you are building on CentOS 6, remember to set
@@ -11,13 +11,14 @@ first step is to clone Bruce's Git repository:
 git clone https://github.com/tagged/bruce.git
 ```
 
-If you will be running Bruce on an RPM-based
-distribution such as CentOS or RHEL, you will probably want to build an RPM
-package.  Here you have two choices.  You can build either an RPM package that
-includes bruce's init script and config files or an RPM package that omits
-these files.  You might prefer the latter choice if you prefer to manage the
-config files separately using a tool such as Puppet.  To choose the first
-option, do the following:
+### Building an RPM package
+
+If you will be running Bruce on an RPM-based distribution such as CentOS or
+RHEL, you will probably want to build an RPM package.  Here you have two
+choices.  You can build either an RPM package that includes bruce's init script
+and config files or an RPM package that omits these files.  You might prefer
+the latter choice if you prefer to manage the config files separately using a
+tool such as Puppet.  To choose the first option, do the following:
 
 ```
 cd bruce
