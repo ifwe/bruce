@@ -3,8 +3,8 @@
 PROTOCOL_VERSION=0
 
 # This is the amount of memory that bruce will reserve for storing messages
-# from clients.
-MSG_BUFFER_MAX=262144
+# from clients.  The value is specified in kbytes.
+MSG_BUFFER_MAX=65536
 
 # This is the UNIX domain datagram socket that bruce monitors for messages from
 # web clients.
