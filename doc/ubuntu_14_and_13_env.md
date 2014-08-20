@@ -12,4 +12,4 @@ sudo apt-get install git
 sudo apt-get install g++
 ```
 
-Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-installing-and-configuring-bruce).
+Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building_and-installing-bruce).
