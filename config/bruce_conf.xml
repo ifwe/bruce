@@ -43,10 +43,13 @@
         <defaultTopic action="combinedTopics" config="" />
 
         <topicConfigs>
+            <!-- Uncomment and customize the settings in here if you wish to
+                 have batching configurations that differ on a per-topic basis.
             <topic name="low_latency_topic_1" action="perTopic"
                    config="low_latency" />
             <topic name="low_latency_topic_2" action="perTopic"
                    config="low_latency" />
+              -->
         </topicConfigs>
     </batching>
 
@@ -68,25 +71,27 @@
              based on experimental data. -->
         <sizeThresholdPercent value="75" />
 
-        <!-- Enable compression for all topics except the two listed below
-             under topicConfigs. -->
+        <!-- Enable compression for all topics except those listed below under
+             topicConfigs. -->
         <defaultTopic config="snappy_config" />
 
         <topicConfigs>
-            <!-- Disable compression for these two topics. -->
+            <!-- Uncomment and customize the settings in here if you wish to
+                 configure compression on a per-topic basis.
             <topic name="no_compression_topic_1" config="no_compression" />
             <topic name="no_compression_topic_2" config="no_compression" />
+              -->
         </topicConfigs>
     </compression>
 
     <initialBrokers>
         <!-- When Bruce starts, it chooses a broker in this list to contact for
-             metadata.  If Bruce cannot get metadata from this host, it tries
-             other hosts in the list until it succeeds.  Once Bruce
-             successfully gets metadata, the broker list in the metadata
-             determines which brokers Bruce will connect to for message
-             transmission. -->
-        <broker host="BROKER_HOST_1" port="9092" />
-        <broker host="BROKER_HOST_2" port="9092" />
+             metadata.  If Bruce cannot get metadata from the host it chooses,
+             it tries other hosts until it succeeds.  Once Bruce successfully
+             gets metadata, the broker list in the metadata determines which
+             brokers Bruce will connect to for message transmission and future
+             metadata requests. -->
+        <broker host="broker_host_1" port="9092" />
+        <broker host="broker_host_2" port="9092" />
     </initialBrokers>
 </bruceConfig>
