@@ -67,13 +67,13 @@ rpm -Uvh out/pkg/rpm/bruce-1.0.6.38.g66c5a2d-1.el6.x86_64.rpm
 Otherwise, you can copy the Bruce executable to a location of your choice, such
 as `/usr/bin`.  If you are running on CentOS 6, remember that the gcc482 RPM
 package described [here](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md#building-and-installing-gcc-482)
-must be installed and `LD_LIBRARY_PATH` must contain `/opt/gcc/lib64`.  If you
-built your RPM package using the `rpm_noconfig` option described above, or you
-build Bruce directly using SCons, you will probably want to install bruce's
-init script, sysconfig file, and configuration file (which mostly contains
-settings related to batching and compression).  Assuming you are in the root of
-the Git repository (where Bruce's `SConstruct` file is found), you can do this
-as follows:
+must be installed, and `LD_LIBRARY_PATH` must contain `/opt/gcc/lib64` in the
+shell that you execute Bruce from.  If you built your RPM package using the
+`rpm_noconfig` option described above, or you build Bruce directly using SCons,
+you will probably want to install Bruce's init script, sysconfig file, and
+configuration file (which mostly contains settings related to batching and
+compression).  Assuming you are in the root of the Git repository (where
+Bruce's `SConstruct` file is found), you can do this as follows:
 
 ```
 cp config/bruce.init /etc/init.d/bruce
