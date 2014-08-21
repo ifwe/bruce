@@ -47,20 +47,20 @@ interface.  The default value is 9090.
 * `--client_id CLIENT_ID_STRING` allows a Client ID string to be specified when
 sending produce requests to Kafka.  If unspecified, the client ID will be
 empty.
-* `--required_acks N` specifies the *required ACKs* value to be in produce
+* `--required_acks N` specifies the *required ACKs* value to be sent in produce
 requests, as described
-[here](http://kafka.apache.org/documentation.html#producerconfigs).  If
-unspecified, the default value is -1.
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest).
+If unspecified, the default value is -1.
 * `--replication_timeout N` specifies the time in milliseconds the broker will
 wait for successful replication to occur, as specified by the `required_acks`
-value, before returning an error.  This is the same value as
-`request.timeout.ms` specified
-[here](http://kafka.apache.org/documentation.html#producerconfigs).
+value described
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest),
+before returning an error.
 
 Bruce's config file (`/etc/bruce/bruce_conf.xml` in the above example) is an
 XML document that specifies batching and configuration options, as well as the
 above-described list of initial brokers.  The example configuration specifies
-a uniform batching latency od 1000 ms, with a 256 kbyte upper bound on the
+a uniform batching latency of 1000 ms, with a 256 kbyte upper bound on the
 total message data size in a single batch.  The maximum message data size for a
 single produce request is limited to 1024 kbytes.  These values are somewhat
 arbitrary, and will probably require tuning.  Snappy message compression is
@@ -75,8 +75,8 @@ You can shut down Bruce using its init script as follows:
 service bruce stop
 ```
 
-Alternatively, you can shut it down directly by sending it a SIGTERM or SIGINT.
-For instance:
+Alternatively, you can shut down Bruce directly by sending it a SIGTERM or
+SIGINT.  For instance:
 
 ```
 kill -TERM PROCESS_ID_OF_BRUCE
