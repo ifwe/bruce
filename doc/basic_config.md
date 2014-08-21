@@ -52,8 +52,7 @@ requests, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest).
 If unspecified, the default value is -1.
 * `--replication_timeout N` specifies the time in milliseconds the broker will
-wait for successful replication to occur, as specified by the `required_acks`
-value described
+wait for successful replication to occur, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest),
 before returning an error.
 
