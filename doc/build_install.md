@@ -54,7 +54,6 @@ cd ../..
 ```
 
 The path to the newly built Bruce executable is now `out/release/bruce/bruce`.
-
 Additionally, a simple command line client for sending messages to Bruce can be
 built in the same manner as above:
 
