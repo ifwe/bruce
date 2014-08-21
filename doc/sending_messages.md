@@ -69,13 +69,96 @@ expects to receive from its UNIX domain datagram socket.  The same notation
 described [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)
 is used below.
 
+### Generic Message Format
+
+```
+GenericMessage => Size ApiKey ApiVersion Message
+
+Size => int32
+ApiKey => int16
+ApiVersion => int16
+Message => AnyPartitionMessage | PartitionKeyMessage
+```
+
+Field Descriptions:
+* `Size`: This is the size in bytes of the entire message, including the `Size`
+field.
+* `ApiKey`: This identifies a particular message type.  Currently, the only
+message types are AnyPartition and PartitionKey.  A value of 256 identifies an
+AnyPartition message and a value of 257 identifies a PartitionKey message.
+* `ApiVersion`: This identifies the version of a given message type.
+* `Message`: This is the data for the message format identified by `ApiKey` and
+`ApiVersion`.
+
 ### AnyPartition Message Format
 
-(details will appear here shortly)
+```
+AnyPartitionMessage => Flags TopicSize Topic Timestamp KeySize Key ValueSize
+        Value
+
+Flags => int16
+TopicSize => int8
+Topic => array of TopicSize bytes
+Timestamp => int64
+KeySize => int32
+Key => array of KeySize bytes
+ValueSize => int32
+Value => array of ValueSize bytes
+```
+
+Field Descriptions:
+* `Flags`: Currently this value must be 0.
+* `TopicSize`: This is the size in bytes of the topic.  It must be > 0, since
+the topic must be nonempty.
+* `Topic`: This is the Kafka topic that the message will be sent to.
+* `Timestamp`: This is a timestamp for the message, represented as milliseconds
+since the epoch (January 1 1970 12:00am UTC).
+* `KeySize`: This is the size in bytes of the key for the message, as described
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
+For an empty key, 0 must be specified.
+* `Key`: This is the message key.
+* `ValueSize`: This is the size in bytes of the value for the message, as
+described
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
+* `Value`: This is the message value.
 
 ### PartitionKey Message Format
 
-(details will appear here shortly)
+```
+PartitionKeyMessage => Flags PartitionKey TopicSize Topic Timestamp KeySize Key
+        ValueSize Value
+
+Flags => int16
+PartitionKey => int32
+TopicSize => int8
+Topic => array of TopicSize bytes
+Timestamp => int64
+KeySize => int32
+Key => array of KeySize bytes
+ValueSize => int32
+Value => array of ValueSize bytes
+```
+
+Field Descriptions:
+* `Flags`: Currently this value must be 0.
+* `PartitionKey`: This is the partition key, as described above, which is used
+for partition selection.
+* `TopicSize`: This is the size in bytes of the topic.  It must be > 0, since
+the topic must be nonempty.
+* `Topic`: This is the Kafka topic that the message will be sent to.
+* `Timestamp`: This is a timestamp for the message, represented as milliseconds
+since the epoch (January 1 1970 12:00am UTC).
+* `KeySize`: This is the size in bytes of the key for the message, as described
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
+For an empty key, 0 must be specified.
+* `Key`: This is the message key.
+* `ValueSize`: This is the size in bytes of the value for the message, as
+described
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
+* `Value`: This is the message value.
+
+Notice that the PartitionKey format is identical to the AnyPartition format
+except for the presence of the `PartitionKey` field.
 
 Once you are able to send messages to Bruce, you will probably be interested
 in learning about its
