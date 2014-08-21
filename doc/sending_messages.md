@@ -8,7 +8,7 @@ Sending a message to Bruce can then be done as follows:
 
 ```
 simple_bruce_client --socket_path /var/run/bruce/bruce.socket \
-        --topic test_topic --value "hello world" --count 1
+        --topic test_topic --value "hello world"
 ```
 
 A full listing of the simple client's command line options may be obatined by
