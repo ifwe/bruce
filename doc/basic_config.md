@@ -9,8 +9,17 @@ request.  This list needs to be edited to specify the brokers in your Kafka
 cluster.  Specifying a single broker is ok, since Bruce will learn about other
 brokers from the metadata response it receives.  However, specifying multiple
 brokers is preferable to guard against a situation where the specified broker
-is down.  If you wish to start Bruce manually using the example configuration,
+is down.  If you wish to start Bruce using its init script after following the
+steps given
+[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#installing-bruce),
 that can be done as follows:
+
+```
+chkconfig bruce on
+service bruce start
+```
+Otherwise, Bruce can be started manually using the example configuration as
+follows:
 
 ```
 bruce --daemon --protocol_version 0 --msg_buffer_max 65536 \
@@ -59,6 +68,25 @@ also configured for all topics.
 
 Full details of Bruce's configuration options are provided
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+
+You can shut down Bruce using its init script as follows:
+
+```
+service bruce stop
+```
+
+Alternatively, you can shut it down directly by sending it a SIGTERM or SIGINT.
+For instance:
+
+```
+kill -TERM PROCESS_ID_OF_BRUCE
+```
+
+or
+
+```
+kill -INT PROCESS_ID_OF_BRUCE
+```
 
 Once Bruce has been set up with a basic configuration, you can
 [send messages](https://github.com/tagged/bruce#sending-messages).
