@@ -25,7 +25,7 @@ and C++ clients can link to should be available soon.  Client code for other
 programming languages is needed.  Contributions from the community would be
 much appreciated.
 
-## Message Types
+### Message Types
 
 Bruce supports two input message types: *AnyPartition* messages
 and *PartitionKey* messages.  The difference between these two message types is
