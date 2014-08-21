@@ -149,10 +149,19 @@ void TMetadata::TBuilder::CloseTopic() {
 
   TTopic &t = Topics[CurrentTopicIndex];
 
-  /* Group partitions by broker index. */
+  /* Group partitions first by broker index, and then in ascending order by
+     Kafka partition ID.  Given a certain set of available partitions for a
+     topic, we want their order in each broker's partition choices vector for
+     that topic to be totally predictable.  Then clients who know the partition
+     layout for a given topic can use that knowledge to send PartitionKey
+     messages that target specific Kafka partition IDs. */
   std::sort(t.OkPartitions.begin(), t.OkPartitions.end(),
       [] (const TPartition &x, const TPartition &y) {
-        return (x.GetBrokerIndex() < y.GetBrokerIndex());
+        if (x.GetBrokerIndex() != y.GetBrokerIndex()) {
+           return (x.GetBrokerIndex() < y.GetBrokerIndex());
+        }
+
+        return (x.GetId() < y.GetId());
       });
 
   std::vector<TPartition>::const_iterator iter1 = t.OkPartitions.begin();
@@ -524,6 +533,15 @@ bool TMetadata::SanityCheck() const {
       }
 
       for (size_t i = 0; i < chunk_size; ++i) {
+        /* For each topic/broker combination, the array of available Kafka
+           partition IDs must be sorted in ascending order, so clients with
+           knowledge of the partition layout can rely on this ordering if they
+           want to send PartitionKey messages that target specific partition
+           IDs. */
+        if ((i > 0) && (chunk_begin[i] <= chunk_begin[i - 1])) {
+          return false;
+        }
+
         ++topic_broker_vec_access[chunk_index + i];
       }
     }
