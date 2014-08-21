@@ -45,7 +45,7 @@ Also, you can look in Bruce's source code to see what a counter indicates.  For
 instance, near the top of `src/bruce/msg.cc` you will see the following
 definitions:
 
-```
+```C++
 SERVER_COUNTER(MsgCreate);
 SERVER_COUNTER(MsgDestroy);
 SERVER_COUNTER(MsgUnprocessedDestroy);
