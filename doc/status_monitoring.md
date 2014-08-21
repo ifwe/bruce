@@ -1,5 +1,6 @@
 Content will be added here soon.
 
-Before reading more detailed information on Bruce's configuration, it is
-helpful to have an understanding of
+![Bruce management interface](https://github.com/tagged/bruce/blob/master/doc/web_interface.jpg?raw=true)
+
+At this point it is helpful to have some information on
 [Bruce's design](https://github.com/tagged/bruce#design-overview).
