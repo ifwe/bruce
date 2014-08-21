@@ -36,8 +36,11 @@ pid=14246
 (remaining output omitted)
 ```
 
-These counter values track various events inside Bruce, and can be used for
-health monitoring and troubleshooting.  For example,
+In addition to the counter values, the above output shows the time at which
+the counter report was created (1408656417 seconds since the epoch), the time
+when Bruce started running (1408585285 seconds since the epoch), and Bruce's
+process ID, which is 14246.  The counter values track various events inside
+Bruce, and can be used for health monitoring and troubleshooting.  For example,
 `src/bruce/scripts/bruce_counters.py` is a Nagios script that monitors Bruce's
 counters and reports problems.  Details on the meanings of some of the more
 interesting counters are provided
