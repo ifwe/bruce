@@ -1,3 +1,5 @@
+## Basic Configuration
+
 A simple Bruce configuration can be found in the `config` directory of Bruce's
 Git repository, and instructions for deploying it can be found
 [here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#installing-bruce).

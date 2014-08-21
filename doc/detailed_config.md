@@ -1,3 +1,5 @@
+## Detailed Configuration
+
 Before reading the full details of Bruce's configuration options, you will
 probably want an overview of Bruce's design, which is avaliable
 [here](https://github.com/tagged/bruce/blob/master/doc/design.md).

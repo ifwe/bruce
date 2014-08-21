@@ -1,4 +1,6 @@
-## Using the Simple Command Line Client
+## Sending Messages
+
+### Using the Simple Command Line Client
 
 The quickest way to get started sending messages to Bruce is by using the
 simple command line client.  This client is included in Bruce's RPM package,
@@ -14,7 +16,7 @@ simple_bruce_client --socket_path /var/run/bruce/bruce.socket \
 A full listing of the simple client's command line options may be obatined by
 typing `simple_bruce_client --help`.
 
-## Other Clients
+### Other Clients
 
 Example client code for writing to Bruce's input socket in Java, Python, PHP,
 and C will soon be available.  For example C++ code, you can examine and borrow
@@ -62,14 +64,14 @@ instance, if partition 3 in the above example becomes unavailable, then the
 array of available partitions becomes `{1, 5}`, and the mapping function from
 partition key to partition therefore changes.
 
-## Message Formats
+### Message Formats
 
 Here, low-level details are presented for the message formats that Bruce
 expects to receive from its UNIX domain datagram socket.  The same notation
 described [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)
 is used below.
 
-### Generic Message Format
+#### Generic Message Format
 
 ```
 GenericMessage => Size ApiKey ApiVersion Message
@@ -90,7 +92,7 @@ AnyPartition message and a value of 257 identifies a PartitionKey message.
 * `Message`: This is the data for the message format identified by `ApiKey` and
 `ApiVersion`.
 
-### AnyPartition Message Format
+#### AnyPartition Message Format
 
 ```
 AnyPartitionMessage => Flags TopicSize Topic Timestamp KeySize Key ValueSize
@@ -122,7 +124,7 @@ described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
 * `Value`: This is the message value.
 
-### PartitionKey Message Format
+#### PartitionKey Message Format
 
 ```
 PartitionKeyMessage => Flags PartitionKey TopicSize Topic Timestamp KeySize Key
