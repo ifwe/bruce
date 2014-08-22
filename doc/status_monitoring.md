@@ -18,6 +18,7 @@ like this:
 now=1408656417 Thu Aug 21 14:26:57 2014
 since=1408585285 Wed Aug 20 18:41:25 2014
 pid=14246
+version=1.0.6.70.ga324763
 
 [bruce/web_interface.cc, 43].MongooseUrlDecodeError=0
 [bruce/web_interface.cc, 42].MongooseUnknownException=0
@@ -93,6 +94,7 @@ looks something like this:
 ```
 pid: 5843
 now: 1408659550 Thu Aug 21 15:19:10 2014
+version: 1.0.6.70.ga324763
 report interval in seconds: 600
 
 current (unfinished) reporting period:
