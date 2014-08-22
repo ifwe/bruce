@@ -160,15 +160,77 @@ problems.
 
 ### Queued Message Information
 
-(content will be added here soon)
+If you click on `get msg stats` in Bruce's web interface shown near the top of
+this page (i.e. send an HTTP GET to `http://example:9090/sys/msg_stats`), you
+will get queued message information that looks something like this:
+
+```
+pid: 18592
+now: 1408667163 Thu Aug 21 17:26:03 2014
+version: 1.0.6.70.ga324763
+
+queued:        147  send_wait:          0  ack_wait:        147  topic: [topic1]
+
+       147 total queued (send_wait + ack_wait)
+         0 total send_wait
+       147 total ack_wait
+     21653 total new
+     21800 total (all states: new + send_wait + ack_wait)
+```
+
+As with discard reports, you can see the process ID, current time, and Bruce's
+version at the top.  It also shows that for topic `topic1`, 147 total messages
+have been assigned to a broker and are being sent.  Of those 147 messages, 0
+are waiting to be sent to a Kafka broker and 147 are waiting for an
+acknowledgement (ACK) from a broker.  Additionally, 21653 messages are either
+being batched or are new messages that Bruce has not yet started processing.
+As future work, the intent is to have this last value broken into two separate
+values: a count of messages being batched, and a count of messages that Bruce
+has not yet started processing.
 
 ### Metadata Fetch Time
 
-(content will be added here soon)
+If you click on `get metadata fetch time` in Bruce's web interface shown near
+the top of this page (i.e. send an HTTP GET to
+`http://example:9090/sys/metadata_fetch_time`), you will get metadata fetch
+time information that looks something like this:
+
+```
+pid: 18592
+version: 1.0.6.70.ga324763
+now (milliseconds since epoch): 1408668040576 Thu Aug 21 17:40:40 2014
+metadata last updated at (milliseconds since epoch): 1408667094030 Thu Aug 21 17:24:54 2014
+metadata last modified at (milliseconds since epoch): 1408667094030 Thu Aug 21 17:24:54 2014
+```
+
+The *last updated at* value indicates the last time when the metadata was
+updated, but not necessarily modified.  If Bruce requests metadata, and finds
+the new metadata to be identical to what it currently has, it treats this event
+as a metadata update without modification.  The *last modified at* value
+indicates the last time when Bruce actually replaced its metadata due to
+changed information.  If the metadata has never changed since Bruce started
+running, then the *last modified at* value indicates the time when Bruce
+initialized its metadata during startup.
 
 ### Metadata Updates
 
-(content will be added here soon)
+Bruce refreshes its metadata at regular intervals.  The interval length
+defaults to 15 minutes plus or minus some randomness, which is added so that
+different Bruce instances will tend to spread out their requests and not all
+ask for new metadata at the same time.  Configuration of the interval length is
+documented
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+Additionally, you can manually cause Bruce to update its metadata.  Clicking
+on the `update metadata` button in Bruce's web interface shown near the top of
+this page (i.e. sending an HTTP POST to
+`http://example:9090/sys/metadata_update`) causes Bruce to update its metadata.
+Certain error conditions can also cause Bruce to update its metadata, as
+described [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
+
+### Future work
+
+At some point, it would be nice to replace the output format of Bruce's web
+interface with JSON, so output can be parsed with off-the-shelf JSON libraries.
 
 At this point it is helpful to have some information on
 [Bruce's design](https://github.com/tagged/bruce#design-overview).
