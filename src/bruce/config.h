@@ -35,8 +35,6 @@ namespace Bruce {
 
     std::string ConfigPath;
 
-    bool DiscardAllData;
-
     int LogLevel;
 
     bool LogEcho;

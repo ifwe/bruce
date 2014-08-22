@@ -215,13 +215,7 @@ bool TInputThread::ForwardMessages() {
     msg = ReadOneMsg();
     ++MsgReceivedCount;  // for testing
 
-    if (!msg) {
-      continue;
-    }
-
-    if (Config.DiscardAllData) {
-      MsgStateTracker.MsgEnterProcessed(*msg);
-    } else {
+    if (msg) {
       /* Forward message to router thread. */
       queue.Put(std::move(msg));
       InputThreadForwardMsg.Increment();

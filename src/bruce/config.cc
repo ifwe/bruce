@@ -95,10 +95,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     ValueArg<decltype(config.ConfigPath)> arg_config_path("", "config_path",
         "Pathname of config file.", true, config.ConfigPath, "PATH");
     cmd.add(arg_config_path);
-    SwitchArg arg_discard_all_data("", "discard_all_data",
-        "Discard all data rather than sending to Kafka.  Since all data is "
-        "being explicitly discarded, no discard reporting or logging is "
-        "performed.", cmd, config.DiscardAllData);
     std::vector<std::string> log_levels({"LOG_ERR", "LOG_WARNING",
         "LOG_NOTICE", "LOG_INFO", "LOG_DEBUG"});
     ValuesConstraint<std::string> log_levels_constraint(log_levels);
@@ -269,7 +265,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         config.UseOldOutputFormat);
     cmd.parse(argc, &arg_vec[0]);
     config.ConfigPath = arg_config_path.getValue();
-    config.DiscardAllData = arg_discard_all_data.getValue();
     config.LogLevel = StringToLogLevel(arg_log_level.getValue());
     config.LogEcho = arg_log_echo.getValue();
     config.ReceiveSocketName = arg_receive_socket_name.getValue();
@@ -316,8 +311,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
 }
 
 TConfig::TConfig(int argc, char *argv[])
-    : DiscardAllData(false),
-      LogLevel(LOG_NOTICE),
+    : LogLevel(LOG_NOTICE),
       LogEcho(false),
       ProtocolVersion(0),
       StatusPort(9090),
@@ -353,11 +347,6 @@ TConfig::TConfig(int argc, char *argv[])
 void Bruce::LogConfig(const TConfig &config) {
   syslog(LOG_NOTICE, "Version: [%s]", GetVersion());
   syslog(LOG_NOTICE, "Config file: [%s]", config.ConfigPath.c_str());
-
-  if (config.DiscardAllData) {
-    syslog(LOG_WARNING, "Discarding all data as requested");
-  }
-
   syslog(LOG_NOTICE, "UNIX domain datagram input socket [%s]",
          config.ReceiveSocketName.c_str());
   syslog(LOG_NOTICE, "Using Kafka protocol version [%lu]",
