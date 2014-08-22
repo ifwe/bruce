@@ -48,7 +48,7 @@ void Bruce::Util::InitSyslog(const char *prog_name, int max_level,
   openlog(prog_basename.c_str(), LOG_PID | (log_echo ? LOG_PERROR : 0),
           LOG_USER);
   setlogmask(LOG_UPTO(max_level));
-  syslog(LOG_INFO, "Log started");
+  syslog(LOG_NOTICE, "Log started");
 }
 
 static bool RunTest(std::vector<uint8_t> &buf,

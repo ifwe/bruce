@@ -59,7 +59,7 @@ static int BruceMain(int argc, char *argv[]) {
       }
     }
 
-    InitSyslog(argv[0], LOG_INFO, config.LogEcho);
+    InitSyslog(argv[0], config.LogLevel, config.LogEcho);
   } catch (const TArgParseError &x) {
     /* Error parsing command line arguments. */
     std::cerr << x.what() << std::endl;
@@ -91,7 +91,7 @@ static int BruceMain(int argc, char *argv[]) {
            "need to set SO_SNDBUF above the default value.");
   }
 
-  syslog(LOG_INFO, "Pool block size is %lu bytes",
+  syslog(LOG_NOTICE, "Pool block size is %lu bytes",
          static_cast<unsigned long>(bruce.GetPoolBlockSize()));
   return bruce.Run();
 }

@@ -246,8 +246,8 @@ void TAnomalyTracker::CheckGetInfoRate() const {
 
   if (delta > ReportInterval) {
     NoDiscardQuery.Increment();
-    syslog(LOG_ERR, "No discard query in last %llu seconds: possible loss of "
-           "discard info", static_cast<unsigned long long>(delta));
+    syslog(LOG_WARNING, "No discard query in last %llu seconds: possible loss "
+           "of discard info", static_cast<unsigned long long>(delta));
   }
 }
 

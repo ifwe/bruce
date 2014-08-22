@@ -24,8 +24,6 @@
 #include <limits>
 #include <utility>
 
-#include <syslog.h>
-
 #include <base/no_default_case.h>
 #include <bruce/batch/batch_config.h>
 

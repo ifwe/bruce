@@ -37,6 +37,8 @@ namespace Bruce {
 
     bool DiscardAllData;
 
+    int LogLevel;
+
     bool LogEcho;
 
     std::string ReceiveSocketName;

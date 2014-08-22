@@ -21,12 +21,15 @@
 
 #include <bruce/config.h>
 
+#include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include <libgen.h>
 #include <syslog.h>
 
 #include <base/basename.h>
+#include <base/no_default_case.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/version.h>
 #include <tclap/CmdLine.h>
@@ -34,6 +37,52 @@
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::Util;
+
+static const char *LogLevelToString(int level) {
+  switch (level) {
+    case LOG_ERR:
+      return "LOG_ERR";
+    case LOG_WARNING:
+      return "LOG_WARNING";
+    case LOG_NOTICE:
+      return "LOG_NOTICE";
+    case LOG_INFO:
+      return "LOG_INFO";
+    case LOG_DEBUG:
+      break;
+    NO_DEFAULT_CASE;
+  }
+
+  return "LOG_DEBUG";
+}
+
+static int StringToLogLevel(const char *level_string) {
+  if (!std::strcmp(level_string, "LOG_ERR")) {
+    return LOG_ERR;
+  }
+
+  if (!std::strcmp(level_string, "LOG_WARNING")) {
+    return LOG_WARNING;
+  }
+
+  if (!std::strcmp(level_string, "LOG_NOTICE")) {
+    return LOG_NOTICE;
+  }
+
+  if (!std::strcmp(level_string, "LOG_INFO")) {
+    return LOG_INFO;
+  }
+
+  if (!std::strcmp(level_string, "LOG_DEBUG")) {
+    return LOG_DEBUG;
+  }
+
+  throw std::logic_error("Bad log level string");
+}
+
+static inline int StringToLogLevel(const std::string &level_string) {
+  return StringToLogLevel(level_string.c_str());
+}
 
 static void ParseArgs(int argc, char *argv[], TConfig &config) {
   using namespace TCLAP;
@@ -50,6 +99,12 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "Discard all data rather than sending to Kafka.  Since all data is "
         "being explicitly discarded, no discard reporting or logging is "
         "performed.", cmd, config.DiscardAllData);
+    std::vector<std::string> log_levels({"LOG_ERR", "LOG_WARNING",
+        "LOG_NOTICE", "LOG_INFO", "LOG_DEBUG"});
+    ValuesConstraint<std::string> log_levels_constraint(log_levels);
+    ValueArg<std::string> arg_log_level("", "log_level", "Log level.", false,
+        LogLevelToString(config.LogLevel), &log_levels_constraint);
+    cmd.add(arg_log_level);
     SwitchArg arg_log_echo("", "log_echo", "Echo syslog messages to standard "
         "error.", cmd, config.LogEcho);
     ValueArg<decltype(config.ReceiveSocketName)> arg_receive_socket_name("",
@@ -215,6 +270,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     cmd.parse(argc, &arg_vec[0]);
     config.ConfigPath = arg_config_path.getValue();
     config.DiscardAllData = arg_discard_all_data.getValue();
+    config.LogLevel = StringToLogLevel(arg_log_level.getValue());
     config.LogEcho = arg_log_echo.getValue();
     config.ReceiveSocketName = arg_receive_socket_name.getValue();
     config.ProtocolVersion = arg_protocol_version.getValue();
@@ -261,6 +317,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
 
 TConfig::TConfig(int argc, char *argv[])
     : DiscardAllData(false),
+      LogLevel(LOG_NOTICE),
       LogEcho(false),
       ProtocolVersion(0),
       StatusPort(9090),
@@ -294,80 +351,80 @@ TConfig::TConfig(int argc, char *argv[])
 }
 
 void Bruce::LogConfig(const TConfig &config) {
-  syslog(LOG_INFO, "Version: [%s]", GetVersion());
-  syslog(LOG_INFO, "Config file: [%s]", config.ConfigPath.c_str());
+  syslog(LOG_NOTICE, "Version: [%s]", GetVersion());
+  syslog(LOG_NOTICE, "Config file: [%s]", config.ConfigPath.c_str());
 
   if (config.DiscardAllData) {
     syslog(LOG_WARNING, "Discarding all data as requested");
   }
 
-  syslog(LOG_INFO, "UNIX domain datagram input socket [%s]",
+  syslog(LOG_NOTICE, "UNIX domain datagram input socket [%s]",
          config.ReceiveSocketName.c_str());
-  syslog(LOG_INFO, "Using Kafka protocol version [%lu]",
+  syslog(LOG_NOTICE, "Using Kafka protocol version [%lu]",
          static_cast<unsigned long>(config.ProtocolVersion));
-  syslog(LOG_INFO, "Listening on status port %u",
+  syslog(LOG_NOTICE, "Listening on status port %u",
          static_cast<unsigned>(config.StatusPort));
-  syslog(LOG_INFO, "Buffered message limit %lu kbytes",
+  syslog(LOG_NOTICE, "Buffered message limit %lu kbytes",
          static_cast<unsigned long>(config.MsgBufferMax));
-  syslog(LOG_INFO, "Max input message size %lu bytes",
+  syslog(LOG_NOTICE, "Max input message size %lu bytes",
          static_cast<unsigned long>(config.MaxInputMsgSize));
-  syslog(LOG_INFO, "Allow large UNIX datagrams: %s",
+  syslog(LOG_NOTICE, "Allow large UNIX datagrams: %s",
          config.AllowLargeUnixDatagrams ? "true" : "false");
-  syslog(LOG_INFO, "Max failed delivery attempts %lu",
+  syslog(LOG_NOTICE, "Max failed delivery attempts %lu",
          static_cast<unsigned long>(config.MaxFailedDeliveryAttempts));
-  syslog(LOG_INFO, config.Daemon ?
+  syslog(LOG_NOTICE, config.Daemon ?
          "Running as daemon" : "Not running as daemon");
-  syslog(LOG_INFO, "Client ID [%s]", config.ClientId.c_str());
-  syslog(LOG_INFO, "Required ACKs %d",
+  syslog(LOG_NOTICE, "Client ID [%s]", config.ClientId.c_str());
+  syslog(LOG_NOTICE, "Required ACKs %d",
          static_cast<int>(config.RequiredAcks));
-  syslog(LOG_INFO, "Replication timeout %d milliseconds",
+  syslog(LOG_NOTICE, "Replication timeout %d milliseconds",
          static_cast<int>(config.ReplicationTimeout));
-  syslog(LOG_INFO, "Shutdown send grace period %lu milliseconds",
+  syslog(LOG_NOTICE, "Shutdown send grace period %lu milliseconds",
          static_cast<unsigned long>(config.ShutdownMaxDelay));
-  syslog(LOG_INFO, "Kafka dispatch restart grace period %lu milliseconds",
+  syslog(LOG_NOTICE, "Kafka dispatch restart grace period %lu milliseconds",
          static_cast<unsigned long>(config.DispatcherRestartMaxDelay));
-  syslog(LOG_INFO, "Metadata refresh interval %lu minutes",
+  syslog(LOG_NOTICE, "Metadata refresh interval %lu minutes",
          static_cast<unsigned long>(config.MetadataRefreshInterval));
-  syslog(LOG_INFO, "Kafka socket timeout %lu seconds",
+  syslog(LOG_NOTICE, "Kafka socket timeout %lu seconds",
          static_cast<unsigned long>(config.KafkaSocketTimeout));
-  syslog(LOG_INFO, "Pause rate limit initial %lu milliseconds",
+  syslog(LOG_NOTICE, "Pause rate limit initial %lu milliseconds",
          static_cast<unsigned long>(config.PauseRateLimitInitial));
-  syslog(LOG_INFO, "Pause rate limit max double %lu",
+  syslog(LOG_NOTICE, "Pause rate limit max double %lu",
          static_cast<unsigned long>(config.PauseRateLimitMaxDouble));
-  syslog(LOG_INFO, "Minimum pause delay %lu milliseconds",
+  syslog(LOG_NOTICE, "Minimum pause delay %lu milliseconds",
          static_cast<unsigned long>(config.MinPauseDelay));
 
   if (config.UseOldInputFormat) {
-    syslog(LOG_INFO, "Omit timestamp from output: %s",
+    syslog(LOG_NOTICE, "Omit timestamp from output: %s",
            config.OmitTimestamp ? "true" : "false");
   }
 
-  syslog(LOG_INFO, "Discard reporting interval %lu seconds",
+  syslog(LOG_NOTICE, "Discard reporting interval %lu seconds",
          static_cast<unsigned long>(config.DiscardReportInterval));
-  syslog(LOG_INFO, "Debug directory [%s]", config.DebugDir.c_str());
-  syslog(LOG_INFO, "Message debug time limit %lu seconds",
+  syslog(LOG_NOTICE, "Debug directory [%s]", config.DebugDir.c_str());
+  syslog(LOG_NOTICE, "Message debug time limit %lu seconds",
          static_cast<unsigned long>(config.MsgDebugTimeLimit));
-  syslog(LOG_INFO, "Message debug byte limit %lu",
+  syslog(LOG_NOTICE, "Message debug byte limit %lu",
          static_cast<unsigned long>(config.MsgDebugByteLimit));
-  syslog(LOG_INFO, "Compare metadata on refresh: %s",
+  syslog(LOG_NOTICE, "Compare metadata on refresh: %s",
          config.CompareMetadataOnRefresh ? "true" : "false");
 
   if (config.DiscardLogPath.empty()) {
-    syslog(LOG_INFO, "Discard logfile creation is disabled");
+    syslog(LOG_NOTICE, "Discard logfile creation is disabled");
   } else {
-    syslog(LOG_INFO, "Discard logfile: [%s]", config.DiscardLogPath.c_str());
-    syslog(LOG_INFO, "Discard log max file size: %lu kbytes",
+    syslog(LOG_NOTICE, "Discard logfile: [%s]", config.DiscardLogPath.c_str());
+    syslog(LOG_NOTICE, "Discard log max file size: %lu kbytes",
            static_cast<unsigned long>(config.DiscardLogMaxFileSize));
-    syslog(LOG_INFO, "Discard log max archive size: %lu kbytes",
+    syslog(LOG_NOTICE, "Discard log max archive size: %lu kbytes",
            static_cast<unsigned long>(config.DiscardLogMaxArchiveSize));
-    syslog(LOG_INFO, "Discard log bad msg prefix size: %lu bytes",
+    syslog(LOG_NOTICE, "Discard log bad msg prefix size: %lu bytes",
            static_cast<unsigned long>(config.DiscardLogBadMsgPrefixSize));
   }
 
-  syslog(LOG_INFO, "Discard report bad msg prefix size: %lu bytes",
+  syslog(LOG_NOTICE, "Discard report bad msg prefix size: %lu bytes",
          static_cast<unsigned long>(config.DiscardReportBadMsgPrefixSize));
-  syslog(LOG_INFO, "Using %s input datagram format",
+  syslog(LOG_NOTICE, "Using %s input datagram format",
          config.UseOldInputFormat ? "old" : "new");
-  syslog(LOG_INFO, "Using %s output format",
+  syslog(LOG_NOTICE, "Using %s output format",
          config.UseOldOutputFormat ? "old" : "new");
 }

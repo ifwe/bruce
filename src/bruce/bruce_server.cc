@@ -234,7 +234,7 @@ int TBruceServer::Run() {
   }
 
   Started = true;
-  syslog(LOG_INFO, "Server started");
+  syslog(LOG_NOTICE, "Server started");
   const Signal::TSet sigset(TSet::Exclude, { SIGINT, SIGTERM });
   Signal::TMasker masker(*sigset);
 
@@ -246,7 +246,7 @@ int TBruceServer::Run() {
         Config->UseOldOutputFormat);
   }
 
-  syslog(LOG_INFO, "Starting input thread");
+  syslog(LOG_NOTICE, "Starting input thread");
 
   try {
     if (!StartInputThread()) {
@@ -261,7 +261,7 @@ int TBruceServer::Run() {
     return EXIT_FAILURE;
   }
 
-  syslog(LOG_INFO, "Started input thread, now starting web interface");
+  syslog(LOG_NOTICE, "Started input thread, now starting web interface");
 
   /* Start the Mongoose HTTP server, which is used for status monitoring.  It
      runs in a separate thread. */
@@ -273,7 +273,7 @@ int TBruceServer::Run() {
   /* We can close this now, since Mongoose has the port claimed. */
   TmpStatusSocket.Reset();
 
-  syslog(LOG_INFO, "Started web interface, waiting for shutdown signal");
+  syslog(LOG_NOTICE, "Started web interface, waiting for shutdown signal");
 
   /* The server is running.  Now wait for a shutdown signal, or for the server
      to shut down on its own due to a fatal error. */
@@ -363,19 +363,19 @@ bool TBruceServer::StartInputThread() {
 
 bool TBruceServer::ShutDownInputThread() {
   assert(this);
-  syslog(LOG_INFO, "Shutting down input thread");
+  syslog(LOG_NOTICE, "Shutting down input thread");
   InputThread.RequestShutdown();
   InputThread.Join();
   bool input_thread_ok = (InputThread.GetShutdownStatus() ==
                           TInputThread::TShutdownStatus::Normal);
-  syslog(LOG_INFO, "Server finished: input thread terminated %s",
+  syslog(LOG_NOTICE, "Server finished: input thread terminated %s",
             input_thread_ok ? "normally" : "abnormally");
   return input_thread_ok;
 }
 
 bool TBruceServer::RespondToShutdownSignal() {
   assert(this);
-  syslog(LOG_INFO, "Got shutdown signal");
+  syslog(LOG_NOTICE, "Got shutdown signal");
   bool ret = ShutDownInputThread();
   DiscardFileLogger.Shutdown();
   return ret;

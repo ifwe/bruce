@@ -25,8 +25,6 @@
 #include <cassert>
 #include <memory>
 
-#include <syslog.h>
-
 #include <base/debug_log.h>
 #include <bruce/mock_kafka_server/cmd_worker.h>
 #include <socket/address.h>

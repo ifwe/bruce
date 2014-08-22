@@ -225,6 +225,8 @@ namespace {
     args.push_back(msg_buffer_max_str.c_str());
     args.push_back("--receive_socket_name");
     args.push_back(UnixSocketName);
+    args.push_back("--log_level");
+    args.push_back("LOG_INFO");
     // args.push_back("--log_echo");
     args.push_back(nullptr);
 
@@ -236,7 +238,7 @@ namespace {
           args.size() - 1, const_cast<char **>(&args[0]),
           large_sendbuf_required));
       const Bruce::TConfig &config = bruce_config->GetCmdLineConfig();
-      InitSyslog(args[0], LOG_INFO, config.LogEcho);
+      InitSyslog(args[0], config.LogLevel, config.LogEcho);
 
       {
         std::lock_guard<std::mutex> lock(InitMutex);

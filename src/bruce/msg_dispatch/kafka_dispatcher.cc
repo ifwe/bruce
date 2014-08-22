@@ -99,15 +99,16 @@ void TKafkaDispatcher::Start(const std::shared_ptr<TMetadata> &md) {
       broker_ptr.reset(new TConnector(i, Ds));
     }
 
-    syslog(LOG_INFO, "Starting send and receive threads for broker index %lu "
-           "(Kafka ID %lu)", static_cast<unsigned long>(i),
+    syslog(LOG_NOTICE, "Starting send and receive threads for broker index "
+           "%lu (Kafka ID %lu)", static_cast<unsigned long>(i),
            static_cast<unsigned long>(brokers[i].GetId()));
     broker_ptr->Start(md);
   }
 
   for (size_t i = Connectors.size(); i < brokers.size(); ++i) {
     assert(!brokers[i].IsInService());
-    syslog(LOG_INFO, "Skipping out of service broker index %lu (Kafka ID %lu)",
+    syslog(LOG_NOTICE,
+           "Skipping out of service broker index %lu (Kafka ID %lu)",
            static_cast<unsigned long>(i),
            static_cast<unsigned long>(brokers[i].GetId()));
     SkipOutOfServiceBroker.Increment();
@@ -206,7 +207,6 @@ void TKafkaDispatcher::StartSlowShutdown(uint64_t start_time) {
   assert(this);
   assert(State != TState::Stopped);
   StartDispatcherSlowShutdown.Increment();
-  syslog(LOG_INFO, "Starting slow shutdown of Kafka dispatcher");
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
@@ -225,7 +225,6 @@ void TKafkaDispatcher::StartFastShutdown() {
   assert(this);
   assert(State != TState::Stopped);
   StartDispatcherFastShutdown.Increment();
-  syslog(LOG_INFO, "Starting fast shutdown of Kafka dispatcher");
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
@@ -254,7 +253,7 @@ void TKafkaDispatcher::JoinAll() {
   assert(this);
   assert(State != TState::Stopped);
   StartDispatcherJoinAll.Increment();
-  syslog(LOG_INFO, "Waiting for dispatcher shutdown status");
+  syslog(LOG_NOTICE, "Waiting for dispatcher shutdown status");
   TShutdownStatus shutdown_status = TShutdownStatus::Normal;
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
@@ -271,7 +270,7 @@ void TKafkaDispatcher::JoinAll() {
   assert(Ds.GetShutdownWaitFd().IsReadable());
   Ds.ResetThreadFinishedState();
   FinishDispatcherJoinAll.Increment();
-  syslog(LOG_INFO, "Finished waiting for dispatcher shutdown status");
+  syslog(LOG_NOTICE, "Finished waiting for dispatcher shutdown status");
   State = TState::Stopped;
 }
 

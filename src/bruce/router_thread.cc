@@ -143,7 +143,7 @@ TEventSemaphore &TRouterThread::GetMetadataUpdateRequestSem() {
 void TRouterThread::Run() {
   assert(this);
   int tid = static_cast<int>(Gettid());
-  syslog(LOG_INFO, "Router thread %d started", tid);
+  syslog(LOG_NOTICE, "Router thread %d started", tid);
 
   try {
     DoRun();
@@ -157,7 +157,7 @@ void TRouterThread::Run() {
     _exit(EXIT_FAILURE);
   }
 
-  syslog(LOG_INFO, "Router thread %d finished %s", tid,
+  syslog(LOG_NOTICE, "Router thread %d finished %s", tid,
       (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "abnormally");
 }
 
@@ -630,12 +630,12 @@ bool TRouterThread::Init() {
   assert(this);
   std::shared_ptr<TMetadata> meta;
 
-  syslog(LOG_INFO, "Router thread sending initial metadata request");
+  syslog(LOG_NOTICE, "Router thread sending initial metadata request");
   meta = GetInitialMetadata();
 
   if (!meta) {
-    syslog(LOG_ERR, "Router thread got shutdown request while getting initial "
-           "metadata");
+    syslog(LOG_NOTICE, "Router thread got shutdown request while getting "
+           "initial metadata");
 
     /* Discard any remaining queued messages from the input thread.
 
@@ -648,13 +648,14 @@ bool TRouterThread::Init() {
 
   SetMetadata(std::move(meta));
 
-  syslog(LOG_INFO, "Router thread starting dispatcher during initialization");
+  syslog(LOG_NOTICE,
+         "Router thread starting dispatcher during initialization");
   Dispatcher.Start(Metadata);
 
   PauseRateLimiter.reset(new TBruceRateLimiter(Config.PauseRateLimitInitial,
       Config.PauseRateLimitMaxDouble, Config.MinPauseDelay, GetRandomNumber));
   InitMetadataRefreshTimer();
-  syslog(LOG_INFO, "Router thread finished initialization");
+  syslog(LOG_NOTICE, "Router thread finished initialization");
   InitFinishedSem.Push();
   return true;
 }
@@ -675,26 +676,26 @@ bool TRouterThread::ReplaceMetadataOnRefresh(
     std::shared_ptr<TMetadata> &&meta) {
   assert(this);
   std::shared_ptr<TMetadata> md = std::move(meta);
-  syslog(LOG_INFO, "Router thread starting fast dispatcher shutdown for "
+  syslog(LOG_NOTICE, "Router thread starting fast dispatcher shutdown for "
          "metadata refresh");
   Dispatcher.StartFastShutdown();
-  syslog(LOG_INFO, "Router thread started fast dispatcher shutdown for "
+  syslog(LOG_NOTICE, "Router thread started fast dispatcher shutdown for "
          "metadata refresh");
 
   if (!md) {
-    syslog(LOG_INFO, "Starting metadata fetch 2");
+    syslog(LOG_NOTICE, "Starting metadata fetch 2");
     md = GetMetadata();
-    syslog(LOG_INFO, "Finished metadata fetch 2");
+    syslog(LOG_NOTICE, "Finished metadata fetch 2");
 
     if (md) {
       MetadataTimestamp.RecordUpdate(true);
     }
   }
 
-  syslog(LOG_INFO, "Waiting for dispatcher shutdown to finish");
+  syslog(LOG_NOTICE, "Waiting for dispatcher shutdown to finish");
   GetDispatcherShutdownStatus();
-  syslog(LOG_INFO, "Router thread finished waiting for dispatcher shutdown on "
-         "metadata refresh");
+  syslog(LOG_NOTICE, "Router thread finished waiting for dispatcher shutdown "
+         "on metadata refresh");
 
   if (!md) {
     syslog(LOG_ERR, "Metadata fetch 2 cut short by shutdown delay expiration");
@@ -704,10 +705,10 @@ bool TRouterThread::ReplaceMetadataOnRefresh(
   SetMetadata(std::move(md), false);
   RefreshMetadataSuccess.Increment();
   std::list<std::list<TMsg::TPtr>> to_reroute = EmptyDispatcher();
-  syslog(LOG_INFO, "Router thread finished metadata fetch for refresh: "
+  syslog(LOG_NOTICE, "Router thread finished metadata fetch for refresh: "
          "starting dispatcher");
   Dispatcher.Start(Metadata);
-  syslog(LOG_INFO, "Router thread started dispatcher");
+  syslog(LOG_NOTICE, "Router thread started dispatcher");
   Reroute(std::move(to_reroute));
   InitMetadataRefreshTimer();
   return true;
@@ -744,8 +745,6 @@ bool TRouterThread::RefreshMetadata() {
     MetadataChangedOnRefresh.Increment();
   }
 
-  syslog(LOG_INFO, "Router thread starting dispatcher shutdown for metadata "
-         "refresh");
   return ReplaceMetadataOnRefresh(std::move(meta));
 }
 
@@ -772,7 +771,7 @@ std::list<std::list<TMsg::TPtr>> TRouterThread::EmptyDispatcher() {
           static TLogRateLimiter lim(std::chrono::seconds(30));
 
           if (lim.Test()) {
-            syslog(LOG_ERR, "Possible duplicate message (topic: [%s])",
+            syslog(LOG_WARNING, "Possible duplicate message (topic: [%s])",
                    msg->GetTopic().c_str());
           }
         }
@@ -854,7 +853,7 @@ bool TRouterThread::HandleMetadataUpdate() {
 
   if (MetadataUpdateRequestSem.GetFd().IsReadable()) {
     MetadataUpdateRequestSem.Pop();
-    syslog(LOG_INFO, "Router thread responding to user-initiated metadata "
+    syslog(LOG_NOTICE, "Router thread responding to user-initiated metadata "
            "update request");
   }
 
@@ -902,8 +901,11 @@ void TRouterThread::ContinueShutdown() {
      are empty or the shutdown period expires. */
   RouteFinalMsgs();
 
-  syslog(LOG_INFO, "Router thread forwarding shutdown request to dispatcher");
+  syslog(LOG_NOTICE,
+         "Router thread forwarding shutdown request to dispatcher");
   Dispatcher.StartSlowShutdown(*ShutdownStartTime);
+  syslog(LOG_NOTICE,
+         "Router thread finished forwarding shutdown request to dispatcher");
 }
 
 int TRouterThread::ComputeMainLoopPollTimeout() {
@@ -1033,7 +1035,7 @@ void TRouterThread::HandleShutdownFinished() {
   assert(this);
 
   if (ShutdownStartTime.IsKnown()) {
-    syslog(LOG_INFO, "Router thread got shutdown finished notification from "
+    syslog(LOG_NOTICE, "Router thread got shutdown finished notification from "
            "dispatcher");
   } else {
     syslog(LOG_ERR, "Router thread got unexpected shutdown finished "
@@ -1129,30 +1131,30 @@ bool TRouterThread::HandlePause() {
      previous pause.  If something goes seriously wrong, this prevents us from
      going into a tight pause loop. */
   size_t delay = PauseRateLimiter->ComputeDelay();
-  syslog(LOG_INFO, "Router thread detected pause: waiting %lu milliseconds "
+  syslog(LOG_NOTICE, "Router thread detected pause: waiting %lu milliseconds "
          "before responding", static_cast<unsigned long>(delay));
   SleepMilliseconds(delay);
   PauseRateLimiter->OnAction();
 
-  syslog(LOG_INFO, "Router thread shutting down dispatcher on pause");
+  syslog(LOG_NOTICE, "Router thread shutting down dispatcher on pause");
   Dispatcher.StartFastShutdown();
-  syslog(LOG_INFO, "Router thread waiting for dispatcher shutdown");
+  syslog(LOG_NOTICE, "Router thread waiting for dispatcher shutdown");
   GetDispatcherShutdownStatus();
   bool shutdown_previously_started = ShutdownStartTime.IsKnown();
-  syslog(LOG_INFO, "Router thread getting metadata in response to pause");
+  syslog(LOG_NOTICE, "Router thread getting metadata in response to pause");
   std::shared_ptr<TMetadata> meta = GetMetadata();
 
   if (!meta) {
-    syslog(LOG_INFO, "Shutdown delay expired while getting metadata");
+    syslog(LOG_NOTICE, "Shutdown delay expired while getting metadata");
     return false;
   }
 
   SetMetadata(std::move(meta));
-  syslog(LOG_INFO, "Router thread got metadata in response to pause: starting "
-         "dispatcher");
+  syslog(LOG_NOTICE, "Router thread got metadata in response to pause: "
+         "starting dispatcher");
   std::list<std::list<TMsg::TPtr>> to_reroute = EmptyDispatcher();
   Dispatcher.Start(Metadata);
-  syslog(LOG_INFO, "Router thread started new dispatcher");
+  syslog(LOG_NOTICE, "Router thread started new dispatcher");
   Reroute(std::move(to_reroute));
 
   if (ShutdownStartTime.IsKnown()) {
@@ -1169,10 +1171,10 @@ bool TRouterThread::HandlePause() {
        shutdown was already in progress before the pause, the dispatcher will
        get the original start time, and therefore set its deadline correctly.
      */
-    syslog(LOG_INFO,
+    syslog(LOG_NOTICE,
            "Router thread resending shutdown request to restarted dispatcher");
     Dispatcher.StartSlowShutdown(*ShutdownStartTime);
-    syslog(LOG_INFO,
+    syslog(LOG_NOTICE,
            "Router thread resent shutdown request to restarted dispatcher");
   }
 

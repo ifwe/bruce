@@ -78,7 +78,7 @@ TInputThread::~TInputThread() noexcept {
 void TInputThread::Run() {
   assert(this);
   int tid = static_cast<int>(Gettid());
-  syslog(LOG_INFO, "Input thread %d started", tid);
+  syslog(LOG_NOTICE, "Input thread %d started", tid);
 
   try {
     DoRun();
@@ -90,14 +90,14 @@ void TInputThread::Run() {
     _exit(EXIT_FAILURE);
   }
 
-  syslog(LOG_INFO, "Input thread %d finished %s", tid,
+  syslog(LOG_NOTICE, "Input thread %d finished %s", tid,
       (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "abnormally");
 }
 
 void TInputThread::DoRun() {
   assert(this);
   ShutdownStatus = TShutdownStatus::Error;
-  syslog(LOG_INFO, "Starting router thread");
+  syslog(LOG_NOTICE, "Starting router thread");
 
   /* Don't wait for the router thread to finish its initialization, since that
      depends on Kafka being in a healthy state.  If the router thread runs into
@@ -108,14 +108,14 @@ void TInputThread::DoRun() {
      discards. */
   RouterThread.Start();
 
-  syslog(LOG_INFO, "Started router thread, opening UNIX domain socket");
+  syslog(LOG_NOTICE, "Started router thread, opening UNIX domain socket");
   OpenUnixSocket();
 
   /* Let the thread that started us know that we finished our initialization
      successfully. */
   InitFinishedSem.Push();
 
-  syslog(LOG_INFO,
+  syslog(LOG_NOTICE,
          "Input thread finished initialization, forwarding messages");
 
   if (ForwardMessages()) {
@@ -133,13 +133,14 @@ void TInputThread::OpenUnixSocket() {
 
 bool TInputThread::ShutDownRouterThread() {
   assert(this);
-  syslog(LOG_INFO, "Input thread sending shutdown request to router thread");
+  syslog(LOG_NOTICE, "Input thread sending shutdown request to router thread");
   RouterThread.RequestShutdown();
-  syslog(LOG_INFO, "Input thread waiting for router thread to shut down");
+  syslog(LOG_NOTICE, "Input thread waiting for router thread to shut down");
   RouterThread.Join();
   bool ok = (RouterThread.GetShutdownStatus() ==
              TRouterThreadApi::TShutdownStatus::Normal);
-  syslog(LOG_INFO, "Input thread got %s termination status from router thread",
+  syslog(LOG_NOTICE,
+         "Input thread got %s termination status from router thread",
          (ok ? "normal" : "abnormal"));
   return ok;
 }
@@ -197,7 +198,7 @@ bool TInputThread::ForwardMessages() {
       /* Note: In the case where 'Destroying' is true, the router thread's
          destructor will shut it down. */
       if (!Destroying) {
-        syslog(LOG_INFO, "Input thread got shutdown request, closing UNIX "
+        syslog(LOG_NOTICE, "Input thread got shutdown request, closing UNIX "
                "domain socket");
         /* We received a shutdown request from the thread that created us.
            Close the input socket and perform an orderly shutdown of the router

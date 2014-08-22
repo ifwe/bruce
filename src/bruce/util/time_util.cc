@@ -27,7 +27,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <syslog.h>
 #include <time.h>
 
 using namespace Base;

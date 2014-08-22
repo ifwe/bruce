@@ -97,7 +97,7 @@ void TSender::StartSlowShutdown(uint64_t start_time) {
   assert(!OptShutdownCmd.IsKnown());
   SenderStartSlowShutdown.Increment();
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-  syslog(LOG_INFO, "Sending slow shutdown request to send thread (index %lu "
+  syslog(LOG_NOTICE, "Sending slow shutdown request to send thread (index %lu "
          "broker %ld)", static_cast<unsigned long>(MyBrokerIndex), broker_id);
   OptShutdownCmd.MakeKnown(start_time);
   RequestShutdown();
@@ -109,7 +109,7 @@ void TSender::StartFastShutdown() {
   assert(!OptShutdownCmd.IsKnown());
   SenderStartFastShutdown.Increment();
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-  syslog(LOG_INFO, "Sending fast shutdown request to send thread (index %lu "
+  syslog(LOG_NOTICE, "Sending fast shutdown request to send thread (index %lu "
          "broker %ld)", static_cast<unsigned long>(MyBrokerIndex),
          broker_id);
   OptShutdownCmd.MakeKnown();
@@ -120,7 +120,7 @@ void TSender::WaitForShutdownAck() {
   assert(this);
   SenderStartWaitShutdownAck.Increment();
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-  syslog(LOG_INFO, "Waiting for shutdown ACK from send thread (index %lu "
+  syslog(LOG_NOTICE, "Waiting for shutdown ACK from send thread (index %lu "
          "broker %ld)", static_cast<unsigned long>(MyBrokerIndex), broker_id);
 
   /* In addition to waiting for the shutdown ACK, we must wait for shutdown
@@ -140,7 +140,7 @@ void TSender::WaitForShutdownAck() {
 
   const char *blurb = poll_array[0].revents ?
       "shutdown ACK" : "shutdown finished notification";
-  syslog(LOG_INFO, "Got %s from send thread (index %lu broker %ld)", blurb,
+  syslog(LOG_NOTICE, "Got %s from send thread (index %lu broker %ld)", blurb,
          static_cast<unsigned long>(MyBrokerIndex), broker_id);
   SenderFinishWaitShutdownAck.Increment();
   OptShutdownCmd.Reset();
@@ -184,7 +184,7 @@ void TSender::Run() {
   try {
     assert(MyBrokerIndex < Metadata->GetBrokers().size());
     broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-    syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) started",
+    syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) started",
            static_cast<int>(Gettid()),
            static_cast<unsigned long>(MyBrokerIndex), broker_id);
     DoRun();
@@ -202,7 +202,7 @@ void TSender::Run() {
     _exit(EXIT_FAILURE);
   }
 
-  syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finished %s",
+  syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finished %s",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
          broker_id, (ShutdownStatus == TShutdownStatus::Normal) ?
                     "normally" : "abnormally");
@@ -217,8 +217,8 @@ bool TSender::DoConnect() {
   const std::string &host = broker.GetHostname();
   uint16_t port = broker.GetPort();
   long broker_id = broker.GetId();
-  syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) connecting to host "
-         "%s port %u", static_cast<int>(Gettid()),
+  syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) connecting to "
+         "host %s port %u", static_cast<int>(Gettid()),
          static_cast<unsigned long>(MyBrokerIndex), broker_id, host.c_str(),
          static_cast<unsigned>(port));
 
@@ -242,7 +242,8 @@ bool TSender::DoConnect() {
     return false;
   }
 
-  syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) connect successful",
+  syslog(LOG_NOTICE,
+         "Send thread %d (index %lu broker %ld) connect successful",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
          broker_id);
   return true;
@@ -378,7 +379,7 @@ void TSender::SetFastShutdownState() {
 void TSender::HandlePauseDetected(bool sending) {
   assert(this);
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-  syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) detected pause %s",
+  syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) detected pause %s",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
          broker_id, sending ? "while sending" : "in main loop: finishing now");
 
@@ -424,16 +425,16 @@ bool TSender::HandleShutdownRequest(bool sending) {
   }
 
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
-  syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) sending ACK for %s "
-         "shutdown", static_cast<int>(Gettid()),
+  syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) sending ACK for "
+         "%s shutdown", static_cast<int>(Gettid()),
          static_cast<unsigned long>(MyBrokerIndex), broker_id,
          is_fast ? "fast" : "slow");
   ShutdownAck.Push();
   ClearShutdownRequest();
 
   if (!keep_running) {
-    syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finishing now on "
-           "fast shutdown", static_cast<int>(Gettid()),
+    syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing now "
+           "on fast shutdown", static_cast<int>(Gettid()),
            static_cast<unsigned long>(MyBrokerIndex), broker_id);
   }
 
@@ -544,8 +545,8 @@ TSender::TSockOpResult TSender::HandleSockWriteReady() {
       break;
     }
     case TSockOpResult::OkStop: {
-      syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finishing after "
-             "send during shutdown", static_cast<int>(Gettid()),
+      syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing "
+             "after send during shutdown", static_cast<int>(Gettid()),
              static_cast<unsigned long>(MyBrokerIndex),
              static_cast<long>(Metadata->GetBrokers()[MyBrokerIndex].GetId()));
       break;
@@ -596,8 +597,8 @@ void TSender::DoRun() {
   for (; ; ) {
     if (OptInProgressShutdown.IsKnown() && RequestFactory.IsEmpty()) {
       ShutdownStatus = TShutdownStatus::Normal;
-      syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finishing after "
-             "emptying its queue on shutdown", static_cast<int>(Gettid()),
+      syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing "
+             "after emptying its queue on shutdown", static_cast<int>(Gettid()),
              static_cast<unsigned long>(MyBrokerIndex), broker_id);
       break;
     }
@@ -609,7 +610,7 @@ void TSender::DoRun() {
     if (shutdown_timeout == 0) {
       /* Stop doing work immediately even if FDs are ready. */
       ShutdownStatus = TShutdownStatus::Normal;
-      syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finishing on "
+      syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing on "
              "shutdown time limit expiration 1", static_cast<int>(Gettid()),
              static_cast<unsigned long>(MyBrokerIndex), broker_id);
       break;
@@ -638,8 +639,9 @@ void TSender::DoRun() {
       if (OptInProgressShutdown.IsKnown() &&
           (finish_time >= OptInProgressShutdown->Deadline)) {
         ShutdownStatus = TShutdownStatus::Normal;
-        syslog(LOG_INFO, "Send thread %d (index %lu broker %ld) finishing on "
-               "shutdown time limit expiration 2", static_cast<int>(Gettid()),
+        syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing "
+               "on shutdown time limit expiration 2",
+               static_cast<int>(Gettid()),
                static_cast<unsigned long>(MyBrokerIndex), broker_id);
         break;
       }
