@@ -205,7 +205,7 @@ void TSender::Run() {
   syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finished %s",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
          broker_id, (ShutdownStatus == TShutdownStatus::Normal) ?
-                    "normally" : "abnormally");
+                    "normally" : "on error");
   Ds.MarkThreadFinished();
   SenderFinishRun.Increment();
 }

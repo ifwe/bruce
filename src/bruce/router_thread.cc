@@ -158,7 +158,7 @@ void TRouterThread::Run() {
   }
 
   syslog(LOG_NOTICE, "Router thread %d finished %s", tid,
-      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "abnormally");
+      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "on error");
 }
 
 size_t TRouterThread::ComputeRetryDelay(size_t mean_delay, size_t div) {
@@ -668,7 +668,7 @@ void TRouterThread::GetDispatcherShutdownStatus() {
       TKafkaDispatcherApi::TShutdownStatus::Normal) {
     syslog(LOG_INFO, "Dispatcher terminated normally");
   } else {
-    syslog(LOG_ERR, "Dispatcher terminated abnormally");
+    syslog(LOG_ERR, "Dispatcher terminated on error");
   }
 }
 

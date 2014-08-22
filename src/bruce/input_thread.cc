@@ -91,7 +91,7 @@ void TInputThread::Run() {
   }
 
   syslog(LOG_NOTICE, "Input thread %d finished %s", tid,
-      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "abnormally");
+      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "on error");
 }
 
 void TInputThread::DoRun() {
@@ -141,7 +141,7 @@ bool TInputThread::ShutDownRouterThread() {
              TRouterThreadApi::TShutdownStatus::Normal);
   syslog(LOG_NOTICE,
          "Input thread got %s termination status from router thread",
-         (ok ? "normal" : "abnormal"));
+         (ok ? "normal" : "error"));
   return ok;
 }
 

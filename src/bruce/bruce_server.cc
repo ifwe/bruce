@@ -369,7 +369,7 @@ bool TBruceServer::ShutDownInputThread() {
   bool input_thread_ok = (InputThread.GetShutdownStatus() ==
                           TInputThread::TShutdownStatus::Normal);
   syslog(LOG_NOTICE, "Server finished: input thread terminated %s",
-            input_thread_ok ? "normally" : "abnormally");
+            input_thread_ok ? "normally" : "on error");
   return input_thread_ok;
 }
 

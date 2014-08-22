@@ -392,7 +392,7 @@ void TDiscardFileLogger::TArchiveCleaner::Run() {
   }
 
   syslog(LOG_INFO, "Discard log cleaner thread %d finished %s", tid,
-         caught_fatal_exception ? "abnormally" : "normally");
+         caught_fatal_exception ? "on error" : "normally");
 }
 
 struct TOldLogFileInfo {
