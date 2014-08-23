@@ -199,7 +199,7 @@ static void FillTimeBuf(time_t seconds_since_epoch, char time_buf[]) {
   }
 }
 
-void TWebInterface::HandleGetVersionRequest(std::ostream &os) {
+void TWebInterface::HandleGetServerInfoRequestCompact(std::ostream &os) {
   MongooseGetVersionRequest.Increment();
   uint64_t now = GetEpochSeconds();
   char time_buf[TIME_BUF_SIZE];
@@ -209,7 +209,24 @@ void TWebInterface::HandleGetVersionRequest(std::ostream &os) {
       << "version: " << GetVersion() << std::endl;
 }
 
-void TWebInterface::HandleGetCountersRequest(std::ostream &os) {
+void TWebInterface::HandleGetServerInfoRequestJson(std::ostream &os) {
+  MongooseGetVersionRequest.Increment();
+  uint64_t now = GetEpochSeconds();
+  std::string indent_str;
+  TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
+  os << ind0 << "{" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    os << ind1 << "\"pid\": " << getpid() << "," << std::endl
+        << ind1 << "\"now\": " << now << "," << std::endl
+        << ind1 << "\"version\": \"" << GetVersion() << "\"" << std::endl;
+  }
+
+  os << ind0 << "}" << std::endl;
+}
+
+void TWebInterface::HandleGetCountersRequestCompact(std::ostream &os) {
   MongooseGetCountersRequest.Increment();
   TCounter::Sample();
   time_t sample_time = TCounter::GetSampleTime();
@@ -217,10 +234,6 @@ void TWebInterface::HandleGetCountersRequest(std::ostream &os) {
   char sample_time_buf[TIME_BUF_SIZE], reset_time_buf[TIME_BUF_SIZE];
   FillTimeBuf(sample_time, sample_time_buf);
   FillTimeBuf(reset_time, reset_time_buf);
-
-  /* We include the PID in the output so that when bruce is restarted, the
-     counter monitoring script can keep track of which of its counter files are
-     associated with which bruce invocations. */
   os << "now=" << sample_time << " " << sample_time_buf << std::endl
       << "since=" << reset_time << " " << reset_time_buf << std::endl
       << "pid=" << getpid() << std::endl
@@ -235,7 +248,53 @@ void TWebInterface::HandleGetCountersRequest(std::ostream &os) {
   }
 }
 
-void TWebInterface::WriteDiscardReport(std::ostream &os,
+void TWebInterface::HandleGetCountersRequestJson(std::ostream &os) {
+  MongooseGetCountersRequest.Increment();
+  TCounter::Sample();
+  time_t sample_time = TCounter::GetSampleTime();
+  time_t reset_time = TCounter::GetResetTime();
+  std::string indent_str;
+  TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
+  os << ind0 << "{" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    os << ind1 << "\"now\": " << sample_time << "," << std::endl
+        << ind1 << "\"since: \"" << reset_time << "," << std::endl
+        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"counters\": [" << std::endl;
+
+    {
+      TIndent ind2(ind1);
+
+      for (const TCounter *counter = TCounter::GetFirstCounter(),
+               *next = nullptr;
+           counter != nullptr;
+           counter = next) {
+        next = counter->GetNextCounter();
+        os << ind2 << "{" << std::endl;
+
+        {
+          TIndent ind3(ind2);
+          os << ind3 << "\"location\": \"" << counter->GetCodeLocation()
+              << "\"," << std::endl
+              << ind3 << "\"name\": \"" << counter->GetName() << "\","
+              << std::endl
+              << ind3 << "\"value\": " << counter->GetCount() << std::endl;
+        }
+
+        os << ind2 << (next ? "}," : "}") << std::endl;
+      }
+    }
+
+    os << ind1 << "]" << std::endl;
+  }
+
+  os << ind0 << "}" << std::endl;
+}
+
+void TWebInterface::WriteDiscardReportCompact(std::ostream &os,
     const TAnomalyTracker::TInfo &info) {
   char time_buf[TIME_BUF_SIZE];
   uint64_t start_time = info.GetStartTime();
@@ -310,7 +369,184 @@ void TWebInterface::WriteDiscardReport(std::ostream &os,
   }
 }
 
-void TWebInterface::HandleGetDiscardsRequest(std::ostream &os) {
+void TWebInterface::WriteDiscardReportJson(std::ostream &os,
+    const TAnomalyTracker::TInfo &info, TIndent &ind0) {
+  uint64_t start_time = info.GetStartTime();
+  os << ind0 << "\"id\": " << info.GetReportId() << "," << std::endl
+      << ind0 << "\"start_time\": " << start_time << "," << std::endl
+      << ind0 << "\"malformed_msg_count\": " << info.MalformedMsgCount << ","
+      << std::endl
+      << ind0 << "\"unsupported_api_key_msg_count\": "
+      << info.UnsupportedApiKeyMsgCount << "," << std::endl
+      << ind0 << "\"unsupported_version_msg_count\": "
+      << info.UnsupportedVersionMsgCount << "," << std::endl
+      << ind0 << "\"bad_topic_msg_count\": " << info.BadTopicMsgCount << ","
+      << std::endl
+      << ind0 << "\"recent_malformed\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (const std::string &msg : info.MalformedMsgs) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      /* TODO: base64 encode msg */
+      os << ind1 << "\"" << msg << "\"";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"unsupported_msg_version\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (const std::pair<int, size_t> &item : info.UnsupportedVersionMsgs) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      os << ind1 << "{" << std::endl;
+
+      {
+        TIndent ind2(ind1);
+        os << ind2 << "\"version\": " << item.first << "," << std::endl
+            << ind2 << "\"count\": " << item.second << std::endl;
+      }
+
+      os << ind1 << "}";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"recent_bad_topic\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (const std::string &topic : info.BadTopics) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      os << ind1 << "\"" << topic << "\"";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"recent_too_long_msg\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (const std::string &msg : info.LongMsgs) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      /* TODO: base64 encode msg */
+      os << ind1 << "\"" << msg << "\"";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"discard_topic\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (auto &x : info.DiscardTopicMap) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      os << ind1 << "{" << std::endl;
+
+      {
+        const TAnomalyTracker::TTopicInfo &topic_info = x.second;
+        TIndent ind2(ind1);
+        os << ind2 << "\"topic\": \"" << x.first << "\"," << std::endl
+            << ind2 << "\"min_timestamp\": " << topic_info.Interval.First
+            << "," << std::endl
+            << ind2 << "\"max_timestamp\": " << topic_info.Interval.Last << ","
+            << std::endl
+            << ind2 << "\"count\": " << topic_info.Count << std::endl;
+      }
+
+      os << ind1 << "}";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"possible_duplicate_topic\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (auto &x : info.DiscardTopicMap) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      os << ind1 << "{" << std::endl;
+
+      {
+        const TAnomalyTracker::TTopicInfo &topic_info = x.second;
+        TIndent ind2(ind1);
+        os << ind2 << "\"topic\": \"" << x.first << "\"," << std::endl
+            << ind2 << "\"min_timestamp\": " << topic_info.Interval.First
+            << "," << std::endl
+            << ind2 << "\"max_timestamp\": " << topic_info.Interval.Last << ","
+            << std::endl
+            << ind2 << "\"count\": " << topic_info.Count << std::endl;
+      }
+
+      os << ind1 << "}";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]" << std::endl;
+}
+
+void TWebInterface::HandleGetDiscardsRequestCompact(std::ostream &os) {
   MongooseGetDiscardsRequest.Increment();
   uint64_t now = GetEpochSeconds();
   char time_buf[TIME_BUF_SIZE];
@@ -324,15 +560,59 @@ void TWebInterface::HandleGetDiscardsRequest(std::ostream &os) {
       << "report interval in seconds: " << AnomalyTracker.GetReportInterval()
       << std::endl << std::endl
       << "current (unfinished) reporting period:" << std::endl;
-  WriteDiscardReport(os, current_unfinished);
+  WriteDiscardReportCompact(os, current_unfinished);
 
   if (latest_finished) {
     os << std::endl << "latest finished reporting period:" << std::endl;
-    WriteDiscardReport(os, *latest_finished);
+    WriteDiscardReportCompact(os, *latest_finished);
   }
 }
 
-void TWebInterface::HandleMetadataFetchTimeRequest(std::ostream &os) {
+void TWebInterface::HandleGetDiscardsRequestJson(std::ostream &os) {
+  MongooseGetDiscardsRequest.Increment();
+  uint64_t now = GetEpochSeconds();
+  TAnomalyTracker::TInfo current_unfinished;
+  std::shared_ptr<const TAnomalyTracker::TInfo> latest_finished =
+      AnomalyTracker.GetInfo(current_unfinished);
+  std::string indent_str;
+  TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
+  os << ind0 << "{" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    os << ind1 << "\"now\": " << now << "," << std::endl
+        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"interval\": " << AnomalyTracker.GetReportInterval()
+        << "," << std::endl
+        << ind1 << "\"unfinished_report\": {" << std::endl;
+
+    {
+      TIndent ind2(ind1);
+      WriteDiscardReportJson(os, current_unfinished, ind2);
+    }
+
+    os << ind1 << "}";
+
+    if (latest_finished) {
+      os << "," << std::endl
+          << ind1 << "\"finished_report\": {" << std::endl;
+
+      {
+        TIndent ind2(ind1);
+        WriteDiscardReportJson(os, *latest_finished, ind2);
+      }
+
+      os << ind1 << "}";
+    }
+
+    os << std::endl;
+  }
+
+  os << ind0 << "}" << std::endl;
+}
+
+void TWebInterface::HandleMetadataFetchTimeRequestCompact(std::ostream &os) {
   MongooseGetMetadataFetchTimeRequest.Increment();
   uint64_t last_update_time = 0, last_modified_time = 0;
   MetadataTimestamp.GetTimes(last_update_time, last_modified_time);
@@ -352,7 +632,29 @@ void TWebInterface::HandleMetadataFetchTimeRequest(std::ostream &os) {
       << last_modified_time << " " << last_modified_time_buf << std::endl;
 }
 
-void TWebInterface::HandleMsgStatsRequest(std::ostream &os) {
+void TWebInterface::HandleMetadataFetchTimeRequestJson(std::ostream &os) {
+  MongooseGetMetadataFetchTimeRequest.Increment();
+  uint64_t last_update_time = 0, last_modified_time = 0;
+  MetadataTimestamp.GetTimes(last_update_time, last_modified_time);
+  uint64_t now = GetEpochMilliseconds();
+  std::string indent_str;
+  TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
+  os << ind0 << "{" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    os << ind1 << "\"pid\": " << getpid() << "," << std::endl
+        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"now\": " << now << "," << std::endl
+        << ind1 << "\"last_updated\": " << last_update_time << "," << std::endl
+        << ind1 << "\"last_modified\": " << last_modified_time << ","
+        << std::endl;
+  }
+
+  os << ind0 << "}" << std::endl;
+}
+
+void TWebInterface::HandleMsgStatsRequestCompact(std::ostream &os) {
   MongooseGetMsgStatsRequest.Increment();
   std::vector<TMsgStateTracker::TTopicStatsItem> topic_stats;
   long new_count = 0;
@@ -390,6 +692,56 @@ void TWebInterface::HandleMsgStatsRequest(std::ostream &os) {
       << " total (all states: new + send_wait + ack_wait)" << std::endl;
 }
 
+void TWebInterface::HandleMsgStatsRequestJson(std::ostream &os) {
+  MongooseGetMsgStatsRequest.Increment();
+  std::vector<TMsgStateTracker::TTopicStatsItem> topic_stats;
+  long new_count = 0;
+  MsgStateTracker.GetStats(topic_stats, new_count);
+  uint64_t now = GetEpochSeconds();
+  std::string indent_str;
+  TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
+  os << ind0 << "{" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    os << ind1 << "\"now\": " << now << "," << std::endl
+        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"sending\": [";
+
+    {
+      TIndent ind2(ind1);
+      bool first_time = true;
+
+      for (const auto &item : topic_stats) {
+        if (!first_time) {
+          os << "," << std::endl;
+        }
+
+        os << ind2 << "{" << std::endl;
+
+        {
+          TIndent ind3(ind2);
+          os << ind3 << "\"topic\": \"" << item.first << "\"," << std::endl
+              << ind3 << "\"send_wait\": " << item.second.SendWaitCount << ","
+              << std::endl
+              << ind3 << "\"ack_wait\": " << item.second.AckWaitCount
+              << std::endl;
+        }
+
+        os << ind2 << "}";
+      }
+
+      os << std::endl;
+    }
+
+    os << ind1 << "]," << std::endl
+        << ind1 << "\"new\": " << new_count << std::endl;
+  }
+
+  os << ind0 << "}" << std::endl;
+}
+
 void TWebInterface::HandleHttpRequest(mg_connection *conn,
     const mg_request_info *request_info, TRequestType &request_type) {
   /* For each request type handled below, set this as soon as the request type
@@ -399,61 +751,107 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
 
   if (!std::strcmp(request_info->request_method, "GET")) {
     static const char add_debug_topic_prefix[] =
-        "/sys/msg_debug/add_topic/";
+        "/msg_debug/add_topic/";
     static const char del_debug_topic_prefix[] =
-        "/sys/msg_debug/del_topic/";
+        "/msg_debug/del_topic/";
     static const size_t add_debug_topic_prefix_len =
         std::strlen(add_debug_topic_prefix);
     static const size_t del_debug_topic_prefix_len =
         std::strlen(del_debug_topic_prefix);
 
-    if (!std::strcmp(request_info->uri, "/sys/version")) {
+    if (!std::strcmp(request_info->uri, "/server_info/compact")) {
       request_type = TRequestType::GET_VERSION;
       std::ostringstream oss;
-      HandleGetVersionRequest(oss);
+      HandleGetServerInfoRequestCompact(oss);
       std::string response(oss.str());
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/sys/counters")) {
+    } else if (!std::strcmp(request_info->uri, "/server_info/json")) {
+      request_type = TRequestType::GET_VERSION;
+      std::ostringstream oss;
+      HandleGetServerInfoRequestJson(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri, "/counters/compact")) {
       request_type = TRequestType::GET_COUNTERS;
       std::ostringstream oss;
-      HandleGetCountersRequest(oss);
+      HandleGetCountersRequestCompact(oss);
       std::string response(oss.str());
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/sys/discards")) {
+    } else if (!std::strcmp(request_info->uri, "/counters/json")) {
+      request_type = TRequestType::GET_COUNTERS;
+      std::ostringstream oss;
+      HandleGetCountersRequestJson(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri, "/discards/compact")) {
       request_type = TRequestType::GET_DISCARDS;
       std::ostringstream oss;
-      HandleGetDiscardsRequest(oss);
+      HandleGetDiscardsRequestCompact(oss);
       std::string response(oss.str());
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/sys/metadata_fetch_time")) {
+    } else if (!std::strcmp(request_info->uri, "/discards/json")) {
+      request_type = TRequestType::GET_DISCARDS;
+      std::ostringstream oss;
+      HandleGetDiscardsRequestJson(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri,
+                            "/metadata_fetch_time/compact")) {
       request_type = TRequestType::GET_METADATA_FETCH_TIME;
       std::ostringstream oss;
-      HandleMetadataFetchTimeRequest(oss);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/sys/msg_stats")) {
-      request_type = TRequestType::GET_MSG_STATS;
-      std::ostringstream oss;
-      HandleMsgStatsRequest(oss);
+      HandleMetadataFetchTimeRequestCompact(oss);
       std::string response(oss.str());
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri,
-                            "/sys/msg_debug/get_topics")) {
+                            "/metadata_fetch_time/json")) {
+      request_type = TRequestType::GET_METADATA_FETCH_TIME;
+      std::ostringstream oss;
+      HandleMetadataFetchTimeRequestJson(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri, "/queues/compact")) {
+      request_type = TRequestType::GET_MSG_STATS;
+      std::ostringstream oss;
+      HandleMsgStatsRequestCompact(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri, "/queues/json")) {
+      request_type = TRequestType::GET_MSG_STATS;
+      std::ostringstream oss;
+      HandleMsgStatsRequestJson(oss);
+      std::string response(oss.str());
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                      "Content-Length: %d\r\n\r\n",
+                response.size());
+      mg_write(conn, response.data(), response.size());
+    } else if (!std::strcmp(request_info->uri, "/msg_debug/get_topics")) {
       request_type = TRequestType::MSG_DEBUG_GET_TOPICS;
       TDebugSetup::TSettings::TPtr settings = DebugSetup.GetSettings();
       assert(settings);
@@ -479,7 +877,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
                 response.size());
       mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri,
-                            "/sys/msg_debug/add_all_topics")) {
+                            "/msg_debug/add_all_topics")) {
       request_type = TRequestType::MSG_DEBUG_ADD_ALL_TOPICS;
       DebugSetup.SetDebugTopics(nullptr);
       std::string response("All topics enabled\n");
@@ -487,8 +885,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri,
-                            "/sys/msg_debug/del_all_topics")) {
+    } else if (!std::strcmp(request_info->uri, "/msg_debug/del_all_topics")) {
       request_type = TRequestType::MSG_DEBUG_DEL_ALL_TOPICS;
       DebugSetup.ClearDebugTopics();
       std::string response("All topics deleted\n");
@@ -496,8 +893,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
                       "Content-Length: %d\r\n\r\n",
                 response.size());
       mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri,
-                            "/sys/msg_debug/truncate_files")) {
+    } else if (!std::strcmp(request_info->uri, "/msg_debug/truncate_files")) {
       request_type = TRequestType::MSG_DEBUG_TRUNCATE_FILES;
       DebugSetup.TruncateDebugFiles();
       std::string response("Message debug files truncated\n");
@@ -540,21 +936,26 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n\
   <head>\n\
-    <title>bruce</title>\n\
+    <title>Bruce</title>\n\
   </head>\n\
   <body>\n\
-    <h1>server status</h1>\n\
+    <h1>Server Status</h1>\n\
     <div>\n\
-      <a href=\"/sys/version\">get server version</a><br/>\n\
-      <a href=\"/sys/counters\">get counter values</a><br/>\n\
-      <a href=\"/sys/discards\">get discard info</a><br/>\n\
-      <a href=\"/sys/msg_stats\">get msg stats</a><br/>\n\
-      <a href=\"/sys/metadata_fetch_time\">get metadata fetch time</a><br/>\n\
+      Get server info: [<a href=\"/server_info/compact\">compact</a>]\
+[<a href=\"/server_info/json\">JSON</a>]<br/>\n\
+      Get counter values: [<a href=\"/counters/compact\">compact</a>]\
+[<a href=\"/counters/json\">JSON</a>]<br/>\n\
+      Get discard info: [<a href=\"/discards/compact\">compact</a>]\
+[<a href=\"/discards/json\">JSON</a>]<br/>\n\
+      Get queued message info: [<a href=\"/queues/compact\">compact</a>]\
+[<a href=\"/queues/json\">JSON</a>]<br/>\n\
+      Get metadata fetch time: [<a href=\"/metadata_fetch_time/compact\">\
+compact</a>][<a href=\"/metadata_fetch_time/json\">JSON</a>]<br/>\n\
     </div>\n\
-    <h1>server management</h1>\n\
-    <form action=\"/sys/metadata_update\" method=\"post\">\n\
+    <h1>Server Management</h1>\n\
+    <form action=\"/metadata_update\" method=\"post\">\n\
       <div>\n\
-        <input type=\"submit\" value=\"update metadata\"/>\n\
+        <input type=\"submit\" value=\"Update Metadata\"/>\n\
       </div>\n\
     </form>\n\
   </body>\n\
@@ -565,7 +966,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
       mg_write(conn, response.data(), response.size());
     }
   } else if (!std::strcmp(request_info->request_method, "POST")) {
-    if (!std::strcmp(request_info->uri, "/sys/metadata_update")) {
+    if (!std::strcmp(request_info->uri, "/metadata_update")) {
       request_type = TRequestType::METADATA_UPDATE;
       MetadataUpdateRequestSem.Push();
       uint64_t now = GetEpochSeconds();
@@ -583,8 +984,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
       request_type = TRequestType::UNKNOWN_POST_REQUEST;
       mg_printf(conn, "HTTP/1.1 404 NOT FOUND\r\n"
                       "Content-Type: text/plain\r\n\r\n"
-                      "[not found: try /sys/metadata_update or "
-                      "/sys/reset_counters]");
+                      "[not found: try /metadata_update]");
     }
   } else {
     request_type = TRequestType::UNIMPLEMENTED_REQUEST_METHOD;

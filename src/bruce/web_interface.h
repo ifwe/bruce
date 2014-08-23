@@ -28,6 +28,7 @@
 #include <netinet/in.h>
 
 #include <base/event_semaphore.h>
+#include <base/indent.h>
 #include <base/no_copy_semantics.h>
 #include <bruce/anomaly_tracker.h>
 #include <bruce/debug/debug_setup.h>
@@ -102,18 +103,31 @@ namespace Bruce {
 
     void DoStartHttpServer();
 
-    void HandleGetVersionRequest(std::ostream &os);
+    void HandleGetServerInfoRequestCompact(std::ostream &os);
 
-    void HandleGetCountersRequest(std::ostream &os);
+    void HandleGetServerInfoRequestJson(std::ostream &os);
 
-    void WriteDiscardReport(std::ostream &os,
+    void HandleGetCountersRequestCompact(std::ostream &os);
+
+    void HandleGetCountersRequestJson(std::ostream &os);
+
+    void WriteDiscardReportCompact(std::ostream &os,
         const TAnomalyTracker::TInfo &info);
 
-    void HandleGetDiscardsRequest(std::ostream &os);
+    void WriteDiscardReportJson(std::ostream &os,
+        const TAnomalyTracker::TInfo &info, Base::TIndent &ind0);
 
-    void HandleMetadataFetchTimeRequest(std::ostream &os);
+    void HandleGetDiscardsRequestCompact(std::ostream &os);
 
-    void HandleMsgStatsRequest(std::ostream &os);
+    void HandleGetDiscardsRequestJson(std::ostream &os);
+
+    void HandleMetadataFetchTimeRequestCompact(std::ostream &os);
+
+    void HandleMetadataFetchTimeRequestJson(std::ostream &os);
+
+    void HandleMsgStatsRequestCompact(std::ostream &os);
+
+    void HandleMsgStatsRequestJson(std::ostream &os);
 
     void HandleHttpRequest(mg_connection *conn,
         const mg_request_info *request_info, TRequestType &request_type);
