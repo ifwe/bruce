@@ -130,7 +130,7 @@ void TWebRequestHandler::HandleGetCountersRequestJson(std::ostream &os) {
   {
     TIndent ind1(ind0);
     os << ind1 << "\"now\": " << sample_time << "," << std::endl
-        << ind1 << "\"since: \"" << reset_time << "," << std::endl
+        << ind1 << "\"since: " << reset_time << "," << std::endl
         << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
         << ind1 << "\"counters\": [" << std::endl;
