@@ -34,6 +34,7 @@
 #include <base/error_utils.h>
 #include <base/no_default_case.h>
 #include <bruce/util/msg_util.h>
+#include <third_party/base64/base64.h>
 
 using namespace Base;
 using namespace Bruce;
@@ -98,8 +99,16 @@ void TDebugLogger::LogMsg(const TMsg &msg) {
   /* TODO: write both key and value to file */
   size_t bytes_written = WriteValue(MsgBuf, 0, msg, AddTimestamp,
                                     UseOldOutputFormat);
-  MsgBuf.resize(bytes_written + 1);
-  MsgBuf[bytes_written] = '\n';
+  std::string encoded;
+
+  if (bytes_written) {
+    /* Base64 encode message, since it may contain binary data. */
+    encoded = base64_encode(&MsgBuf[0], bytes_written);
+  }
+
+  encoded.push_back('\n');
+  MsgBuf.resize(encoded.size());
+  std::memcpy(&MsgBuf[0], encoded.data(), encoded.size());
 
   if (!Settings->RequestLogBytes(MsgBuf.size())) {
     /* Flip automatic kill switch if we can't log this message without

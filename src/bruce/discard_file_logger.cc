@@ -46,6 +46,7 @@
 #include <base/no_default_case.h>
 #include <bruce/util/msg_util.h>
 #include <bruce/util/time_util.h>
+#include <third_party/base64/base64.h>
 
 using namespace Base;
 using namespace Bruce;
@@ -56,27 +57,22 @@ static void ComposeLogEntry(TMsg::TTimestamp timestamp, const char *event,
   assert(event);
   assert(info);
   uint64_t now = GetEpochMilliseconds();
-  const size_t body_size = body.size();
+
+  /* Base64 encode message body, since it may contain binary data. */
+  std::string encoded_body = base64_encode(&body[0], body.size());
+
   std::ostringstream os;
   os << "now: " << now << " ts: " << timestamp
       << " event: " << event << " info: " << info << " topic: " << topic.size()
-      << "[" << topic << "] body: " << body_size << "[";
-  std::string body_prefix(os.str());
-  std::string body_suffix("]\n");
-  body.resize(body_prefix.size() + body_size + body_suffix.size());
+      << "[" << topic << "] body: " << encoded_body.size() << "[";
+  std::string prefix(os.str());
+  std::string suffix("]\n");
+  body.resize(prefix.size() + encoded_body.size() + suffix.size());
 
-  if (body_size) {
-    std::memmove(&body[body_prefix.size()], &body[0], body_size);
-  }
-
-  if (body_prefix.size()) {
-    std::memcpy(&body[0], body_prefix.data(), body_prefix.size());
-  }
-
-  if (body_suffix.size()) {
-    std::memcpy(&body[body_prefix.size() + body_size], body_suffix.data(),
-                body_suffix.size());
-  }
+  std::memcpy(&body[0], prefix.data(), prefix.size());
+  std::memcpy(&body[prefix.size()], encoded_body.data(), encoded_body.size());
+  std::memcpy(&body[prefix.size() + encoded_body.size()], suffix.data(),
+              suffix.size());
 }
 
 static void CreateDir(const char *dir) {
