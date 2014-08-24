@@ -1192,7 +1192,7 @@ def main():
         counter_report = ReadCounterFile(work_path + '/' + str(now))
     else:
         counter_report = GetCounters('http://' + Opts.BruceHost + ':' + \
-                str(Opts.BruceStatusPort) + '/counters/compact')
+                str(Opts.BruceStatusPort) + '/counters/plain')
         now = counter_report.Timestamp
         CreateCounterFile(work_path + '/' + str(now), counter_report)
 

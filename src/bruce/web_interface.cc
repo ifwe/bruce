@@ -109,6 +109,7 @@ const char *TWebInterface::ToErrorBlurb(TRequestType request_type) {
 
 void *TWebInterface::OnEvent(mg_event event, mg_connection *conn,
     const mg_request_info *request_info) {
+  assert(this);
   bool is_handled = false;
   TRequestType request_type = TRequestType::UNIMPLEMENTED_REQUEST_METHOD;
   const char *error_blurb = "";
@@ -164,12 +165,67 @@ void *TWebInterface::OnEvent(mg_event event, mg_connection *conn,
   return is_handled ? const_cast<char *>("") : nullptr;
 }
 
+void TWebInterface::WriteFrontPage(std::ostream &os) {
+  assert(this);
+  os << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl
+      << "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
+      << std::endl
+      << "    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
+      << std::endl
+      << "<html xmlns=\"http://www.w3.org/1999/xhtml\">" << std::endl
+      << "  <head>" << std::endl
+      << "    <title>Bruce</title>" << std::endl
+      << "  </head>" << std::endl
+      << "  <body>" << std::endl
+      << "    <h1>Server Status</h1>" << std::endl
+      << "    <div>" << std::endl
+      << "      Get server info: [<a href=\"/server_info/plain\">"
+      << "plain</a>]" << std::endl
+      << "          [<a href=\"/server_info/json\">JSON</a>]<br/>"
+      << std::endl
+      << "      Get counter values: [<a href=\"/counters/plain\">"
+      << "plain</a>]" << std::endl
+      << "          [<a href=\"/counters/json\">JSON</a>]<br/>" << std::endl
+      << "      Get discard info: [<a href=\"/discards/plain\">"
+      << "plain</a>]" << std::endl
+      << "          [<a href=\"/discards/json\">JSON</a>]<br/>" << std::endl
+      << "      Get queued message info: [<a href=\"/queues/plain\">"
+      << "plain</a>]" << std::endl
+      << "          [<a href=\"/queues/json\">JSON</a>]<br/>" << std::endl
+      << "      Get metadata fetch time:" << std::endl
+      << "          [<a href=\"/metadata_fetch_time/plain\">plain</a>]"
+      << std::endl
+      << "          [<a href=\"/metadata_fetch_time/json\">JSON</a>]<br/>"
+      << std::endl
+      << "    </div>" << std::endl
+      << "    <h1>Server Management</h1>" << std::endl
+      << "    <form action=\"/metadata_update\" method=\"post\">" << std::endl
+      << "      <div>" << std::endl
+      << "        <input type=\"submit\" value=\"Update Metadata\"/>"
+      << std::endl
+      << "      </div>" << std::endl
+      << "    </form>" << std::endl
+      << "  </body>" << std::endl
+      << "</html>" << std::endl;
+}
+
 void TWebInterface::HandleHttpRequest(mg_connection *conn,
     const mg_request_info *request_info, TRequestType &request_type) {
+  assert(this);
+
   /* For each request type handled below, set this as soon as the request type
      is identified.  Then the caller will have that information for error
      reporting even if an exception is thrown. */
   request_type = TRequestType::UNIMPLEMENTED_REQUEST_METHOD;
+
+  /* Response content goes here. */
+  std::ostringstream oss;
+
+  enum class TResponseType {
+    Text,
+    Json,
+    Html
+  } response_type = TResponseType::Text;
 
   if (!std::strcmp(request_info->request_method, "GET")) {
     static const char add_debug_topic_prefix[] =
@@ -181,226 +237,97 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     static const size_t del_debug_topic_prefix_len =
         std::strlen(del_debug_topic_prefix);
 
-    if (!std::strcmp(request_info->uri, "/server_info/compact")) {
+    if (!std::strcmp(request_info->uri, "/server_info/plain")) {
       request_type = TRequestType::GET_SERVER_INFO;
       MongooseGetServerInfoRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetServerInfoRequestCompact(oss);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/server_info/json")) {
       request_type = TRequestType::GET_SERVER_INFO;
       MongooseGetServerInfoRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetServerInfoRequestJson(oss);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/counters/compact")) {
+      response_type = TResponseType::Json;
+    } else if (!std::strcmp(request_info->uri, "/counters/plain")) {
       request_type = TRequestType::GET_COUNTERS;
       MongooseGetCountersRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetCountersRequestCompact(oss);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/counters/json")) {
       request_type = TRequestType::GET_COUNTERS;
       MongooseGetCountersRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetCountersRequestJson(oss);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/discards/compact")) {
+      response_type = TResponseType::Json;
+    } else if (!std::strcmp(request_info->uri, "/discards/plain")) {
       request_type = TRequestType::GET_DISCARDS;
       MongooseGetDiscardsRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetDiscardsRequestCompact(oss,
           AnomalyTracker);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/discards/json")) {
       request_type = TRequestType::GET_DISCARDS;
       MongooseGetDiscardsRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetDiscardsRequestJson(oss, AnomalyTracker);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
+      response_type = TResponseType::Json;
     } else if (!std::strcmp(request_info->uri,
-                            "/metadata_fetch_time/compact")) {
+                            "/metadata_fetch_time/plain")) {
       request_type = TRequestType::GET_METADATA_FETCH_TIME;
       MongooseGetMetadataFetchTimeRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleMetadataFetchTimeRequestCompact(oss,
           MetadataTimestamp);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri,
                             "/metadata_fetch_time/json")) {
       request_type = TRequestType::GET_METADATA_FETCH_TIME;
       MongooseGetMetadataFetchTimeRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleMetadataFetchTimeRequestJson(oss,
           MetadataTimestamp);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
-    } else if (!std::strcmp(request_info->uri, "/queues/compact")) {
+      response_type = TResponseType::Json;
+    } else if (!std::strcmp(request_info->uri, "/queues/plain")) {
       request_type = TRequestType::GET_QUEUE_STATS;
       MongooseGetQueueStatsRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleQueueStatsRequestCompact(oss,
           MsgStateTracker);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/queues/json")) {
       request_type = TRequestType::GET_QUEUE_STATS;
       MongooseGetQueueStatsRequest.Increment();
-      std::ostringstream oss;
       TWebRequestHandler().HandleQueueStatsRequestJson(oss, MsgStateTracker);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
+      response_type = TResponseType::Json;
     } else if (!std::strcmp(request_info->uri, "/msg_debug/get_topics")) {
       request_type = TRequestType::MSG_DEBUG_GET_TOPICS;
-      std::ostringstream oss;
       TWebRequestHandler().HandleGetDebugTopicsRequest(oss, DebugSetup);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri,
                             "/msg_debug/add_all_topics")) {
       request_type = TRequestType::MSG_DEBUG_ADD_ALL_TOPICS;
-      std::ostringstream oss;
       TWebRequestHandler().HandleDebugAddAllTopicsRequest(oss, DebugSetup);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/msg_debug/del_all_topics")) {
       request_type = TRequestType::MSG_DEBUG_DEL_ALL_TOPICS;
-      std::ostringstream oss;
       TWebRequestHandler().HandleDebugDelAllTopicsRequest(oss, DebugSetup);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strcmp(request_info->uri, "/msg_debug/truncate_files")) {
       request_type = TRequestType::MSG_DEBUG_TRUNCATE_FILES;
-      std::ostringstream oss;
       TWebRequestHandler().HandleDebugTruncateFilesRequest(oss, DebugSetup);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strncmp(request_info->uri, add_debug_topic_prefix,
                              add_debug_topic_prefix_len)) {
       request_type = TRequestType::MSG_DEBUG_ADD_TOPIC;
-      std::ostringstream oss;
       const char *topic = request_info->uri + add_debug_topic_prefix_len;
       TWebRequestHandler().HandleDebugAddTopicRequest(oss, DebugSetup, topic);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else if (!std::strncmp(request_info->uri, del_debug_topic_prefix,
                              del_debug_topic_prefix_len)) {
       request_type = TRequestType::MSG_DEBUG_DEL_TOPIC;
-      std::ostringstream oss;
       const char *topic = request_info->uri + del_debug_topic_prefix_len;
       TWebRequestHandler().HandleDebugDelTopicRequest(oss, DebugSetup, topic);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else {
       request_type = std::strcmp(request_info->uri, "/") ?
           TRequestType::UNKNOWN_GET_REQUEST : TRequestType::TOP_LEVEL_PAGE;
-
-      const std::string response("\
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\
-    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n\
-  <head>\n\
-    <title>Bruce</title>\n\
-  </head>\n\
-  <body>\n\
-    <h1>Server Status</h1>\n\
-    <div>\n\
-      Get server info: [<a href=\"/server_info/compact\">compact</a>]\
-[<a href=\"/server_info/json\">JSON</a>]<br/>\n\
-      Get counter values: [<a href=\"/counters/compact\">compact</a>]\
-[<a href=\"/counters/json\">JSON</a>]<br/>\n\
-      Get discard info: [<a href=\"/discards/compact\">compact</a>]\
-[<a href=\"/discards/json\">JSON</a>]<br/>\n\
-      Get queued message info: [<a href=\"/queues/compact\">compact</a>]\
-[<a href=\"/queues/json\">JSON</a>]<br/>\n\
-      Get metadata fetch time: [<a href=\"/metadata_fetch_time/compact\">\
-compact</a>][<a href=\"/metadata_fetch_time/json\">JSON</a>]<br/>\n\
-    </div>\n\
-    <h1>Server Management</h1>\n\
-    <form action=\"/metadata_update\" method=\"post\">\n\
-      <div>\n\
-        <input type=\"submit\" value=\"Update Metadata\"/>\n\
-      </div>\n\
-    </form>\n\
-  </body>\n\
-</html>\n");
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
+      WriteFrontPage(oss);
+      response_type = TResponseType::Html;
     }
   } else if (!std::strcmp(request_info->request_method, "POST")) {
     if (!std::strcmp(request_info->uri, "/metadata_update")) {
       request_type = TRequestType::METADATA_UPDATE;
-      std::ostringstream oss;
       TWebRequestHandler().HandleMetadataUpdateRequest(oss,
           MetadataUpdateRequestSem);
-      std::string response(oss.str());
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n"
-                      "Content-Length: %d\r\n\r\n",
-                response.size());
-      mg_write(conn, response.data(), response.size());
     } else {
       request_type = TRequestType::UNKNOWN_POST_REQUEST;
       mg_printf(conn, "HTTP/1.1 404 NOT FOUND\r\n"
                       "Content-Type: text/plain\r\n\r\n"
                       "[not found: try /metadata_update]");
+      return;
     }
   } else {
     request_type = TRequestType::UNIMPLEMENTED_REQUEST_METHOD;
@@ -408,10 +335,27 @@ compact</a>][<a href=\"/metadata_fetch_time/json\">JSON</a>]<br/>\n\
                     "Content-Type: text/plain\r\n\r\n"
                     "[request method %s not implemented]",
               request_info->request_method);
+    return;
   }
+
+  const char *resp_type = "text/plain";
+
+  switch (response_type) {
+    case TResponseType::Text: break;
+    case TResponseType::Json: resp_type = "application/json"; break;
+    case TResponseType::Html: resp_type = "text/html"; break;
+    NO_DEFAULT_CASE;
+  }
+
+  std::string response(oss.str());
+  mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\n"
+                  "Content-Length: %d\r\n\r\n", resp_type,
+            response.size());
+  mg_write(conn, response.data(), response.size());
 }
 
 void TWebInterface::DoStartHttpServer() {
+  assert(this);
   std::ostringstream oss;
   oss << Port;
   std::string port_str(oss.str());

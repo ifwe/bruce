@@ -1833,7 +1833,7 @@ def main():
     if Opts.Testfile == '':
         # Get discard info from bruce.
         discard_response = GetDiscardResponse('http://' + host + ':' + \
-                str(Opts.BruceStatusPort) + '/discards/compact')
+                str(Opts.BruceStatusPort) + '/discards/plain')
     else:
         discard_response = GetDiscardResponseFromFile(Opts.Testfile)
 

@@ -48,10 +48,10 @@ namespace Bruce {
     void HandleGetCountersRequestJson(std::ostream &os);
 
     void HandleGetDiscardsRequestCompact(std::ostream &os,
-        TAnomalyTracker &tracker);
+        const TAnomalyTracker &tracker);
 
     void HandleGetDiscardsRequestJson(std::ostream &os,
-        TAnomalyTracker &tracker);
+        const TAnomalyTracker &tracker);
 
     void HandleMetadataFetchTimeRequestCompact(std::ostream &os,
         const TMetadataTimestamp &metadata_timestamp);
@@ -60,13 +60,13 @@ namespace Bruce {
         const TMetadataTimestamp &metadata_timestamp);
 
     void HandleQueueStatsRequestCompact(std::ostream &os,
-        TMsgStateTracker &tracker);
+        const TMsgStateTracker &tracker);
 
     void HandleQueueStatsRequestJson(std::ostream &os,
-        TMsgStateTracker &tracker);
+        const TMsgStateTracker &tracker);
 
     void HandleGetDebugTopicsRequest(std::ostream &os,
-        Debug::TDebugSetup &debug_setup);
+        const Debug::TDebugSetup &debug_setup);
 
     void HandleDebugAddAllTopicsRequest(std::ostream &os,
         Debug::TDebugSetup &debug_setup);

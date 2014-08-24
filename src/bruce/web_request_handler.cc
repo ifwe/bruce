@@ -164,7 +164,7 @@ void TWebRequestHandler::HandleGetCountersRequestJson(std::ostream &os) {
 }
 
 void TWebRequestHandler::HandleGetDiscardsRequestCompact(std::ostream &os,
-    TAnomalyTracker &tracker) {
+    const TAnomalyTracker &tracker) {
   assert(this);
   uint64_t now = GetEpochSeconds();
   char time_buf[TIME_BUF_SIZE];
@@ -187,7 +187,7 @@ void TWebRequestHandler::HandleGetDiscardsRequestCompact(std::ostream &os,
 }
 
 void TWebRequestHandler::HandleGetDiscardsRequestJson(std::ostream &os,
-    TAnomalyTracker &tracker) {
+    const TAnomalyTracker &tracker) {
   assert(this);
   uint64_t now = GetEpochSeconds();
   TAnomalyTracker::TInfo current_unfinished;
@@ -276,7 +276,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestJson(std::ostream &os,
 }
 
 void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
-    TMsgStateTracker &tracker) {
+    const TMsgStateTracker &tracker) {
   assert(this);
   std::vector<TMsgStateTracker::TTopicStatsItem> topic_stats;
   long new_count = 0;
@@ -315,7 +315,7 @@ void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
 }
 
 void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
-    TMsgStateTracker &tracker) {
+    const TMsgStateTracker &tracker) {
   assert(this);
   std::vector<TMsgStateTracker::TTopicStatsItem> topic_stats;
   long new_count = 0;
@@ -366,7 +366,7 @@ void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
 }
 
 void TWebRequestHandler::HandleGetDebugTopicsRequest(std::ostream &os,
-    Debug::TDebugSetup &debug_setup) {
+    const Debug::TDebugSetup &debug_setup) {
   assert(this);
   TDebugSetup::TSettings::TPtr settings = debug_setup.GetSettings();
   assert(settings);

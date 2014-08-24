@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <ostream>
 #include <string>
@@ -57,10 +58,13 @@ namespace Bruce {
     }
 
     virtual ~TWebInterface() noexcept {
+      assert(this);
       StopHttpServer();
     }
 
     void StartHttpServer() {
+      assert(this);
+
       if (!HttpServerStarted) {
         DoStartHttpServer();
         HttpServerStarted = true;
@@ -68,6 +72,8 @@ namespace Bruce {
     }
 
     void StopHttpServer() {
+      assert(this);
+
       if (HttpServerStarted) {
         DoStopHttpServer();
         HttpServerStarted = false;
@@ -102,10 +108,13 @@ namespace Bruce {
 
     void DoStartHttpServer();
 
+    void WriteFrontPage(std::ostream &os);
+
     void HandleHttpRequest(mg_connection *conn,
         const mg_request_info *request_info, TRequestType &request_type);
 
     void DoStopHttpServer() {
+      assert(this);
       Stop();
     }
 
