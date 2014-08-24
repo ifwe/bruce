@@ -97,6 +97,7 @@
 import bisect
 import errno
 import getopt
+import json
 import os
 import subprocess
 import sys
@@ -217,26 +218,94 @@ def LookupCounter(counters, key):
 ###############################################################################
 
 ###############################################################################
-# Class for storing a counter report.
-#
-# members:
-#     Timestamp: An integer number of seconds since the epoch (measured on the
-#         host where this script is running) when the report was created.
-#     BrucePid: The PID of the bruce daemon that the report was obtained from.
-#     Counters: A map containing the counters.  The keys are counter name
-#         strings and the values are integer counts.
+# Parse a JSON counter report and return the result.
 ###############################################################################
-class TCounterReport(object):
-    'counter report class'
-    def __init__(self, timestamp, bruce_pid, counters):
-        self.Timestamp = timestamp
-        self.BrucePid = bruce_pid
-        self.Counters = counters
+def ParseCounterReport(json_input):
+    try:
+        result = json.loads(json_input)
+    except ValueError:
+        Die(EC_UNKNOWN, 'Failed to parse counter report')
+
+    if type(result) is not dict:
+        Die(EC_UNKNOWN, 'Counter report is not a dictionary')
+
+    if 'now' not in result:
+        Die(EC_UNKNOWN, 'Counter report missing "now" item')
+
+    if type(result['now']) is not int:
+        Die(EC_UNKNOWN, 'Item "now" in counter report is not an integer')
+
+    if 'since' not in result:
+        Die(EC_UNKNOWN, 'Counter report missing "since" item')
+
+    if type(result['since']) is not int:
+        Die(EC_UNKNOWN, 'Item "since" in counter report is not an integer')
+
+    if 'pid' not in result:
+        Die(EC_UNKNOWN, 'Counter report missing "pid" item')
+
+    if type(result['pid']) is not int:
+        Die(EC_UNKNOWN, 'Item "pid" in counter report is not an integer')
+
+    if 'version' not in result:
+        Die(EC_UNKNOWN, 'Counter report missing "version" item')
+
+    if type(result['version']) is not unicode:
+        Die(EC_UNKNOWN,
+            'Item "version" in counter report is not a unicode string')
+
+    if 'counters' not in result:
+        Die(EC_UNKNOWN, 'Counter report missing "counters" item')
+
+    if type(result['counters']) is not list:
+        Die(EC_UNKNOWN, 'Item "counters" in counter report is not a list')
+
+    counter_names = set()
+
+    for item in result['counters']:
+        if type(item) is not dict:
+            Die(EC_UNKNOWN, 'Counter item is not a dictionary')
+
+        if 'name' not in item:
+            Die(EC_UNKNOWN, 'Counter item has no name')
+
+        if type(item['name']) is not unicode:
+            Die(EC_UNKNOWN, 'Counter item name is not a unicode string')
+
+        if item['name'] in counter_names:
+            Die(EC_UNKNOWN, 'Duplicate counter name [' + item['name'] + ']')
+
+        counter_names.add(item['name'])
+
+        if 'value' not in item:
+            Die(EC_UNKNOWN, 'Counter item [' + item['name'] + '] has no value')
+
+        if type(item['value']) is not int:
+            Die(EC_UNKNOWN, 'Value of counter item [' + item['name'] + \
+                    '] is not an integer')
+
+        if 'location' not in item:
+            Die(EC_UNKNOWN, 'Counter item [' + item['name'] + \
+                    '] has no location')
+
+        if type(item['location']) is not unicode:
+            Die(EC_UNKNOWN, 'Location of counter item [' + item['name'] + \
+                    '] is not a unicode string')
+
+    return result
+###############################################################################
+
+###############################################################################
+# Serialize a counter report to a JSON string and return the result.
+###############################################################################
+def SerializeCounterReport(report):
+    return json.dumps(report, sort_keys=True, indent=4,
+                separators=(',', ': ')) + '\n'
 ###############################################################################
 
 ###############################################################################
 # Send a "get counters" HTTP request to bruce, parse the response, and return
-# a TCounterReport object.
+# the parsed counter report.
 ###############################################################################
 def GetCounters(url):
     try:
@@ -246,244 +315,63 @@ def GetCounters(url):
         # running.
         Die(EC_CRITICAL, 'Failed to open counters URL: ' + str(e.reason))
 
-    # The first line is uninteresting, but verify that it is as expected.
-    line = response.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Got empty counter report from bruce')
-
-    if line[:4] != 'now=':
-        Die(EC_UNKNOWN, 'Got invalid counter report from bruce: \'now=\' '
-            'expected')
-
-    # Likewise for the second line.
-    line = response.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Got truncated counter report from bruce: '
-            '\'since=\' not found')
-
-    if line[:6] != 'since=':
-        Die(EC_UNKNOWN, 'Got invalid counter report from bruce: \'since=\' '
-            'expected')
-
-    # The third line gives the PID, which we are interested in.
-    line = response.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Got truncated counter report from bruce: \'pid=\' '
-            'not found')
-
-    line = line.rstrip('\n')
-
-    if line[:4] != 'pid=':
-        Die(EC_UNKNOWN, 'Got invalid counter report from bruce: \'pid=\' '
-            'expected')
-
-    line = line[4:]
-
-    try:
-        bruce_pid = int(line)
-    except ValueError:
-        Die(EC_UNKNOWN, 'Got counter report from bruce with invalid PID: ' +
-            line)
-
-    if bruce_pid < 0:
-        Die(EC_UNKNOWN, 'Got counter report from bruce with negative PID: ' +
-            str(bruce_pid))
-
-    # The fourth line gives Bruce's version, which we will ignore.
-    line = response.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Got truncated counter report from bruce: '
-            '\'version=\' not found')
-
-    line = line.rstrip('\n')
-
-    if line[:8] != 'version=':
-        Die(EC_UNKNOWN, 'Got invalid counter report from bruce: \'version=\' '
-            'expected')
-
-    # The fifth line is empty.
-    line = response.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Got truncated counter report from bruce: '
-            'Unexpected end of input before counters')
-
-    counters = { }
+    json_input = ''
 
     for line in response:
-        line = line.rstrip('\n')
+        json_input += line
 
-        # Each counter line ends with text like this:
-        #
-        #     .CounterName=N
-        #
-        # where N is an integer counter value.  Find the last '.' so we can
-        # isolate the 'CounterName=N' part that immediately follows it.
-        index = line.rfind('.')
-
-        if index == -1:
-            Die(EC_UNKNOWN, 'Got invalid counter line from bruce (1)')
-
-        # Discard everything preceding the 'CounterName=N' part.  Then separate
-        # key and value on '='.
-        line = line[index + 1:]
-        index = line.find('=')
-
-        if index == -1:
-            Die(EC_UNKNOWN, 'Got invalid counter line from bruce (2)')
-
-        key = line[:index]
-        value_str = line[index + 1:]
-
-        try:
-            value = int(value_str)
-        except ValueError:
-            Die(EC_UNKNOWN, 'Got invalid counter line from bruce (3)')
-
-        if value < 0:
-            Die(EC_UNKNOWN, 'Got counter report from bruce with negative '
-                'value ' + str(value) + ' for counter ' + key)
-
-        counters[key] = value
-
-    return TCounterReport(SecondsSinceEpoch(), bruce_pid, counters)
+    return ParseCounterReport(json_input)
 ###############################################################################
 
 ###############################################################################
 # Create a file with counter data whose location is given by 'path'.
-# 'counter_report' is a TCounterReport object containing the data to be written
-# to the file.  The first line of the file gives the creation time in a format
-# that looks like this:
-#
-#     created: 1378942553 Wed Sep 11 16:35:53 2013
-#
-# This line is intended for human consumption.  The number immediately
-# following 'created: ' is the creation time in seconds since the epoch, and
-# the remaining text is the creation time expressed in a more human-friendly
-# form.  The second line gives the PID of the bruce server that the counter
-# data was obtained from.  Its format looks like this:
-#
-#     bruce_pid: 8692
-#
-# The rest of the file consists of a line for each counter, where the format of
-# a counter line looks like this:
-#
-#     CounterName=N
-#
-# 'CounterName' is the name of a counter and 'N' is its count.
+# 'counter_report' is a counter report containing the data to be written.
+# Serialize the report to JSON and write it to the file.
 ###############################################################################
 def CreateCounterFile(path, counter_report):
+    json_report = SerializeCounterReport(counter_report)
+
     try:
+        is_open = False
         outfile = open(path, 'w')
+        is_open = True
+        outfile.write(json_report)
     except OSError as e:
         Die(EC_UNKNOWN, 'Failed to create counter file ' + path + ': ' +
             e.strerror)
     except IOError as e:
         Die(EC_UNKNOWN, 'Failed to create counter file ' + path + ': ' +
             e.strerror)
-
-    outfile.write('created: ' + str(counter_report.Timestamp) + ' ' +
-                  time.ctime(counter_report.Timestamp) + '\n')
-    outfile.write('bruce_pid: ' + str(counter_report.BrucePid) + '\n')
-
-    for key in counter_report.Counters:
-        outfile.write(key + '=' + str(counter_report.Counters[key]) + '\n')
-
-    outfile.close()
+    finally:
+        if is_open:
+            outfile.close()
 ###############################################################################
 
 ###############################################################################
-# Read counter data from file given by 'path'.  Return a TCounterReport object
+# Read counter data from file given by 'path'.  Return a counter report
 # containing the data.
 ###############################################################################
 def ReadCounterFile(path):
+    json_input = ''
+
     try:
+        is_open = False
         infile = open(path, 'r')
+        is_open = True
+
+        for line in infile:
+            json_input += line
     except OSError as e:
         Die(EC_UNKNOWN, 'Failed to open counter file ' + path +
             ' for reading: ' + e.strerror)
     except IOError as e:
         Die(EC_UNKNOWN, 'Failed to open counter file ' + path +
             ' for reading: ' + e.strerror)
+    finally:
+        if is_open:
+            infile.close()
 
-    # The first line has creation time information.
-    line = infile.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Empty counter file ' + path)
-
-    if line[:9] != 'created: ':
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid contents: '
-            '\'created: \' expected')
-
-    line = line[9:]
-    index = line.find(' ')
-
-    if index == -1:
-        Die(EC_UNKNOWN, '\'created\' line of counter file ' + path +
-            ' has unexpected format')
-
-    line = line[:index]
-
-    try:
-        timestamp = int(line)
-    except ValueError:
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid timestamp')
-
-    if timestamp < 0:
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has negative timestamp')
-
-    # The second line has the PID of the bruce daemon that the counter data was
-    # obtained from.
-    line = infile.readline()
-
-    if line == '':
-        Die(EC_UNKNOWN, 'Truncated counter file ' + path)
-
-    if line[:11] != 'bruce_pid: ':
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid contents: \''
-            'bruce_pid: \' expected')
-
-    line = line[11:]
-
-    try:
-        bruce_pid = int(line)
-    except ValueError:
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid bruce PID')
-
-    if bruce_pid < 0:
-        Die(EC_UNKNOWN, 'Counter file ' + path + ' has negative bruce PID')
-
-    counters = { }
-
-    for line in infile:
-        line = line.rstrip('\n')
-
-        # Each line looks like this:
-        #
-        #     CounterName=N
-        #
-        # Separate key and value on '='.
-        index = line.find('=')
-
-        if index == -1:
-            Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid format')
-
-        key = line[:index]
-        value_str = line[index + 1:]
-
-        try:
-            value = int(value_str)
-        except ValueError:
-            Die(EC_UNKNOWN, 'Counter file ' + path + ' has invalid format')
-
-        counters[key] = value
-
-    return TCounterReport(timestamp, bruce_pid, counters)
+    return ParseCounterReport(json_input)
 ###############################################################################
 
 ###############################################################################
@@ -503,7 +391,7 @@ def FindOldCounterFileTimes(path, now):
         Die(EC_UNKNOWN, 'Failed to list contents of directory ' + path + ': ' +
             e.strerror)
 
-    result = [ ]
+    result = []
 
     for item in file_list:
         try:
@@ -522,12 +410,11 @@ def FindOldCounterFileTimes(path, now):
 
 ###############################################################################
 # Read the counter file for the most recent previous counter report for the
-# currently running instance of bruce.  Return a TCounterReport object
-# containing the data, or None if no such data exists.
+# currently running instance of bruce.  Return a counter report containing the
+# data, or None if no such data exists.
 #
 # parameters:
-#     current_report: A TCounterReport object representing the current counter
-#         report.
+#     current_report: The current counter report.
 #     work_path: The pathname of the directory containing the counter files.
 #     old_counter_file_times: A list of integers sorted in ascending order.
 #         Each value is a number of seconds since the epoch whose string
@@ -548,13 +435,13 @@ def GetLastCounterReport(current_report, work_path, old_counter_file_times):
     # The most recent previous counter file contains data for a different
     # invocation of bruce (i.e. bruce restarted).  Therefore the data is not
     # applicable.
-    if last_report.BrucePid != current_report.BrucePid:
+    if last_report['pid'] != current_report['pid']:
         return None
 
-    if last_report.Timestamp != newest_timestamp:
+    if last_report['now'] != newest_timestamp:
         Die(EC_UNKNOWN, 'Previous counter report file ' +
             str(newest_timestamp) + ' contains timestamp ' +
-            str(last_report.Timestamp) + ' that differs from filename')
+            str(last_report['now']) + ' that differs from filename')
 
     return last_report
 ###############################################################################
@@ -562,12 +449,11 @@ def GetLastCounterReport(current_report, work_path, old_counter_file_times):
 ###############################################################################
 # Read the counter file for a previous counter report for the currently running
 # instance of bruce.  The most recent file that was created at least a given
-# number of seconds ago will be chosen.  Return a TCounterReport object
-# containing the data, or None if no such data exists.
+# number of seconds ago will be chosen.  Return a counter report containing the
+# data, or None if no such data exists.
 #
 # parameters:
-#     current_report: A TCounterReport object representing the current counter
-#         report.
+#     current_report: The current counter report.
 #     work_path: The pathname of the directory containing the counter files.
 #     old_counter_file_times: A list of integers sorted in ascending order.
 #         Each value is a number of seconds since the epoch whose string
@@ -583,7 +469,7 @@ def GetOldCounterReport(current_report, work_path, old_counter_file_times,
     if file_count == 0:
         return None
 
-    max_ok_timestamp = current_report.Timestamp - min_seconds_ago
+    max_ok_timestamp = current_report['now'] - min_seconds_ago
 
     # Use binary search to find the right timestamp.
     i = bisect.bisect_left(old_counter_file_times, max_ok_timestamp)
@@ -607,10 +493,10 @@ def GetOldCounterReport(current_report, work_path, old_counter_file_times,
 
     # The old counter file contains data for a different invocation of bruce
     # (i.e. bruce restarted).  Therefore the data is not applicable.
-    if old_report.BrucePid != current_report.BrucePid:
+    if old_report['pid'] != current_report['pid']:
         return None
 
-    if old_report.Timestamp != chosen_timestamp:
+    if old_report['now'] != chosen_timestamp:
         Die(EC_UNKNOWN, 'Old counter report file ' + str(chosen_timestamp) +
             ' contains wrong timestamp')
 
@@ -618,41 +504,64 @@ def GetOldCounterReport(current_report, work_path, old_counter_file_times,
 ###############################################################################
 
 ###############################################################################
-# Take as input two dictionaries 'old_counters' and 'new_counters'.  The keys
-# are counter name strings and the values are integer counts.  The input
-# dictionaries must have identical key sets, unless 'old_counters' is None.  If
-# 'old_counters' is None, return 'new_counters'.  Otherwise return a new
-# dictionary with keys identical to 'old_couners' and 'new_counters'.  For each
-# key K in the returned dictionary, the value is new_counters[K] -
-# old_counters[K].  Exit with an error message if (the keys of the input
-# dictionaries differ) or (new_counters[K] < old_counters[K] for any key K).
+# Input list 'in_counters' contains counter information from a counter report.
+# Return a dictionary whose keys are the names of the counters in 'in_counters'
+# and whose values are the corresponding counts.
+###############################################################################
+def CounterListToDict(in_counters):
+    result = {}
+
+    for item in in_counters:
+        result[item['name']] = item['value']
+
+    return result
+###############################################################################
+
+###############################################################################
+# Take as input two lists, 'old_counters' and 'new_counters', of counter
+# information from counter reports.  The input lists must have exactly the same
+# sets of counter names.  If 'old_counters' is None, return a dictionary whose
+# keys are the names of the counters from 'new_counters' and whose values are
+# the corresponding counts.  Otherwise return a dictionary with keys identical
+# to the counter names from 'old_couners' and 'new_counters'.  For each key K
+# in the returned dictionary, suppose V_old is the value of the corresponding
+# counter in 'old_counters' and V_new is the value of the corresponding counter
+# in 'new_counters'.  The value associated with K is then V_new - V_old.  Exit
+# with an error if the sets of counter names from the input lists are not
+# identical or the computed value for any key in the result dictionary is
+# negative.
 ###############################################################################
 def ComputeCounterDeltas(old_counters, new_counters):
+    new_counter_dict = CounterListToDict(new_counters)
+
     if old_counters == None:
-        return new_counters
+        return new_counter_dict
 
-    if len(new_counters) != len(old_counters):
-        Die(EC_UNKNOWN, 'Number of counters is inconsistent between reports')
+    old_counter_dict = CounterListToDict(old_counters)
+    old_keys = {k for k in old_counter_dict.keys()}
+    new_keys = {k for k in new_counter_dict.keys()}
+    s = old_keys - new_keys
 
-    deltas = { }
+    if s:
+        Die(EC_UNKNOWN, 'Old counter file has unmatched keys: ' + str(s))
 
-    for key in old_counters:
-        old_value = old_counters[key]
+    s = new_keys - old_keys
 
-        try:
-            new_value = new_counters[key]
-        except KeyError:
-            Die(EC_UNKNOWN, 'Counter \'' + key +
-                '\' in old counters is missing from new counters')
+    if s:
+        Die(EC_UNKNOWN, 'New counter file has unmatched keys: ' + str(s))
 
-        if new_value < old_value:
-            Die(EC_UNKNOWN, 'Counter \'' + key + '\' decreased from ' +
-                str(old_value) + ' to ' + str(new_value) +
-                ': likely counter wraparound')
+    result = {}
 
-        deltas[key] = new_value - old_value
+    for k in new_keys:
+        delta = new_counter_dict[k] - old_counter_dict[k]
 
-    return deltas
+        if delta < 0:
+            Die(EC_UNKNOWN, 'Key [' + k + '] decreased by ' + str(-delta) + \
+                    ' in new counters file')
+
+        result[k] = delta
+
+    return result
 ###############################################################################
 
 ###############################################################################
@@ -698,7 +607,7 @@ def CheckSocketErrorDeltas(deltas, old_nagios_code):
                       'SendMetadataRequestLostTcpConnection',
                       'SendMetadataRequestTimedOut'
                     ]
-    nonzero_counter_names = [ ]
+    nonzero_counter_names = []
     sum = 0
 
     for name in counter_names:
@@ -787,8 +696,8 @@ def AnalyzeDeltas(deltas):
     nagios_code = CheckDelta(deltas, 'DiscardBadTopicOnReroute', 0,
                              EC_CRITICAL, nagios_code)
 
-    nagios_code = CheckDelta(deltas, 'DiscardBadTopicOnRoute', 0, EC_CRITICAL,
-                             nagios_code)
+    nagios_code = CheckDelta(deltas, 'DiscardBadTopicMsgOnRoute', 0,
+                             EC_CRITICAL, nagios_code)
 
     nagios_code = CheckDelta(deltas, 'InputThreadDiscardMsgMalformed', 0,
                              EC_CRITICAL, nagios_code)
@@ -889,13 +798,14 @@ def AnalyzeDeltas(deltas):
 ###############################################################################
 
 ###############################################################################
-# Compare the 'MsgCreate' and 'MsgDestroy' counter values from input counter
-# dictionary 'counters'.  Report a problem if one is found and return the
-# appropriate Nagios code.
+# Compare the 'MsgCreate' and 'MsgDestroy' counter values from input list
+# 'counters' of counters from counter report.  Report a problem if one is found
+# and return the appropriate Nagios code.
 ###############################################################################
 def CheckOutstandingMsgCount(counters):
-    msg_create_count = LookupCounter(counters, 'MsgCreate')
-    msg_destroy_count = LookupCounter(counters, 'MsgDestroy')
+    counter_dict = CounterListToDict(counters)
+    msg_create_count = LookupCounter(counter_dict, 'MsgCreate')
+    msg_destroy_count = LookupCounter(counter_dict, 'MsgDestroy')
 
     if msg_destroy_count > msg_create_count:
         ReportProblem(EC_CRITICAL, 'MsgDestroy counter value ' +
@@ -920,14 +830,16 @@ def CheckOutstandingMsgCount(counters):
 ###############################################################################
 
 ###############################################################################
-# Compare counter dictionaries 'current_counters' and 'old_counters' and report
+# Compare counter info lists 'current_counters' and 'old_counters' and report
 # a problem if counter 'MetadataUpdated' has not increased.  Return the
 # appropriate Nagios code.
 ###############################################################################
 def CheckMetadataUpdates(current_counters, old_counters):
+    old_counter_dict = CounterListToDict(old_counters)
+    new_counter_dict = CounterListToDict(current_counters)
     counter_name = 'GetMetadataSuccess'
-    old_count = LookupCounter(old_counters, counter_name)
-    new_count = LookupCounter(current_counters, counter_name)
+    old_count = LookupCounter(old_counter_dict, counter_name)
+    new_count = LookupCounter(new_counter_dict, counter_name)
 
     if new_count > old_count:
         return EC_SUCCESS
@@ -1192,8 +1104,8 @@ def main():
         counter_report = ReadCounterFile(work_path + '/' + str(now))
     else:
         counter_report = GetCounters('http://' + Opts.BruceHost + ':' + \
-                str(Opts.BruceStatusPort) + '/counters/plain')
-        now = counter_report.Timestamp
+                str(Opts.BruceStatusPort) + '/counters/json')
+        now = counter_report['now']
         CreateCounterFile(work_path + '/' + str(now), counter_report)
 
     old_counter_file_times = FindOldCounterFileTimes(work_path, now)
@@ -1203,19 +1115,19 @@ def main():
     if last_report == None:
         last_counters = None
     else:
-        last_counters = last_report.Counters
+        last_counters = last_report['counters']
 
-    deltas = ComputeCounterDeltas(last_counters, counter_report.Counters)
+    deltas = ComputeCounterDeltas(last_counters, counter_report['counters'])
     nagios_code = AnalyzeDeltas(deltas)
     nagios_code = max(nagios_code,
-                      CheckOutstandingMsgCount(counter_report.Counters))
+                      CheckOutstandingMsgCount(counter_report['counters']))
     older_report = GetOldCounterReport(counter_report, work_path,
                                        old_counter_file_times, Opts.Interval)
 
     if older_report != None:
         nagios_code = max(nagios_code,
-                          CheckMetadataUpdates(counter_report.Counters,
-                                               older_report.Counters))
+                          CheckMetadataUpdates(counter_report['counters'],
+                                               older_report['counters']))
 
     # Nagios expects some sort of output even in the case of a successful
     # result.
@@ -1223,7 +1135,7 @@ def main():
         print "Ok"
 
     # Manual mode is used by a human being to view the details of problems
-    # previously reported by this script while being execute by Nagios.  In
+    # previously reported by this script while being executed by Nagios.  In
     # this case, deleting old counter files is not a desired behavior.
     if RunningInManualMode():
         print 'Nagios code: ' + NagiosCodeToString(nagios_code)
