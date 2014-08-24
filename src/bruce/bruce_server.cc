@@ -266,8 +266,8 @@ int TBruceServer::Run() {
   /* Start the Mongoose HTTP server, which is used for status monitoring.  It
      runs in a separate thread. */
   TWebInterface web_interface(StatusPort, MsgStateTracker, AnomalyTracker,
-      MetadataTimestamp, InputThread.GetMetadataUpdateRequestSem(), DebugSetup,
-      Config->UseOldInputFormat);
+      MetadataTimestamp, InputThread.GetMetadataUpdateRequestSem(),
+      DebugSetup);
   web_interface.StartHttpServer();
 
   /* We can close this now, since Mongoose has the port claimed. */

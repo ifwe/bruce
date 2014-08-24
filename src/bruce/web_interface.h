@@ -46,15 +46,14 @@ namespace Bruce {
                   TAnomalyTracker &anomaly_tracker,
                   const TMetadataTimestamp &metadata_timestamp,
                   Base::TEventSemaphore &metadata_update_request_sem,
-                  Debug::TDebugSetup &debug_setup, bool use_old_input_format)
+                  Debug::TDebugSetup &debug_setup)
         : Port(port),
           HttpServerStarted(false),
           MsgStateTracker(msg_state_tracker),
           AnomalyTracker(anomaly_tracker),
           MetadataTimestamp(metadata_timestamp),
           MetadataUpdateRequestSem(metadata_update_request_sem),
-          DebugSetup(debug_setup),
-          UseOldInputFormat(use_old_input_format) {
+          DebugSetup(debug_setup) {
     }
 
     virtual ~TWebInterface() noexcept {
@@ -85,11 +84,11 @@ namespace Bruce {
       UNKNOWN_GET_REQUEST,
       UNKNOWN_POST_REQUEST,
       TOP_LEVEL_PAGE,
-      GET_VERSION,
+      GET_SERVER_INFO,
       GET_COUNTERS,
       GET_DISCARDS,
       GET_METADATA_FETCH_TIME,
-      GET_MSG_STATS,
+      GET_QUEUE_STATS,
       MSG_DEBUG_GET_TOPICS,
       MSG_DEBUG_ADD_ALL_TOPICS,
       MSG_DEBUG_DEL_ALL_TOPICS,
@@ -102,32 +101,6 @@ namespace Bruce {
     static const char *ToErrorBlurb(TRequestType request_type);
 
     void DoStartHttpServer();
-
-    void HandleGetServerInfoRequestCompact(std::ostream &os);
-
-    void HandleGetServerInfoRequestJson(std::ostream &os);
-
-    void HandleGetCountersRequestCompact(std::ostream &os);
-
-    void HandleGetCountersRequestJson(std::ostream &os);
-
-    void WriteDiscardReportCompact(std::ostream &os,
-        const TAnomalyTracker::TInfo &info);
-
-    void WriteDiscardReportJson(std::ostream &os,
-        const TAnomalyTracker::TInfo &info, Base::TIndent &ind0);
-
-    void HandleGetDiscardsRequestCompact(std::ostream &os);
-
-    void HandleGetDiscardsRequestJson(std::ostream &os);
-
-    void HandleMetadataFetchTimeRequestCompact(std::ostream &os);
-
-    void HandleMetadataFetchTimeRequestJson(std::ostream &os);
-
-    void HandleMsgStatsRequestCompact(std::ostream &os);
-
-    void HandleMsgStatsRequestJson(std::ostream &os);
 
     void HandleHttpRequest(mg_connection *conn,
         const mg_request_info *request_info, TRequestType &request_type);
@@ -149,8 +122,6 @@ namespace Bruce {
     Base::TEventSemaphore &MetadataUpdateRequestSem;
 
     Debug::TDebugSetup &DebugSetup;
-
-    bool UseOldInputFormat;
   };  // TWebInterface
 
 }  // Bruce
