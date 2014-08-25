@@ -1622,7 +1622,9 @@ def GetDiscardResponseFromFile(path):
     response = [ ]
 
     try:
+        is_open = False
         infile = open(path, 'r')
+        is_open = True
 
         for line in infile:
             response.append(line)
@@ -1633,7 +1635,8 @@ def GetDiscardResponseFromFile(path):
         Die(EC_UNKNOWN, 'Failed to open file ' + path + ' for reading: ' + \
                 e.strerror + '\n')
     finally:
-        infile.close()
+        if is_open:
+            infile.close()
 
     return response
 ###############################################################################
@@ -1650,7 +1653,9 @@ def ReadSavedDiscardResponseFile(path):
     response = [ ]
 
     try:
+        is_open = False
         infile = open(path, 'r')
+        is_open = True
         line = infile.readline()
         canonicalized_host = line.rstrip('\n')
         line = infile.readline()  # discard error message
@@ -1664,7 +1669,8 @@ def ReadSavedDiscardResponseFile(path):
         Die(EC_UNKNOWN, 'Failed to open file ' + path + ' for reading: ' + \
                 e.strerror + '\n')
     finally:
-        infile.close()
+        if is_open:
+            infile.close()
 
     return (canonicalized_host, response)
 ###############################################################################
@@ -1778,8 +1784,20 @@ def HandlePersistFailure(work_path, report_start, discard_response,
 
     filename = work_path + '/' + str(report_start)
 
+    # The code that parses the file we are creating expects the error message
+    # to occupy a single line.  The error message should not contain any
+    # newline characters, but it doesn't hurt to make sure.
+    msg = err_msg.replace('\n', ' ')
+
     try:
+        is_open = False
         outfile = open(filename, 'w')
+        is_open = True
+        outfile.write(canonicalized_host + '\n')
+        outfile.write(err_msg + '\n')
+
+        for line in discard_response:
+            outfile.write(line)
     except OSError as e:
         print 'Failed to create discard report file [' + filename + ']: ' + \
                 e.strerror
@@ -1788,19 +1806,9 @@ def HandlePersistFailure(work_path, report_start, discard_response,
         print 'Failed to create discard report file [' + filename + ']: ' + \
                 e.strerror
         return EC_CRITICAL
-
-    # The code that parses the file we are creating expects the error message
-    # to occupy a single line.  The error message should not contain any
-    # newline characters, but it doesn't hurt to make sure.
-    msg = err_msg.replace('\n', ' ')
-
-    outfile.write(canonicalized_host + '\n')
-    outfile.write(err_msg + '\n')
-
-    for line in discard_response:
-        outfile.write(line)
-
-    outfile.close()
+    finally:
+        if is_open:
+            outfile.close()
 
     if Opts.Verbose:
         print 'Discard report ' + str(report_start) + \
@@ -1853,7 +1861,9 @@ def GetCredentialsFromFile():
     file_contents = ''
 
     try:
+        is_open = False
         infile = open(Opts.Credentials, 'r')
+        is_open = True
 
         for line in infile:
             file_contents += line
@@ -1864,7 +1874,8 @@ def GetCredentialsFromFile():
         Die(EC_UNKNOWN, 'Failed to open file ' + Opts.Credentials + \
                 ' for reading: ' + e.strerror + '\n')
     finally:
-        infile.close()
+        if is_open:
+            infile.close()
 
     return ParseCredentialsFileContents(file_contents)
 ###############################################################################
