@@ -293,6 +293,220 @@ def GetDiscardResponse(url):
 ###############################################################################
 
 ###############################################################################
+# Validate a list of unicode strings within a discard report.  Silently return
+# on success.  Die on error.
+###############################################################################
+def ValidateUnicodeListItem(report, item_name):
+    if item_name not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "' + item_name + '" item')
+
+    the_list = report[item_name]
+
+    if type(the_list) is not list:
+        Die(EC_UNKNOWN, 'Item "' + item_name + \
+                '" in discard report is not a list')
+
+    for item in the_list:
+        if type(item) is not unicode:
+            Die(EC_UNKNOWN, 'List "' + item_name + \
+                    '" in discard report has item that is not unicode string')
+###############################################################################
+
+###############################################################################
+# Validate a 'discard_topic' or 'possible_duplicate_topic' section within a
+# discard report.  Silently return on success.  Die on error.
+###############################################################################
+def ValidateTopicIntervalList(report, list_name):
+    if list_name not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "' + list_name + '" item')
+
+    the_list = report[list_name]
+
+    if type(the_list) is not list:
+        Die(EC_UNKNOWN, 'Item "' + list_name + \
+                '" in discard report is not a list')
+
+    for item in the_list:
+        if type(item) is not dict:
+            Die(EC_UNKNOWN, 'List "' + list_name + \
+                    '" in discard report has item that is not a dictionary')
+
+        if 'topic' not in item:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report is missing topic')
+
+        if type(item['topic']) is not unicode:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report has topic that is not unicode string')
+
+        if 'min_timestamp' not in item:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report is missing min_timestamp')
+
+        if type(item['min_timestamp']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report has noninteger min_timestamp')
+
+        if 'max_timestamp' not in item:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report is missing max_timestamp')
+
+        if type(item['max_timestamp']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report has noninteger max_timestamp')
+
+        if 'count' not in item:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report is missing count')
+
+        if type(item['count']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "' + list_name + '" in ' + \
+                    'discard report has noninteger count')
+###############################################################################
+
+###############################################################################
+# Validate a single discard report within a parsed discard response.  Silently
+# return on success.  Die on error.
+###############################################################################
+def ValidateDiscardReport(report):
+    if 'id' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "id" item')
+
+    if type(report['id']) is not int:
+        Die(EC_UNKNOWN, 'Item "id" in discard report is not an integer')
+
+    if 'start_time' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "start_time" item')
+
+    if type(report['start_time']) is not int:
+        Die(EC_UNKNOWN,
+                'Item "start_time" in discard report is not an integer')
+
+    if 'malformed_msg_count' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "malformed_msg_count" item')
+
+    if type(report['malformed_msg_count']) is not int:
+        Die(EC_UNKNOWN, 'Item "malformed_msg_count" in discard report is ' + \
+                'not an integer')
+
+    if 'unsupported_api_key_msg_count' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing ' + \
+                '"unsupported_api_key_msg_count" item')
+
+    if type(report['unsupported_api_key_msg_count']) is not int:
+        Die(EC_UNKNOWN, 'Item "unsupported_api_key_msg_count" in discard ' + \
+                'report is not an integer')
+
+    if 'unsupported_version_msg_count' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing ' + \
+                '"unsupported_version_msg_count" item')
+
+    if type(report['unsupported_version_msg_count']) is not int:
+        Die(EC_UNKNOWN, 'Item "unsupported_version_msg_count" in discard ' + \
+                'report is not an integer')
+
+    if 'bad_topic_msg_count' not in report:
+        Die(EC_UNKNOWN, 'Discard report missing "bad_topic_msg_count" item')
+
+    if type(report['bad_topic_msg_count']) is not int:
+        Die(EC_UNKNOWN, 'Item "bad_topic_msg_count" in discard report is ' + \
+                'not an integer')
+
+    ValidateUnicodeListItem(report, 'recent_malformed')
+
+    if 'unsupported_msg_version' not in report:
+        Die(EC_UNKNOWN,
+                'Discard report missing "unsupported_msg_version" item')
+
+    if type(report['unsupported_msg_version']) is not list:
+        Die(EC_UNKNOWN, 'Item "unsupported_msg_version" in discard report ' + \
+                'is not a list')
+
+    for item in report['unsupported_msg_version']:
+        if type(item) is not dict:
+            Die(EC_UNKNOWN, 'List "unsupported_msg_version" in discard ' + \
+                    'report has item that is not a dictionary')
+
+        if 'version' not in item:
+            Die(EC_UNKNOWN, 'Item of list "unsupported_msg_version" in ' + \
+                    'discard report is missing version')
+
+        if type(item['version']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "unsupported_msg_version" in ' + \
+                    'discard report has noninteger version')
+
+        if 'count' not in item:
+            Die(EC_UNKNOWN, 'Item of list "unsupported_msg_version" in ' + \
+                    'discard report is missing count')
+
+        if type(item['count']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "unsupported_msg_version" in ' + \
+                    'discard report has noninteger count')
+
+    ValidateUnicodeListItem(report, 'recent_bad_topic')
+    ValidateUnicodeListItem(report, 'recent_too_long_msg')
+    ValidateTopicIntervalList(report, 'discard_topic')
+    ValidateTopicIntervalList(report, 'possible_duplicate_topic')
+###############################################################################
+
+###############################################################################
+# Parse a JSON discard response and return the parsed result.  Die on error.
+###############################################################################
+def ParseJsonDiscardResponse(json_input):
+    try:
+        result = json.loads(json_input)
+    except ValueError:
+        Die(EC_UNKNOWN, 'Failed to parse counter report')
+
+    if type(result) is not dict:
+        Die(EC_UNKNOWN, 'Discard response is not a dictionary')
+
+    if 'now' not in result:
+        Die(EC_UNKNOWN, 'Discard response missing "now" item')
+
+    if type(result['now']) is not int:
+        Die(EC_UNKNOWN, 'Item "now" in discard response is not an integer')
+
+    if 'pid' not in result:
+        Die(EC_UNKNOWN, 'Discard response missing "pid" item')
+
+    if type(result['pid']) is not int:
+        Die(EC_UNKNOWN, 'Item "pid" in discard response is not an integer')
+
+    if 'version' not in result:
+        Die(EC_UNKNOWN, 'Discard response missing "version" item')
+
+    if type(result['version']) is not unicode:
+        Die(EC_UNKNOWN,
+            'Item "version" in discard response is not a unicode string')
+
+    if 'interval' not in result:
+        Die(EC_UNKNOWN, 'Discard response missing "interval" item')
+
+    if type(result['interval']) is not int:
+        Die(EC_UNKNOWN,
+                'Item "interval" in discard response is not an integer')
+
+    if 'unfinished_report' not in result:
+        Die(EC_UNKNOWN, 'Discard response missing "unfinished_report" item')
+
+    if type(result['unfinished_report']) is not dict:
+        Die(EC_UNKNOWN, 'Item "unfinished_report" in discard response is ' + \
+                'not a dictionary')
+
+    ValidateDiscardReport(result['unfinished_report'])
+
+    if 'finished_report' in result:
+        if type(result['finished_report']) is not dict:
+            Die(EC_UNKNOWN, 'Item "finished_report" in discard response ' + \
+                    'is not a dictionary')
+
+        ValidateDiscardReport(result['finished_report'])
+
+    return result
+###############################################################################
+
+###############################################################################
 # Class for storing an unsupported message version number and the associated
 # count of messages of that version.  A discard report contains a possibly
 # empty list of these.
