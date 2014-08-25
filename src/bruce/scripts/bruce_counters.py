@@ -133,7 +133,7 @@ def SecondsSinceEpoch():
 ###############################################################################
 # Create the directory given by 'path' if it doesn't already exist.
 ###############################################################################
-def MakePathExist(path):
+def MakeDirExist(path):
     try:
         os.makedirs(path)
     except OSError as e:
@@ -1097,7 +1097,7 @@ def main():
     Opts = ParseArgs(sys.argv[1:])
 
     work_path = GetNagiosDir() + '/' + Opts.WorkDir + '/' + Opts.NagiosServer
-    MakePathExist(work_path)
+    MakeDirExist(work_path)
 
     if RunningInManualMode():
         now = Opts.Manual
