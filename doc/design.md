@@ -81,24 +81,50 @@ send threads, which are also responsible for assembling message batches into
 produce requests and doing final partition selection as described in the
 section on batching below.
 
-An error ACK received from Kafka will cause the receive thread
-that got the ACK to respond in one of four ways:
+An error ACK received from Kafka will cause the receive thread that got the ACK
+to respond in one of four ways:
 
-1. Queue the corresponding message set to be resent to the same broker by the
-   send thread.
-2. Discard the corresponding message set and continue processing ACKs.
-3. Discard the corresponding message set and initiate a pause event.
-4. Initiate a pause event without discarding the corresponding message set.  In
-   this case, the router thread will collect the messages and reroute them once
-   it has updated the metadata and restarted the dispatcher.
+1. *Resend*: Queue the corresponding message set to be resent to the same
+   broker by the send thread.
+2. *Discard*: Discard the corresponding message set and continue processing
+   ACKs.
+3. *Discard and Pause*: Discard the corresponding message set and initiate a
+   pause event.
+4. *Pause*: Initiate a pause event without discarding the corresponding message
+   set.  In this case, the router thread will collect the messages and reroute
+   them once it has updated the metadata and restarted the dispatcher.
 
-To see which types of error ACKs cause wich types of responses, look in
-`src/bruce/kafka_proto/v0/wire_proto.cc`.  Socket-related errors cause the
-fourth type of response above.  Additionally, when a response of type 4 occurs
-due to an error ACK, a failed delivery attempt count is incremented for each
-message in the corresponding message set.  Once a message's failed delivery
-attempt count exceeds a certain configurable threshold, the message is
-discarded.
+The Kafka error ACK values are documented
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes).
+The following table summarizes which response Bruce implements for each type of
+error ACK:
+
+| Error                      | Code | Response from Bruce |
+|:---------------------------|-----:|:--------------------|
+| Unknown                    |   -1 | Discard             |
+| OffsetOutOfRange           |    1 | Discard             |
+| InvalidMessage             |    2 | Resend              |
+| UnknownTopicOrPartition    |    3 | Discard and Pause   |
+| InvalidMessageSize         |    4 | Discard             |
+| LeaderNotAvailable         |    5 | Pause               |
+| NotLeaderForPartition      |    6 | Pause               |
+| RequestTimedOut            |    7 | Pause               |
+| BrokerNotAvailable         |    8 | Pause               |
+| ReplicaNotAvailable        |    9 | Pause               |
+| MessageSizeTooLarge        |   10 | Discard             |
+| StaleControllerEpochCode   |   11 | Discard             |
+| OffsetMetadataTooLargeCode |   12 | Discard             |
+| (all other values)         |    ? | Discard             |
+
+Feedback from the Kafka community regarding these choices is welcomed.  If a
+different response for a given error code would be more appropriate, changes
+can easily be made.
+
+Additionally, socket-related errors cause a response of type 4.  When a
+response of type 4 occurs specifically due to an error ACK, a failed delivery
+attempt count is incremented for each message in the corresponding message set.
+Once a message's failed delivery attempt count exceeds a certain configurable
+threshold, the message is discarded.
 
 ### Message Batching
 
