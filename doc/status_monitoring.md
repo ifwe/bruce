@@ -8,11 +8,21 @@ will show the following when directed at `http://example:9090`:
 
 ![Bruce management interface](https://github.com/tagged/bruce/blob/master/doc/web_interface.jpg?raw=true)
 
+As shown above, for each status option you can choose either plain or JSON
+output.  JSON output is intended for comsumption by monitoring tools, allowing
+them to parse the output using off-the-shelf JSON libraries.  Although human
+beings can read this output, the plain option is more visually compact and
+oriented toward human viewers.  For example Nagios monitoring scripts that
+report problems indicated by the JSON counter and discard output, see
+`src/bruce/scripts/bruce_counters.py` and
+`src/bruce/scripts/bruce_discards.py`.  The discards script also contains
+example code for writing discard reports to an Oracle database, providing a
+queryable history of data quality information.
+
 ### Counter Reporting
 
-If you click on `get counter values` (i.e. send an HTTP GET to
-`http://example:9090/sys/counters`), you will get a page that looks something
-like this:
+If you choose the plain option for *Get counter values*, you will get output
+that looks something like this:
 
 ```
 now=1408656417 Thu Aug 21 14:26:57 2014
@@ -42,9 +52,8 @@ counter report was created (1408656417 seconds since the epoch), the time when
 Bruce started running (1408585285 seconds since the epoch), Bruce's process ID
 which is 14246, and Bruce's version which is `1.0.6.70.ga324763`.  The counter
 values track various events inside Bruce, and can be used for health monitoring
-and troubleshooting.  For example, `src/bruce/scripts/bruce_counters.py` is a
-Nagios script that monitors Bruce's counters and reports problems.  Details on
-the meanings of some of the more interesting counters are provided
+and troubleshooting.  Details on the meanings of some of the more interesting
+counters are provided
 [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
 Also, you can look in Bruce's source code to see what a counter indicates.  For
 instance, near the top of `src/bruce/msg.cc` you will see the following
@@ -86,10 +95,9 @@ TMsg::~TMsg() noexcept {
 When certain problems occur, which are detailed
 [here](https://github.com/tagged/bruce/blob/master/doc/design.md), Bruce will
 discard messages.  When discards occur, they are tracked and reported through
-Bruce's discard reporting web interface.  If you click on `get discard info`
-in Bruce's web interface shown near the top of this page (i.e. send an HTTP GET
-to `http://example:9090/sys/discards`), you will get a discard report that
-looks something like this:
+Bruce's discard reporting web interface.  If you choose the plain option for
+*Get discard info* in Bruce's web interface shown near the top of this page,
+you will get output that looks something like this:
 
 ```
 pid: 5843
@@ -154,15 +162,12 @@ milliseconds, since the epoch).  The version of Bruce that produced the report
 is `1.0.6.70.ga324763`.  The default discard report interval, as shown above,
 is 600 seconds, and is configurable, as documented
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
-An example Nagios script `src/bruce/scripts/bruce_discards.py` requests discard
-reports from Bruce, analyzes and stores them in an Oracle database, and reports
-problems.
 
 ### Queued Message Information
 
-If you click on `get msg stats` in Bruce's web interface shown near the top of
-this page (i.e. send an HTTP GET to `http://example:9090/sys/msg_stats`), you
-will get queued message information that looks something like this:
+If you choose the plain option for *Get queued message info* in Bruce's web
+interface shown near the top of this page, you will get output that looks
+something like this:
 
 ```
 pid: 18592
@@ -190,10 +195,9 @@ has not yet started processing.
 
 ### Metadata Fetch Time
 
-If you click on `get metadata fetch time` in Bruce's web interface shown near
-the top of this page (i.e. send an HTTP GET to
-`http://example:9090/sys/metadata_fetch_time`), you will get metadata fetch
-time information that looks something like this:
+If you choose the plain option for *Get metadata fetch time* in Bruce's web
+interface shown near the top of this page, you will get output that looks
+something like this:
 
 ```
 pid: 18592
@@ -221,16 +225,11 @@ ask for new metadata at the same time.  Configuration of the interval length is
 documented
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
 Additionally, you can manually cause Bruce to update its metadata.  Clicking
-on the `update metadata` button in Bruce's web interface shown near the top of
+on the *Update metadata* button in Bruce's web interface shown near the top of
 this page (i.e. sending an HTTP POST to
 `http://example:9090/sys/metadata_update`) causes Bruce to update its metadata.
 Certain error conditions can also cause Bruce to update its metadata, as
 described [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
-
-### Future work
-
-At some point, it would be nice to replace the output format of Bruce's web
-interface with JSON, so output can be parsed with off-the-shelf JSON libraries.
 
 At this point it is helpful to have some information on
 [Bruce's design](https://github.com/tagged/bruce#design-overview).
