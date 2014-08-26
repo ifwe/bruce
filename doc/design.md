@@ -102,7 +102,7 @@ discarded.
 
 ### Message Batching
 
-Batching is configurable on a per-topic basis.  Specifically, topics can be
+Batching is configurable on a per-topic basis.  Specifically, topics may be
 configured with individual batching thresholds that consist of any combination
 of the following limits:
 
@@ -110,7 +110,7 @@ of the following limits:
 - Maximum combined message data size, specified in bytes.
 - Maximum message count.
 
-Batching can also be configured so that topics without individual batching
+Batching may also be configured so that topics without individual batching
 configurations are grouped together into combined (mixed) topic batches subject
 to configurable limits of the same types that govern per-topic batching.  It is
 also possible to specify that batching for certain topics is completely
@@ -139,7 +139,7 @@ partitions.  If 3 of the partitions are hosted by broker B1 and 7 are hosted by
 broker B2, then 30% of the batches for topic T will be sent to B1 and 70% will
 be sent to B2.
 
-Combined topics batching (in which a single batch contains multiple topics) can
+Combined topics batching (in which a single batch contains multiple topics) may
 be configured for topics that do not have per-topic batching configurations.
 For AnyPartition messages with these topics, a broker is chosen in the same
 manner as described above for per-topic batches.  However, this type of message
@@ -201,4 +201,26 @@ sets.
 
 ### Message Compression
 
-(more content will be added soon)
+Kafka supports compression of individual message sets.  To send a compressed
+message set, a producer such as Bruce is expected to encapsulate the compressed
+data inside a single message with a header field set to indicate the type of
+compression.  Bruce allows compression to be configured on a per-topic basis.
+Although Bruce was designed to support multiple compression types, only Snappy
+compression is currently implemented.  Support for new compression types can
+easily be added with minimal changes to Bruce's core implementation.
+
+Bruce may be configured to skip compression of message sets whose uncompressed
+sizes are below a certain limit, since compression of small amounts of data may
+not be worthwhile.  Bruce may also be configured to compute the ratio of
+compressed to uncompressed message set size, and send an individual message set
+uncompressed if this ratio is above a certain limit.  This prevents the brokers
+from wasting CPU cycles dealing with message sets that compress poorly.
+
+Kafka places an upper bound on the size of a single message.  To prevent this
+limit from being exceeded by a message that encapsulates a large compressed
+message set, Bruce limits the size of a produce request so that the
+uncompressed size of each individual message set it contains does not exceed
+the limit.  Although it's possible that the compressed size of a message set is
+within the limit while the uncompressed size exceeds it, implementing things
+this way is simple and avoids wasting CPU cycles on message sets that are found
+to still exceed the limit after compression.
