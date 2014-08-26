@@ -189,9 +189,10 @@ have been assigned to a broker and are being sent.  Of those 147 messages, 0
 are waiting to be sent to a Kafka broker and 147 are waiting for an
 acknowledgement (ACK) from a broker.  Additionally, 21653 messages are either
 being batched or are new messages that Bruce has not yet started processing.
-As future work, the intent is to have this last value broken into two separate
-values: a count of messages being batched, and a count of messages that Bruce
-has not yet started processing.
+As future work, the intent is to have this last value represent only messages
+that Bruce has not yet started processing.  Per-topic batched message counts
+would then appear along with the above-illustrated counts of messages waiting
+to be sent and waiting for acknowledgements.
 
 ### Metadata Fetch Time
 
