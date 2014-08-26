@@ -23,7 +23,8 @@ to allocate memory from this pool to store the message contents.  If the pool
 does not contain enough free memory, Bruce will discard the message.  All
 messages discarded for any reason are tracked and reported through Bruce's web
 interface, as described
-[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#discard-reporting).  On successful message creation, Bruce queues the message for
+[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#discard-reporting).
+On successful message creation, the input thread queues the message for
 processing by the router thread and continues monitoring its input socket.
 
 Communication between Bruce and its clients is purely one-way in nature.
@@ -37,16 +38,19 @@ guarantee.
 ### Router Thread
 
 The router thread's primary responsibility is to route messages to Kafka
-brokers based on metadata received from Kafka.  The metadata provides
+brokers based on metadata obtained from Kafka.  The metadata provides
 information such as the set of brokers in the cluster, a list of known topics,
-a list of partitions for each topic along with which brokers store their
-replicas, and status information for the brokers, topics, and partitions.
-Bruce uses this information to choose a partition for each message and send it
-to the proper broker.  As documented
+a list of partitions for each topic along with the locations of the replicas
+for each partition, and status information for the brokers, topics, and
+partitions.  Bruce uses this information to choose a destination broker and
+partition for each message.  If Bruce receives a message for an unknown topic,
+it will discard the message.  Bruce does not currently support automatic topic
+creation, although this capability will probably be added in the near future.
+As documented
 [here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-types),
 Bruce provides two different message types, *AnyPartition* messages and
 *PartitionKey* messages, which implement different types of routing behavior.
-The Router thread also shares responsibility for message batching with the
+The Router thread shares responsibility for message batching with the
 dispatcher threads, as detailed below.
 
 Once the router thread has chosen a broker for a message or batch of messages,
@@ -71,7 +75,7 @@ each connection is serviced by a send thread and a receive thread.  A pause
 event initiated by any dispatcher thread will alert the router thread and cause
 all of the other dispatcher threads to shut down.  As detailed below,
 responsibility for message batching is divided between the dispatcher threads
-and the router thread, according to the types of messages being sent and how
+and the router thread, according to the type of message being sent and how
 batching is configured.  Compression is handled completely by the dispatcher
 send threads, which are also responsible for assembling message batches into
 produce requests and doing final partition selection as described in the
@@ -121,19 +125,19 @@ request, up to a configurable data size limit.
 #### Batching of AnyPartition Messages
 
 For AnyPartition messages, per-topic batching is done by the router thread.
-When a batch for a topic is complete, Bruce chooses a destination broker for
-the batch as follows.  For each topic, Bruce maintains an array of available
-partitions.  An index in this array is chosen in a round-robin manner, and then
-the broker that hosts the lead replica for that partition is chosen as the
-destination.  However, at this point only the destination broker is determined,
-and the batch may ultimately be sent to a different partition hosted by the
-same broker.  Final partition selection is done by the send thread for the
-destination broker while it is building a produce request.  In this manner,
-batches for a given topic are sent to brokers proportionally according to how
-many partitions for the topic each broker hosts.  For instance, suppose topic T
-has a total of 10 partitions.  If 3 of the partitions are hosted by broker B1
-and 7 are hosted by broker B2, then 30% of the batches for topic T will be sent
-to B1 and 70% will be sent to B2.
+When a batch for a topic is complete, Bruce chooses a destination broker as
+follows.  For each topic, Bruce maintains an array of available partitions.  An
+index in this array is chosen in a round-robin manner, and the broker that
+hosts the lead replica for that partition is chosen as the destination.
+However, at this point only the destination broker is determined, and the batch
+may ultimately be sent to a different partition hosted by the same broker.
+Final partition selection is done by the send thread for the destination broker
+as a produce request is being built.  In this manner, batches for a given topic
+are sent to brokers proportionally according to how many partitions for the
+topic each broker hosts.  For instance, suppose topic T has a total of 10
+partitions.  If 3 of the partitions are hosted by broker B1 and 7 are hosted by
+broker B2, then 30% of the batches for topic T will be sent to B1 and 70% will
+be sent to B2.
 
 Combined topics batching (in which a single batch contains multiple topics) can
 be configured for topics that do not have per-topic batching configurations.
@@ -144,6 +148,57 @@ broker and transferred the message to the dispatcher.
 
 #### Batching of PartitionKey Messages
 
+For PartitionKey messages, the chosen partition is determined by the partition
+key which the client provides along with the message, as documented
+[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-types).
+Since the partition determines the destination broker, per-topic batching of
+PartitionKey messages is done at the broker level after the router thread has
+transferred a message to the dispatcher.  All other aspects of batching for
+PartitionKey messages operate in the same manner as for AnyPartition messages.
+In the case of combined topics batching, a single batch may contain a mixture
+of AnyPartition and PartitionKey messages.
+
 #### Produce Request Creation and Final Partition Selection
+
+As mentioned above, the send thread for a broker may combine the contents of
+multiple batches (possibly a mixture of per-topic batches of AnyPartition
+messages, per-topic batches of PartitionKey messages, and combined topics
+batches which may contain both types of messages) into a single produce
+request.  To prevent creation of arbitrarily large produce requests, a
+configurable upper bound on the combined size of all message content in a
+produce request is implemented.  Enforcement of this limit may result in a
+subset of the contents of a particular batch being included in a produce
+request, with the remaining batch contents left for inclusion in the next
+produce request.
+
+Once the send thread has determined which messages to include in a produce
+request, it must assign partitions to AnyPartition messages and group the
+messages together by topic and partition.  First the messages are grouped by
+topic, so that if a produce request contains messages from multiple batches,
+all messages for a given topic are grouped together regardless of which batch
+they came from.  Then partitions are assigned to AnyPartition messages, and
+messages within a topic are grouped by partition into message sets.
+
+For a given topic within a produce request, all AnyPartition messages are
+assigned to the same partition.  To facilitate choosing a partition, the send
+thread for a given broker has access to an array of available partitions for
+the topic such that the lead replica for each partition is located at the
+broker.  The send thread chooses a partition by cycling through this vector in
+a round-robin manner.  For instance, suppose that topic T has available
+partitions { P1, P2, P3, P4, P5 }.  Suppose that the lead replica for each of
+{ P1, P3, P4 } is hosted by broker B, while the lead replica for each of the
+other partitions is hosted on some other broker.  Then for a given produce
+request, the send thread for B will choose one of { P1, P3, P4 } as the
+assigned partition for all AnyPartition messages with topic T.  Let's assume
+that partition P3 is chosen.  Then P4 will be chosen for the next produce
+request containing AnyPartition messages for T, P1 will be chosen next, and the
+send thread will continue cycling through the array in a round-robin manner.
+For a given topic within a produce request, once a partition is chosen for all
+AnyPartition messages, the messages are grouped into a single message set along
+with all PartitionKey messages that map to the chosen partition.  PartitionKey
+messages for T that map to other partitions are grouped into additional message
+sets.
+
+### Message Compression
 
 (more content will be added soon)
