@@ -37,7 +37,7 @@ guarantee.
 ### Router Thread
 
 The router thread's primary responsibility is to route messages to Kafka
-brokers based on Metadata received from Kafka.  The Metadata provides
+brokers based on metadata received from Kafka.  The metadata provides
 information such as the set of brokers in the cluster, a list of known topics,
 a list of partitions for each topic along with which brokers store their
 replicas, and status information for the brokers, topics, and partitions.
@@ -68,22 +68,28 @@ and then proceeds in a manner similar to the handling of a pause event.
 The dispatcher opens a TCP connection to each Kafka broker that serves as
 leader for at least one currently available partition.  As described above,
 each connection is serviced by a send thread and a receive thread.  A pause
-event initiated by any dispatcher thread will cause all of the other dispathcer
-threads to shut down (and also alert the router thread).  As detailed below,
+event initiated by any dispatcher thread will alert the router thread and cause
+all of the other dispatcher threads to shut down.  As detailed below,
 responsibility for message batching is divided between the dispatcher threads
-and the router thread, depending on the types of messages being sent and how
+and the router thread, according to the types of messages being sent and how
 batching is configured.  Compression is handled completely by the dispatcher
 send threads.  An error ACK received from Kafka will cause the receive thread
 that got the ACK to respond in one of four ways:
 
-1. Resend the corresponding message set to the same broker.
+1. Queue the corresponding message set to be resent to the same broker by the
+   send thread.
 2. Discard the corresponding message set and continue processing ACKs.
 3. Discard the corresponding message set and initiate a pause event.
-4. Initiate a pause event without discarding the corresponding message set.
+4. Initiate a pause event without discarding the corresponding message set.  In
+   this case, the router thread will collect and reroute the messages once it
+   has updated the metadata and restarted the dispatcher.
 
 To see which types of error ACKs cause wich types of responses, look in
 `src/bruce/kafka_proto/v0/wire_proto.cc`.  Socket-related errors cause the
-fourth type of response above.
+fourth type of response above.  Additionally, when a response of type 4 occurs,
+a failed delivery attempt count is incremented for each message in the
+corresponding message set.  Once a message's failed delivery attempt count
+exceeds a certain configurable threshold, the message is discarded.
 
 ### Message Batching
 
