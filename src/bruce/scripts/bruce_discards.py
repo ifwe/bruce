@@ -105,7 +105,6 @@ import socket
 import subprocess
 import sys
 import time
-import types
 
 from urllib2 import URLError
 from urllib2 import urlopen
@@ -130,7 +129,7 @@ def Die(exit_code, msg):
 ###############################################################################
 # Create the directory given by 'path' if it doesn't already exist.
 ###############################################################################
-def MakePathExist(path):
+def MakeDirExist(path):
     try:
         os.makedirs(path)
     except OSError as e:
@@ -209,7 +208,7 @@ def FindDiscardFileTimes(path):
         Die(EC_UNKNOWN, 'Failed to list contents of directory ' + path + ': ' +
             e.strerror)
 
-    result = [ ]
+    result = []
 
     for item in file_list:
         try:
@@ -273,8 +272,8 @@ def CanonicalizeHost(host):
 ###############################################################################
 
 ###############################################################################
-# Send a "get discards" HTTP request to bruce and return the response as a list
-# of lines of text with trailing newline characters preserved.
+# Send a "get discards" HTTP request to bruce and return the response as a
+# string.
 ###############################################################################
 def GetDiscardResponse(url):
     try:
@@ -284,12 +283,12 @@ def GetDiscardResponse(url):
         # running.
         Die(EC_CRITICAL, 'Failed to open discards URL: ' + str(e.reason))
 
-    result = [ ]
+    json_input = ''
 
     for line in response:
-        result.append(line)
+        json_input += line
 
-    return result
+    return json_input
 ###############################################################################
 
 ###############################################################################
@@ -451,8 +450,13 @@ def ValidateDiscardReport(report):
 
 ###############################################################################
 # Parse a JSON discard response and return the parsed result.  Die on error.
+# If we got the response directly from Bruce, then 'host' and 'port' will
+# provide the canonicalized hostname where Bruce is running, and the port Bruce
+# is listening on.  Otherwise, the response was obtained from a file that got
+# created due to a previous database failure.  In this case, 'host' and 'port'
+# will be None.
 ###############################################################################
-def ParseJsonDiscardResponse(json_input):
+def ParseDiscardResponse(json_input, host, port):
     try:
         result = json.loads(json_input)
     except ValueError:
@@ -496,6 +500,22 @@ def ParseJsonDiscardResponse(json_input):
 
     ValidateDiscardReport(result['unfinished_report'])
 
+    if host is None:
+        if 'host' not in result['unfinished_report']:
+            Die(EC_UNKNOWN, '"host" missing from saved discard response')
+    else:
+        result['unfinished_report']['host'] = host
+
+    if port is None:
+        if 'port' not in result['unfinished_report']:
+            Die(EC_UNKNOWN, '"port" missing from saved discard response')
+    else:
+        result['unfinished_report']['port'] = port
+
+    result['unfinished_report']['end_time'] = \
+            result['unfinished_report']['start_time'] + result['interval']
+    result['unfinished_report']['pid'] = result['pid']
+
     if 'finished_report' in result:
         if type(result['finished_report']) is not dict:
             Die(EC_UNKNOWN, 'Item "finished_report" in discard response ' + \
@@ -503,814 +523,45 @@ def ParseJsonDiscardResponse(json_input):
 
         ValidateDiscardReport(result['finished_report'])
 
-    return result
-###############################################################################
+        if host is None:
+            if 'host' not in result['finished_report']:
+                Die(EC_UNKNOWN, '"host" missing from saved discard response')
+        else:
+            result['finished_report']['host'] = host
 
-###############################################################################
-# Class for storing an unsupported message version number and the associated
-# count of messages of that version.  A discard report contains a possibly
-# empty list of these.
-#
-# members:
-#     MsgVersion: The the unsupported message version.
-#     MsgCount: A count of messages of that version.
-###############################################################################
-class TUnsupportedMsgVersionInfo(object):
-    'class for storing unsupported message version info'
-    def __init__(self, msg_version, msg_count):
-        self.MsgVersion = msg_version
-        self.MsgCount = msg_count
+        if port is None:
+            if 'port' not in result['finished_report']:
+                Die(EC_UNKNOWN, '"port" missing from saved discard response')
+        else:
+            result['finished_report']['port'] = port
 
-    def __str__(self):
-        return 'version: ' + str(self.MsgVersion) + ' count: ' + \
-                str(self.MsgCount)
-###############################################################################
-
-###############################################################################
-# Class for storing error information (either discards or possible duplicate
-# messages) for a topic.  A discard report contains a possibly empty list of
-# these representing per-topic discard information and a possibly empty list of
-# these representing per-topic possible duplicate message information.
-#
-# members:
-#     Topic: The Kafka topic.
-#     Timestamp1: The earliest message timestamp in a range of messages.  This
-#         is an integer value whose units are opaque from bruce's point of
-#         view.  Analytics intends to use milliseconds since the epoch.
-#     Timestamp2: The latest message timestamp in a range of messages.  This is
-#         an integer value whose units are the same as for 'Timestamp1'.
-#     Count: The number of messages in the range.
-###############################################################################
-class TTopicErrorInfo(object):
-    'class for storing discard or possible duplicate message information'
-    def __init__(self, topic, timestamp_1, timestamp_2, count):
-        self.Topic = topic
-        self.Timestamp1 = timestamp_1
-        self.Timestamp2 = timestamp_2
-        self.Count = count
-
-    def __str__(self):
-        return 'topic: [' + self.Topic + '] begin ' + \
-                str(self.Timestamp1) + ' end ' + str(self.Timestamp2) + \
-                ' count ' + str(self.Count)
-###############################################################################
-
-###############################################################################
-# Class for storing a discard report
-#
-# members:
-#     Host: Name of host where report came from.
-#     Port: The port bruce listens on for HTTP status requests.  In the case
-#         where multiple instances of bruce run on a single host, this
-#         distinguishes the instances.
-#     BruceReportId: ID assigned to report by bruce.  For a given host, this
-#         value is _not_ guaranteed unique, since bruce will reuse IDs if it is
-#         restarted.
-#     ReportStart: The start time of the report in seconds since the epoch.
-#     ReportEnd: The end time of the report in seconds since the epoch.  The
-#         report contains events each recorded at some time t where
-#         ReportStart <= t < ReportEnd.  In other words, ReportEnd is the start
-#         of the next reporting period.
-#     MalformedMsgCount: The number of malformed messages seen.
-#     UnsupportedVersionMsgCount: The number of messages seen with a version
-#         number that is unsupported.
-#     BadTopicMsgCount: The number of messages seen with a bad topic.
-#     BrucePid: The process ID of the bruce daemon that the report came from.
-#     MalformedMsgList: A possibly empty list of strings representing malformed
-#         messages.  For malformed messages exceeding N bytes, only the first N
-#         bytes are stored.
-#     TooLongMsgList: A possibly empty list of strings representing prefixes of
-#         messages that are too long.
-#     UnsupportedVersionInfoList: A possibly empty list of
-#         TUnsupportedMsgVersionInfo objects.
-#     BadTopicList: A possibly empty list of strings representing bad topics.
-#     DiscardTopicInfoList: A possibly empty list of TTopicErrorInfo objects
-#         representing per-topic information on discarded messages.
-#     DupTopicInfoList: A possibly empty list of TTopicErrorInfo objects
-#         representing per-topic information on possible duplicate messages.
-###############################################################################
-class TDiscardReport(object):
-    'class for storing a discard report'
-    def __init__(self, host, port, bruce_report_id, report_start, report_end,
-                 malformed_msg_count, unsupported_api_key_msg_count,
-                 unsupported_version_msg_count, bad_topic_msg_count, bruce_pid,
-                 malformed_msg_list, too_long_msg_list,
-                 unsupported_version_info_list, bad_topic_list,
-                 discard_topic_info_list, dup_topic_info_list):
-        self.Host = host
-        self.Port = port
-        self.BruceReportId = bruce_report_id
-        self.ReportStart = report_start
-        self.ReportEnd = report_end
-        self.MalformedMsgCount = malformed_msg_count
-        self.UnsupportedApiKeyMsgCount = unsupported_api_key_msg_count
-        self.UnsupportedVersionMsgCount = unsupported_version_msg_count
-        self.BadTopicMsgCount = bad_topic_msg_count
-        self.BrucePid = bruce_pid
-        self.MalformedMsgList = malformed_msg_list
-        self.TooLongMsgList = too_long_msg_list
-        self.UnsupportedVersionInfoList = unsupported_version_info_list
-        self.BadTopicList = bad_topic_list
-        self.DiscardTopicInfoList = discard_topic_info_list
-        self.DupTopicInfoList = dup_topic_info_list
-
-    def __str__(self):
-        result = '    host: ' + self.Host + '\n' + \
-                '    port: ' + str(self.Port) + '\n' + \
-                '    bruce PID: ' + str(self.BrucePid) + '\n' + \
-                '    report ID: ' + str(self.BruceReportId) + '\n' + \
-                '    start time: ' + str(self.ReportStart) + '\n' + \
-                '    end time: ' + str(self.ReportEnd) + '\n' + \
-                '    malformed msg count: ' + str(self.MalformedMsgCount) + \
-                '\n' + \
-                '    unsupported API key msg count: ' + \
-                str(self.UnsupportedApiKeyMsgCount) + '\n' + \
-                '    unsupported version msg count: ' + \
-                str(self.UnsupportedVersionMsgCount) + '\n' + \
-                '    bad topic msg count: ' + \
-                str(self.BadTopicMsgCount) + '\n' + \
-                '    malformed msg list:\n'
-
-        for msg in self.MalformedMsgList:
-            result += '        [' + msg + ']\n'
-
-        result += '    too long msg list:\n'
-
-        for msg in self.TooLongMsgList:
-            result += '        [' + msg + ']\n'
-
-        result += '    unsupported version msg list:\n'
-
-        for obj in self.UnsupportedVersionInfoList:
-            result += '        ' + str(obj) + '\n'
-
-        result += '    bad topic list:\n'
-
-        for t in self.BadTopicList:
-            result += '        [' + t + ']\n'
-
-        result += '    discard topic list:\n'
-
-        for obj in self.DiscardTopicInfoList:
-            result += '        ' + str(obj) + '\n'
-
-        result += '    possible duplicate topic list:\n'
-
-        for obj in self.DupTopicInfoList:
-            result += '        ' + str(obj) + '\n'
-
-        return result
-###############################################################################
-
-###############################################################################
-# Class for iterating over lines of a response from bruce.
-###############################################################################
-class TResponseLineIterator(object):
-    'class for iterating over lines from a response sent by bruce'
-    def __init__(self, response):
-        self.Response = response
-        self.NextLineIndex = 0
-
-    # Return the next line, or None if there are no more lines available.  If
-    # True is specified for 'skip_blank_lines', then lines that are empty or
-    # contain only whitespace will be skipped.  If True is specified for
-    # 'strip_newline', the returned line will have its trailing newline
-    # character (if any) removed.  If True is specified for 'lstrip_ws', then
-    # the returned line will have leading whitespace removed.
-    def GetNextLine(self, skip_blank_lines, strip_newline, lstrip_ws):
-        while self.NextLineIndex < len(self.Response):
-            if skip_blank_lines and \
-                    not self.Response[self.NextLineIndex].strip():
-                self.NextLineIndex += 1
-                continue
-
-            index = self.NextLineIndex
-            self.NextLineIndex += 1
-            result = self.Response[index]
-
-            if strip_newline:
-                result = result.rstrip('\n')
-
-            if lstrip_ws:
-                result = result.lstrip()
-
-            return result
-
-        return None
-
-    # Rewind the iterator to the previous line.  Note that this method does
-    # _not_ rewind past any blank lines skipped during the previous call to
-    # GetNextLine().
-    def RewindOneLine(self):
-        if self.NextLineIndex > 0:
-            self.NextLineIndex -= 1
-###############################################################################
-
-###############################################################################
-# On entry, it is assumed that the next line provided by 'response_iter' will
-# be a line whose form looks something like this:
-#
-#     report ID: 999
-#
-# or like this:
-#
-#     start time: 1396656791 Fri Apr  4 17:13:11 2014
-#
-# In the first case, parameter 'prefix_blurb' would be set to 'report ID: ' and
-# the integer value 999 would be returned.
-#
-# In the second case, parameter 'prefix_blurb' would be set to 'start time: '
-# and 'extra_junk_after_value_ok' would be set to True (indicating that the
-# ' Fri Apr  4 17:13:11 2014' should be ignored).  The integer value 1396656791
-# would be returned.
-#
-# In case of fatal error, 'error_blurb' is included in the error message.
-###############################################################################
-def GetNextIntValueFromResponse(response_iter, prefix_blurb, error_blurb,
-                                extra_junk_after_value_ok):
-    line = response_iter.GetNextLine(True, True, True)
-
-    if line == None:
-        Die(EC_UNKNOWN, 'discard response is truncated')
-
-    if line[:len(prefix_blurb)] != prefix_blurb:
-        Die(EC_UNKNOWN, 'discard response is invalid: \'' + prefix_blurb + \
-            '\' expected')
-
-    # Remove the prefix blurb.  Then the integer value we want will be next.
-    line = line[len(prefix_blurb):]
-
-    if extra_junk_after_value_ok:
-        index = line.find(' ')
-
-        if index != -1:
-            # Remove extra junk after integer value.
-            line = line[:index]
-
-    try:
-        value = int(line)
-    except ValueError:
-        Die(EC_UNKNOWN, 'discard response has invalid ' + error_blurb)
-
-    if value < 0:
-        Die(EC_UNKNOWN, 'discard response has negative ' + error_blurb)
-
-    return value
-###############################################################################
-
-###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# a string value of the following form:
-#
-#     recent bad topic: 3[duh]
-#
-# In the above case, parameter 'prefix_blurb' would be set to
-# 'recent bad topic: ' and we would return the tuple ('duh', extra_junk) where
-# 'extra_junk' is a possibly empty string containing any extra bytes following
-# the closing square bracket.  The value 3 to the left of the opening square
-# bracket indicates the length in bytes of the enclosed string.  Note that the
-# string between the square brackets may contain embedded newline characters,
-# resulting in a returned string that consists of multiple lines.
-#
-# If the next nonempty input line does not fit the above pattern, then rewind
-# it one position and return None.
-#
-# If there are no more input lines, then return None.
-#
-# In case of fatal error, 'error_blurb' is included in the error message.
-###############################################################################
-def GetNextStringValueFromResponse(response_iter, prefix_blurb, error_blurb):
-    line = response_iter.GetNextLine(True, False, True)
-
-    if line == None:
-        return None
-
-    if line[:len(prefix_blurb)] != prefix_blurb:
-        response_iter.RewindOneLine()
-        return None
-
-    # Remove the prefix blurb.
-    line = line[len(prefix_blurb):]
-
-    index = line.find('[')
-
-    if index == -1:
-        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-    try:
-        # Get length value immediately preceding opening square bracket.
-        input_len = int(line[:index])
-    except ValueError:
-        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-    if input_len < 0:
-        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-    # Remove everything through opening square bracket.  Then the string we
-    # want is next, followed by the closing square bracket.
-    line = line[index + 1:]
-
-    result = ''
-
-    if len(result) < input_len:
-        # We iterate to handle the case where the string has one or more
-        # embedded newline characters, and is therefore spread across multiple
-        # lines.
-        while True:
-            remaining = input_len - len(result)
-            available = len(line)
-
-            if available == 0:
-                Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-            num_bytes = min(remaining, available)
-            result = result + line[:num_bytes]
-            line = line[num_bytes:]
-
-            if len(result) == input_len:
-                if line == '':
-                    line = response_iter.GetNextLine(False, False, False)
-
-                    if line == None:
-                        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-                break
-
-            line = response_iter.GetNextLine(False, False, False)
-
-    if line == '':
-        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-    if line[0] != ']':
-        Die(EC_UNKNOWN, 'malformed input for ' + error_blurb)
-
-    line = line.rstrip('\n')
-    extra_junk = line[1:]
-    return (result, extra_junk)
-###############################################################################
-
-###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# a string value of the form expected by GetNextStringValueFromResponse(), and
-# continue processing input lines until a line not matching this form is
-# encountered or there are no more input lines.  We impose an extra requirement
-# that no input item recognized by GetNextStringValueFromResponse() contains
-# extra junk following the closing square bracket, and treat a violation of
-# this requirement as a fatal error.  Return a list of all such string values
-# found, which will be empty in the case where none were found.  Once a
-# nonempty line that doesn't fit what we are looking for is encountered,
-# 'response_iter' will be rewinded to the previous line before we return our
-# result.  In case of fatal error, 'error_blurb' is included in the error
-# message.
-###############################################################################
-def GetStringValueSequence(response_iter, prefix_blurb, error_blurb):
-    # This is a list of strings.
-    result = [ ]
-
-    while True:
-        next_value = GetNextStringValueFromResponse(response_iter,
-                prefix_blurb, error_blurb)
-
-        if next_value == None:
-            break
-
-        if next_value[1] != '':
-            Die(EC_UNKNOWN, 'extra junk at end of input for ' + error_blurb + \
-                ': ' + next_value[1])
-
-        result.append(next_value[0])
+        result['finished_report']['end_time'] = \
+                result['finished_report']['start_time'] + result['interval']
+        result['finished_report']['pid'] = result['pid']
 
     return result
 ###############################################################################
 
 ###############################################################################
-# The behavior of this function is the same as for GetStringValueSequence()
-# except for the following differences:
-#
-#     1.  Extra junk after the closing square bracket is allowed.
-#
-#     2.  Instead of returning a list of strings, we return a list of 2-item
-#         tuples.  The first item is the string (that was enclosed by square
-#         brackets in the input), and the second item is a possibly empty
-#         string containing any trailing junk found after the closing square
-#         bracket.
+# Serialize previously parsed JSON content back to JSON and return the result.
 ###############################################################################
-def GetStringValueSequenceWithExtraJunk(response_iter, prefix_blurb,
-        error_blurb):
-    # This is a list of 2-item tuples, as returned by
-    # GetNextStringValueFromResponse().
-    result = [ ]
-
-    while True:
-        next_value = GetNextStringValueFromResponse(response_iter,
-                prefix_blurb, error_blurb)
-
-        if next_value == None:
-            break
-
-        result.append(next_value)
-
-    return result
+def SerializeToJson(structured_data):
+    return json.dumps(structured_data, sort_keys=True, indent=4,
+                separators=(',', ': ')) + '\n'
 ###############################################################################
 
 ###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# an unsupported message version line of the following form:
-#
-#     unsupported msg version: V count: C
-#
-# Where V is an integer and C is a nonnegative integer.  If such a line is
-# found, return a TUnsupportedMsgVersionInfo object representing the given
-# information.
-#
-# If the next nonempty input line does not fit the above pattern, then rewind
-# it one position and return None.
-#
-# If there are no more input lines, then return None.
-###############################################################################
-def GetUnsupportedVersionInfo(response_iter):
-    line = response_iter.GetNextLine(True, True, True)
-
-    if line == None:
-        return None
-
-    prefix_blurb = 'unsupported msg version: '
-
-    if line[:len(prefix_blurb)] != prefix_blurb:
-        response_iter.RewindOneLine()
-        return None
-
-    # Remove prefix blurb.
-    line = line[len(prefix_blurb):]
-
-    index = line.find(' ')
-
-    if index == -1:
-        Die(EC_UNKNOWN, 'malformed unsupported msg version line')
-
-    try:
-        version = int(line[:index])
-    except ValueError:
-        Die(EC_UNKNOWN, 'unsupported msg version line has invalid version')
-
-    line = line[index + 1:]
-    s = 'count: '
-
-    if line[:len(s)] != s:
-        Die(EC_UNKNOWN, 'malformed unsupported msg version line')
-
-    # Remove everything preceding the count.
-    line = line[len(s):]
-
-    try:
-        count = int(line)
-    except ValueError:
-        Die(EC_UNKNOWN, 'unsupported msg version line has invalid count')
-
-    if count < 0:
-        Die(EC_UNKNOWN, 'unsupported msg version line has negative count')
-
-    return TUnsupportedMsgVersionInfo(version, count)
-###############################################################################
-
-###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# a line of the form expected by GetUnsupportedVersionInfo(), and continue
-# processing input lines until a line not matching this form is encountered or
-# there are no more input lines.  Return a list of TUnsupportedMsgVersionInfo
-# objects representing all such lines found, which will be empty in the case
-# where none were found.  Once a nonempty line that doesn't fit what we are
-# looking for is encountered, 'response_iter' will be rewinded to the previous
-# line before we return our result.
-###############################################################################
-def GetUnsupportedVersionInfoList(response_iter):
-    # This is a list of 2-item tuples, where the first tuple item is a message
-    # version and the second tuple item is a count of messages with that
-    # version.
-    result = [ ]
-
-    while True:
-        next_value = GetUnsupportedVersionInfo(response_iter)
-
-        if next_value == None:
-            break
-
-        result.append(next_value)
-
-    return result
-###############################################################################
-
-###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# something that looks like this:
-#
-#     discard topic: 12[space aliens] begin [333] end [444] count 567
-#
-# In the above example, input parameter 'prefix_blurb' would be set to the
-# string 'discard topic: '.  If such a line is found, return a TTopicErrorInfo
-# object representing the given information.
-#
-# If the next nonempty input line does not fit the above pattern, then rewind
-# it one position and return None.
-#
-# If there are no more input lines, then return None.
-#
-# Note that embedded newline characters within topics are supported, so a
-# single input item may span multiple lines.
-#
-# In case of fatal error, 'error_blurb' is included in the error message.
-###############################################################################
-def GetTopicRangeAndCount(response_iter, prefix_blurb, error_blurb):
-    topic_and_junk = GetNextStringValueFromResponse(response_iter,
-            prefix_blurb, error_blurb)
-
-    if topic_and_junk == None:
-        return None
-
-    topic = topic_and_junk[0]
-
-    # The junk is everything following the closing square bracket that marks
-    # the end of the topic.
-    junk = topic_and_junk[1]
-
-    s = ' begin ['
-
-    if junk[:len(s)] != s:
-        Die(EC_UNKNOWN, 'malformed ' + error_blurb + ' line')
-
-    junk = junk[len(s):]
-    index = junk.find(']')
-
-    if index == -1:
-        Die(EC_UNKNOWN, 'malformed ' + error_blurb + ' line')
-
-    try:
-        # Get first time point in interval.
-        interval_first = int(junk[:index])
-    except ValueError:
-        Die(EC_UNKNOWN, error_blurb + ' line has invalid interval first')
-
-    junk = junk[index + 1:]
-    s = ' end ['
-
-    if junk[:len(s)] != s:
-        Die(EC_UNKNOWN, 'malformed ' + error_blurb + ' line')
-
-    junk = junk[len(s):]
-    index = junk.find(']')
-
-    if index == -1:
-        Die(EC_UNKNOWN, 'malformed ' + error_blurb + ' line')
-
-    try:
-        # Get last time point in interval.
-        interval_last = int(junk[:index])
-    except ValueError:
-        Die(EC_UNKNOWN, error_blurb + ' line has invalid interval last')
-
-    junk = junk[index + 1:]
-    s = ' count '
-
-    if junk[:len(s)] != s:
-        Die(EC_UNKNOWN, 'malformed ' + error_blurb + ' line')
-
-    junk = junk[len(s):]
-
-    try:
-        # Get count of events occurring within interval.
-        count = int(junk.rstrip())
-    except ValueError:
-        Die(EC_UNKNOWN, error_blurb + ' line has invalid count')
-
-    return TTopicErrorInfo(topic, interval_first, interval_last, count)
-###############################################################################
-
-###############################################################################
-# Try to process the next nonempty line of input provided by 'response_iter' as
-# a line of the form expected by GetTopicRangeAndCount(), and continue
-# processing input lines until a line not matching this form is encountered or
-# there are no more input lines.  Return a list of TTopicErrorInfo objects
-# representing all found items, which will be empty in the case where none were
-# found.  Once a nonempty line that doesn't fit what we are looking for is
-# encountered, 'response_iter' will be rewinded to the previous line before we
-# return our result.
-###############################################################################
-def GetTopicRangeAndCountList(response_iter, prefix_blurb, error_blurb):
-    # This is a list of 4-item tuples, as returned by GetTopicRangeAndCount().
-    result = [ ]
-
-    while True:
-        next_value = GetTopicRangeAndCount(response_iter, prefix_blurb,
-                error_blurb)
-
-        if next_value == None:
-            break
-
-        result.append(next_value)
-
-    return result
-###############################################################################
-
-###############################################################################
-# On entry, we assume that the next nonempty line returned by 'response_iter'
-# will be the start of a discard report.  Parse the report, and return a
-# TDiscardReport object representing its contents.  Parameter 'host' gives the
-# canonicalized hostname representing where the report came from.  Parameter
-# 'bruce_pid' gives the process ID of the bruce daemon that produced the report
-# on the given host.  Parameter 'report_interval' gives the reporting interval
-# (time between consecutive reports) in seconds.  Input parameter 'port' gives
-# the port bruce listens on for HTTP status requests.  In the case where
-# multiple instances of bruce run on a single host, this distinguishes the
-# instances.  On return, 'response_iter' will be at the first nonempty line
-# following the report.
-###############################################################################
-def ParseOneDiscardReport(host, port, response_iter, bruce_pid,
-        report_interval):
-    bruce_report_id = GetNextIntValueFromResponse(response_iter, 'report ID: ',
-                                         'report ID', False)
-    start_time = GetNextIntValueFromResponse(response_iter, 'start time: ',
-                                          'start time', True)
-    malformed_msg_count = GetNextIntValueFromResponse(response_iter,
-            'malformed msg count: ', 'malformed msg count', False)
-    unsupported_api_key_msg_count = GetNextIntValueFromResponse(response_iter,
-            'unsupported API key msg count: ', 'unsupported API key msg count',
-            False)
-    unsupported_version_msg_count = GetNextIntValueFromResponse(response_iter,
-            'unsupported version msg count: ', 'unsupported version msg count',
-            False)
-    bad_topic_msg_count = GetNextIntValueFromResponse(response_iter,
-            'bad topic msg count: ', 'bad topic msg count', False)
-
-    malformed_msg_list = [ ]
-    unsupported_version_info_list = [ ]
-    bad_topic_list = [ ]
-    too_long_msg_list = [ ]
-    discard_topic_info_list = [ ]
-    dup_topic_info_list = [ ]
-
-    # Loop never iterates more than once.  We use 'break' inside loop to
-    # achieve the effect of "goto statement following loop".  Gotos aren't evil
-    # if used in a disciplined manner.
-    while True:
-        line = response_iter.GetNextLine(True, True, True)
-
-        if line == None:
-            break
-
-        s = 'recent malformed msg: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            malformed_msg_list = GetStringValueSequence(response_iter, s,
-                    'recent malformed msg')
-            line = response_iter.GetNextLine(True, True, True)
-
-            if line == None:
-                break
-
-        s = 'unsupported msg version: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            unsupported_version_info_list = \
-                    GetUnsupportedVersionInfoList(response_iter)
-            line = response_iter.GetNextLine(True, True, True)
-
-            if line == None:
-                break
-
-        s = 'recent bad topic: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            bad_topic_list = GetStringValueSequence(response_iter, s,
-                    'recent bad topic')
-            line = response_iter.GetNextLine(True, True, True)
-
-            if line == None:
-                break
-
-        s = 'recent too long msg: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            too_long_msg_list = GetStringValueSequence(response_iter, s,
-                    'recent too long msg')
-            line = response_iter.GetNextLine(True, True, True)
-
-            if line == None:
-                break
-
-        s = 'discard topic: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            discard_topic_info_list = GetTopicRangeAndCountList(response_iter,
-                    s, 'discard topic')
-            line = response_iter.GetNextLine(True, True, True)
-
-            if line == None:
-                break
-
-        s = 'possible duplicate topic: '
-
-        if line[:len(s)] == s:
-            response_iter.RewindOneLine()
-            dup_topic_info_list = GetTopicRangeAndCountList(response_iter,
-                    s, 'possible duplicate topic')
-            line = response_iter.GetNextLine(True, True, True)
-
-        break
-
-    if line != None:
-        response_iter.RewindOneLine()
-
-    return TDiscardReport(host, port, bruce_report_id, start_time,
-                          start_time + report_interval, malformed_msg_count,
-                          unsupported_api_key_msg_count,
-                          unsupported_version_msg_count, bad_topic_msg_count,
-                          bruce_pid, malformed_msg_list, too_long_msg_list,
-                          unsupported_version_info_list, bad_topic_list,
-                          discard_topic_info_list, dup_topic_info_list)
-###############################################################################
-
-###############################################################################
-# Input parameter 'response' is a list of input lines representing the contents
-# of a discard response obtained from bruce.  The response should contain two
-# discard reports: the current partially completed report and the latest
-# finished report.  Parse the entire response and return a 2-item tuple
-# containing the discard reports represented as TDiscardReport objects.  The
-# first tuple item will be the current partially completed report, and the
-# second item will be the latest finished report.  Input parameter 'port' gives
-# the port bruce listens on for HTTP status requests.  In the case where
-# multiple instances of bruce run on a single host, this distinguishes the
-# instances.
-###############################################################################
-def ParseDiscardResponse(response, host, port):
-    response_iter = TResponseLineIterator(response)
-    bruce_pid = GetNextIntValueFromResponse(response_iter, 'pid: ',
-                                            'bruce pid', False)
-    GetNextIntValueFromResponse(response_iter, 'now: ', '\'now\' value', True)
-    line = response_iter.GetNextLine(True, True, True)
-    s = 'version:'
-
-    if line[:len(s)] != s:
-        Die(EC_UNKNOWN, 'discard response is invalid: \'' + s + '\' expected')
-
-    report_interval = GetNextIntValueFromResponse(response_iter,
-            'report interval in seconds: ', 'report interval', False)
-
-    line = response_iter.GetNextLine(True, True, True)
-
-    if line == None:
-        Die(EC_UNKNOWN, 'discard response is truncated')
-
-    s = 'current (unfinished) reporting period:'
-
-    if line[:len(s)] != s:
-        Die(EC_UNKNOWN, 'discard response is invalid: \'' + s + '\' expected')
-
-    unfinished_report = ParseOneDiscardReport(host, port, response_iter,
-                                              bruce_pid, report_interval)
-    line = response_iter.GetNextLine(True, True, True)
-
-    if line == None:
-        # This happens when bruce was started recently enough that the first
-        # discard report is not yet finished.
-        return (unfinished_report, None)
-
-    s = 'latest finished reporting period:'
-
-    if line[:len(s)] != s:
-        Die(EC_UNKNOWN, 'discard response is invalid: \'' + s + '\' expected')
-
-    finished_report = ParseOneDiscardReport(host, port, response_iter,
-                                            bruce_pid, report_interval)
-    line = response_iter.GetNextLine(True, True, True)
-
-    if line != None:
-        Die(EC_UNKNOWN, 'unexpected junk at end of discard response: ' + \
-            line.rstrip('\n'))
-
-    return (unfinished_report, finished_report)
-###############################################################################
-
-###############################################################################
-# Analyze input parameter 'report' of type TDiscardReport, looking for
-# discards.  Return EC_SUCCESS if no discards are found.  Otherwise return
-# EC_CRITICAL.
+# Analyze input parameter 'report', looking for discards.  Return EC_SUCCESS if
+# no discards are found.  Otherwise return EC_CRITICAL.
 ###############################################################################
 def AnalyzeDiscardReport(report):
-    if report.MalformedMsgCount > 0:
+    if report['malformed_msg_count'] > 0:
         return EC_CRITICAL
 
-    # Comment this out for now.  The PHP developers need to fix things so that
-    # unknown topics are not sent to bruce.
-    #
-    #if report.BadTopicMsgCount > 0:
-    #    return EC_CRITICAL
+    if report['bad_topic_msg_count'] > 0:
+        return EC_CRITICAL
 
-    if len(report.DiscardTopicInfoList) > 0:
+    if report['discard_topic']:
         return EC_CRITICAL
 
     return EC_SUCCESS
@@ -1355,21 +606,22 @@ class TDatabaseError(Exception):
 
 ###############################################################################
 # Input parameter 'cur' is a database cursor.  Input parameter 'report' is a
-# discard report represented as a TDiscardReport object.  Write a row
-# representing the report to the BRUCE_DATA_QUALITY_REPORT table.  On success,
-# return the integer value from the ID column of the newly inserted row.  If
-# a row for the given report was already in the table, return None.  On error,
-# let cx_Oracle.Error exception propagate to caller.
+# discard report.  Write a row representing the report to the
+# BRUCE_DATA_QUALITY_REPORT table.  On success, return the integer value from
+# the ID column of the newly inserted row.  If a row for the given report was
+# already in the table, return None.  On error, let cx_Oracle.Error exception
+# propagate to caller.
 ###############################################################################
 def InsertReportRow(cur, report):
     # Add report row to BRUCE_DATA_QUALITY_REPORT table.
 
-    report_start = EpochSecondsToTimeString(report.ReportStart)
-    report_end = EpochSecondsToTimeString(report.ReportEnd)
-    rows = [ (report.Host, report.Port, report.BruceReportId, report_start,
-              report_end, report.MalformedMsgCount,
-              report.UnsupportedVersionMsgCount, report.BadTopicMsgCount,
-              report.BrucePid)
+    report_start = EpochSecondsToTimeString(report['start_time'])
+    report_end = EpochSecondsToTimeString(report['end_time'])
+    rows = [ (ToAscii(report['host']), report['port'], report['id'],
+              report_start, report_end, report['malformed_msg_count'],
+              report['unsupported_version_msg_count'],
+              report['bad_topic_msg_count'],
+              report['pid'])
            ]
     cur.setinputsizes(200, int, int, 64, 64, int, int, int, int)
     sql = 'insert into BRUCE_DATA_QUALITY_REPORT ' + \
@@ -1403,7 +655,8 @@ def InsertReportRow(cur, report):
     sql = 'select ID from BRUCE_DATA_QUALITY_REPORT where HOST = :host ' + \
           ' and BRUCE_PORT = :port and REPORT_START = ' + \
           'TO_DATE(:report_start, \'yyyy mm dd hh24 mi ss\')'
-    sql_params = { 'host' : report.Host, 'port' : str(report.Port),
+    sql_params = { 'host' : ToAscii(report['host']),
+                   'port' : str(report['port']),
                    'report_start' : report_start }
     cur.execute(sql, sql_params)
     result_count = 0
@@ -1436,13 +689,13 @@ def InsertReportRow(cur, report):
 # error, let cx_Oracle.Error exception propagate to caller.
 ###############################################################################
 def InsertStringRows(cur, report_id, table_spec, string_max_size, string_list):
-    if len(string_list) == 0:
+    if not string_list:
         return
 
-    rows = [ ]
+    rows = []
 
     for item in string_list:
-        t = (report_id, item)
+        t = (report_id, ToAscii(item))
         rows.append(t)
 
     cur.setinputsizes(int, string_max_size)
@@ -1453,24 +706,23 @@ def InsertStringRows(cur, report_id, table_spec, string_max_size, string_list):
 ###############################################################################
 # Insert a set of rows into either table BRUCE_DISCARD_TOPIC or
 # BRUCE_POSSIBLE_DUP_TOPIC, depending on the text blurb in input parameter
-# 'table_spec', which gets incorporated into the SQL insert statement.
-# The data for the rows is provided by input parameter topic_error_info_list,
-# which is a list of TTopicErrorInfo objects.  Input parameter 'report_id'
-# gives the report ID foreign key referencing table BRUCE_DATA_QUALITY_REPORT.
-# Input parameter 'topic_max_size' specifies the maximum allowed size of the
-# string values, as defined by the schema.  Input parameter 'cur' provides a
-# database cursor.
+# 'table_spec', which gets incorporated into the SQL insert statement.  The
+# data for the rows is provided by input parameter topic_error_info_list.
+# Input parameter 'report_id' gives the report ID foreign key referencing table
+# BRUCE_DATA_QUALITY_REPORT.  Input parameter 'topic_max_size' specifies the
+# maximum allowed size of the string values, as defined by the schema.  Input
+# parameter 'cur' provides a database cursor.
 ###############################################################################
 def InsertTopicErrorInfoRows(cur, report_id, table_spec, topic_max_size,
                              topic_error_info_list):
-    if len(topic_error_info_list) == 0:
+    if not topic_error_info_list:
         return
 
-    rows = [ ]
+    rows = []
 
     for item in topic_error_info_list:
-        t = (report_id, item.Topic, item.Timestamp1, item.Timestamp2,
-             item.Count)
+        t = (report_id, ToAscii(item['topic']), item['min_timestamp'],
+             item['max_timestamp'], item['count'])
         rows.append(t)
 
     cur.setinputsizes(int, topic_max_size, int, int, int)
@@ -1479,10 +731,10 @@ def InsertTopicErrorInfoRows(cur, report_id, table_spec, topic_max_size,
 ###############################################################################
 
 ###############################################################################
-# Input parameter 'report' is a discard report represented as a TDiscardReport
-# object.  Input parameter 'con' is an active database connection.  Input
-# parameter 'cur' is a database cursor for the given connection.  Write the
-# report to the database.  Return on success, or raise exception on error.
+# Input parameter 'report' is a parsed discard report.  Input parameter 'con'
+# is an active database connection.  Input parameter 'cur' is a database cursor
+# for the given connection.  Write the report to the database.  Return on
+# success, or raise exception on error.
 # Exceptions raised: TDatabaseError, cx_Oracle.Warning, cx_Oracle.Error
 ###############################################################################
 def DoPersistDiscardReport(con, cur, report):
@@ -1502,19 +754,19 @@ def DoPersistDiscardReport(con, cur, report):
 
     # Add rows to BRUCE_MALFORMED_MSG table.
     InsertStringRows(cur, report_id, 'BRUCE_MALFORMED_MSG(ID, MSG)', 4000,
-                     report.MalformedMsgList)
+                     report['recent_malformed'])
 
     # Add rows to BRUCE_TOO_LONG_MSG table.
     InsertStringRows(cur, report_id, 'BRUCE_TOO_LONG_MSG(ID, MSG)', 4000,
-                     report.TooLongMsgList)
+                     report['recent_too_long_msg'])
 
-    if len(report.UnsupportedVersionInfoList) > 0:
+    if report['unsupported_msg_version']:
         # Add rows to BRUCE_UNSUPP_VERSION_MSG table.
 
-        rows = [ ]
+        rows = []
 
-        for item in report.UnsupportedVersionInfoList:
-            t = (report_id, item.MsgVersion, item.MsgCount)
+        for item in report['unsupported_msg_version']:
+            t = (report_id, item['version'], item['count'])
             rows.append(t)
 
         cur.setinputsizes(int, int, int)
@@ -1525,17 +777,17 @@ def DoPersistDiscardReport(con, cur, report):
 
     # Add rows to BRUCE_BAD_TOPIC table.
     InsertStringRows(cur, report_id, 'BRUCE_BAD_TOPIC(ID, TOPIC)', 100,
-                     report.BadTopicList)
+                     report['recent_bad_topic'])
 
     # Add rows to BRUCE_DISCARD_TOPIC table.
     InsertTopicErrorInfoRows(cur, report_id,
             'BRUCE_DISCARD_TOPIC(ID, TOPIC, TIMESTAMP_1, TIMESTAMP_2, ' +
-            'DISCARD_COUNT)', 100, report.DiscardTopicInfoList)
+            'DISCARD_COUNT)', 100, report['discard_topic'])
 
     # Add rows to BRUCE_POSSIBLE_DUP_TOPIC table.
     InsertTopicErrorInfoRows(cur, report_id,
             'BRUCE_POSSIBLE_DUP_TOPIC(ID, TOPIC, TIMESTAMP_1, TIMESTAMP_2, ' +
-            'DUP_COUNT)', 100, report.DupTopicInfoList)
+            'DUP_COUNT)', 100, report['possible_duplicate_topic'])
 
     # Commit transaction.
     con.commit()
@@ -1553,21 +805,21 @@ class TTimeoutException(Exception):
 ###############################################################################
 
 ###############################################################################
-#
+# SIGALRM handler that implements timeout for database operations.
 ###############################################################################
 def AlarmHandler(signame, frame):
     raise TTimeoutException()
 ###############################################################################
 
 ###############################################################################
-# Input parameter 'report' is a discard report represented as a TDiscardReport
-# object.  Write the report to the database.  Return the empty string on
-# success, or an error message on error.  The entire report is written as a
-# single transaction, so the database update is all or nothing.  The given
-# discard report may already be in the database if the last time this script
-# ran is recent enough.  In this case, we return the empty string (indicating
-# success) without any database update.  Input paramaters 'username' and
-# 'password' provide the credentials for database access.
+# Input parameter 'report' is a parsed discard report.  Write the report to the
+# database.  Return the empty string on success, or an error message on error.
+# The entire report is written as a single transaction, so the database update
+# is all or nothing.  The given discard report may already be in the database
+# if the last time this script ran is recent enough.  In this case, we return
+# the empty string (indicating success) without any database update.  Input
+# paramaters 'username' and 'password' provide the credentials for database
+# access.
 ###############################################################################
 def PersistDiscardReport(report, username, password):
     db_string = username + '/' + password + '@' + Opts.Dbhost + ':' + \
@@ -1614,12 +866,11 @@ def PersistDiscardReport(report, username, password):
 ###############################################################################
 
 ###############################################################################
-# Open file specified by 'path' for reading.  Read all lines from file into a
-# list of strings, preserving trailing newline characters, and return the list
-# of lines.
+# Open file specified by 'path' for reading.  Read entire file contents into a
+# string and return the result.
 ###############################################################################
-def GetDiscardResponseFromFile(path):
-    response = [ ]
+def ReadFileContents(path):
+    json_response = ''
 
     try:
         is_open = False
@@ -1627,7 +878,7 @@ def GetDiscardResponseFromFile(path):
         is_open = True
 
         for line in infile:
-            response.append(line)
+            json_response += line
     except OSError as e:
         Die(EC_UNKNOWN, 'Failed to open file ' + path + ' for reading: ' + \
                 e.strerror + '\n')
@@ -1638,41 +889,7 @@ def GetDiscardResponseFromFile(path):
         if is_open:
             infile.close()
 
-    return response
-###############################################################################
-
-###############################################################################
-# Read a saved discard response file.  These files get created when there is a
-# failure saving a discard report to the database, so the database operation
-# can be retried later.  The first line of the file contains the canonicalized
-# hostname.  The second line contains an error message indicating why the
-# database operation failed.  The remaining lines contain the discard response,
-# as obtained from Bruce.
-###############################################################################
-def ReadSavedDiscardResponseFile(path):
-    response = [ ]
-
-    try:
-        is_open = False
-        infile = open(path, 'r')
-        is_open = True
-        line = infile.readline()
-        canonicalized_host = line.rstrip('\n')
-        line = infile.readline()  # discard error message
-
-        for line in infile:
-            response.append(line)
-    except OSError as e:
-        Die(EC_UNKNOWN, 'Failed to open file ' + path + ' for reading: ' + \
-                e.strerror + '\n')
-    except IOError as e:
-        Die(EC_UNKNOWN, 'Failed to open file ' + path + ' for reading: ' + \
-                e.strerror + '\n')
-    finally:
-        if is_open:
-            infile.close()
-
-    return (canonicalized_host, response)
+    return json_response
 ###############################################################################
 
 ###############################################################################
@@ -1682,7 +899,7 @@ def ReadSavedDiscardResponseFile(path):
 # 'timestamp_list' is sorted in ascending order.
 ###############################################################################
 def CheckDiscardReportFileAges(timestamp_list):
-    if len(timestamp_list) > 0:
+    if timestamp_list:
         now = GetEpochSeconds()
         oldest = timestamp_list[0]
 
@@ -1697,24 +914,22 @@ def CheckDiscardReportFileAges(timestamp_list):
 ###############################################################################
 
 ###############################################################################
-# Retry database save operation for saved discard report that we previously
-# failed to save to database.  Return True on success or False on error.
+# Retry database write operation for discard report that we previously failed
+# to save to database.  Return True on success or False on error.
 ###############################################################################
 def RetryPersistDiscardReport(filename, timestamp, username, password):
     if Opts.Verbose:
         print 'Retrying persist of discard report ' + str(timestamp)
 
-    (canonicalized_host, saved_response) = \
-            ReadSavedDiscardResponseFile(filename)
-    (unfinished, finished) = ParseDiscardResponse(saved_response,
-            canonicalized_host, Opts.BruceStatusPort)
+    response = ParseDiscardResponse(ReadFileContents(filename), None, None)
 
-    if finished == None:
+    if 'finished_report' not in response:
         print 'Failed to obtain finished report from saved discard ' + \
                 'response ' + str(timestamp)
         return False
 
-    err_msg = PersistDiscardReport(finished, username, password)
+    err_msg = PersistDiscardReport(response['finished_report'], username,
+            password)
 
     if err_msg != '':
         if Opts.Verbose:
@@ -1733,7 +948,7 @@ def RetryPersistDiscardReport(filename, timestamp, username, password):
 # database.  Check for prior discard reports that we failed to persist.  These
 # are stored in local files.  If any still exist, try again now to write them
 # to the database.  The database we currently use for storing discard reports
-# doesn't always have great uptime, so this is a workaround.
+# is sometimes down, so this is a workaround.
 ###############################################################################
 def CheckPriorPersistFailures(work_path, username, password):
     # Contents of 'timestamp_list' are sorted in ascending order, so we go from
@@ -1756,7 +971,7 @@ def CheckPriorPersistFailures(work_path, username, password):
                         filename + ']: ' + e.strerror
                 return EC_WARNING
         else:
-            failed_timestamp_list = [ ]
+            failed_timestamp_list = []
             failed_timestamp_list.append(timestamp)
             return CheckDiscardReportFileAges(failed_timestamp_list)
 
@@ -1767,8 +982,7 @@ def CheckPriorPersistFailures(work_path, username, password):
 # This is called after we have failed to persist a discard report.  Save the
 # report temporarily to a local file, so we can try again later.
 ###############################################################################
-def HandlePersistFailure(work_path, report_start, discard_response,
-        canonicalized_host, err_msg):
+def HandlePersistFailure(work_path, report_start, response, err_msg):
     if Opts.Verbose:
         print 'Handling failure to persist discard report ' + str(report_start)
 
@@ -1780,24 +994,17 @@ def HandlePersistFailure(work_path, report_start, discard_response,
                 print 'Discard report ' + str(report_start) + \
                         ' already saved to local file system'
 
-            return CheckDiscardReportFileAges(FindDiscardFileTimes(work_path))
+            return CheckDiscardReportFileAges(file_list)
 
     filename = work_path + '/' + str(report_start)
-
-    # The code that parses the file we are creating expects the error message
-    # to occupy a single line.  The error message should not contain any
-    # newline characters, but it doesn't hurt to make sure.
-    msg = err_msg.replace('\n', ' ')
+    response['err_msg'] = err_msg
+    json_response = SerializeToJson(response)
 
     try:
         is_open = False
         outfile = open(filename, 'w')
         is_open = True
-        outfile.write(canonicalized_host + '\n')
-        outfile.write(err_msg + '\n')
-
-        for line in discard_response:
-            outfile.write(line)
+        outfile.write(json_response)
     except OSError as e:
         print 'Failed to create discard report file [' + filename + ']: ' + \
                 e.strerror
@@ -1814,7 +1021,15 @@ def HandlePersistFailure(work_path, report_start, discard_response,
         print 'Discard report ' + str(report_start) + \
                 ' has been saved to local file system'
 
-    return CheckDiscardReportFileAges(FindDiscardFileTimes(work_path))
+    return CheckDiscardReportFileAges(file_list)
+###############################################################################
+
+###############################################################################
+# Input parameter 'unicode_str' is a unicode string.  Convert its contents to
+# ASCII and return the result as a normal string.
+###############################################################################
+def ToAscii(unicode_str):
+    return unicode_str.encode('ascii', 'ignore')
 ###############################################################################
 
 ###############################################################################
@@ -1834,7 +1049,7 @@ def ParseCredentialsFileContents(file_contents):
     except ValueError, x:
         Die(EC_CRITICAL, 'Failed to parse credentials file contents')
 
-    if type(parsed_json) != types.DictType:
+    if type(parsed_json) is not dict:
         Die(EC_CRITICAL, 'Credentials file data is in unexpected format')
 
     try:
@@ -1843,41 +1058,10 @@ def ParseCredentialsFileContents(file_contents):
     except KeyError, x:
         Die(EC_CRITICAL, 'Credentials file data is in unexpected format')
 
-    if type(username_u) != types.UnicodeType or \
-            type(password_u) != types.UnicodeType:
+    if type(username_u) is not unicode or type(password_u) is not unicode:
         Die(EC_CRITICAL, 'Credentials file data is in unexpected format')
 
-    username = username_u.encode('ascii', 'ignore')
-    password = password_u.encode('ascii', 'ignore')
-    return (username, password)
-###############################################################################
-
-###############################################################################
-# Read the credentials file and extract the username and password for database
-# access.  Return a 2-item tuple of strings containing the username followed by
-# the password.
-###############################################################################
-def GetCredentialsFromFile():
-    file_contents = ''
-
-    try:
-        is_open = False
-        infile = open(Opts.Credentials, 'r')
-        is_open = True
-
-        for line in infile:
-            file_contents += line
-    except OSError as e:
-        Die(EC_UNKNOWN, 'Failed to open file ' + Opts.Credentials + \
-                ' for reading: ' + e.strerror + '\n')
-    except IOError as e:
-        Die(EC_UNKNOWN, 'Failed to open file ' + Opts.Credentials + \
-                ' for reading: ' + e.strerror + '\n')
-    finally:
-        if is_open:
-            infile.close()
-
-    return ParseCredentialsFileContents(file_contents)
+    return (ToAscii(username_u), ToAscii(password_u))
 ###############################################################################
 
 ###############################################################################
@@ -2045,7 +1229,7 @@ def main():
     Opts = ParseArgs(sys.argv[1:])
 
     work_path = GetNagiosDir() + '/' + Opts.WorkDir + '/' + Opts.NagiosServer
-    MakePathExist(work_path)
+    MakeDirExist(work_path)
 
     try:
         # Get canonicalized hostname.
@@ -2057,13 +1241,17 @@ def main():
 
     if Opts.Testfile == '':
         # Get discard info from bruce.
-        discard_response = GetDiscardResponse('http://' + host + ':' + \
-                str(Opts.BruceStatusPort) + '/discards/plain')
+        json_response = GetDiscardResponse('http://' + host + ':' + \
+                str(Opts.BruceStatusPort) + '/discards/json')
     else:
-        discard_response = GetDiscardResponseFromFile(Opts.Testfile)
+        json_response = ReadFileContents(Opts.Testfile)
 
-    (unfinished_report, finished_report) = \
-            ParseDiscardResponse(discard_response, host, Opts.BruceStatusPort)
+    response = ParseDiscardResponse(json_response, host, Opts.BruceStatusPort)
+    unfinished_report = response['unfinished_report']
+    finished_report = None
+
+    if 'finished_report' in response:
+        finished_report = response['finished_report']
 
     # See if reports contain any discards.
     if finished_report == None:
@@ -2073,18 +1261,13 @@ def main():
                           AnalyzeDiscardReport(finished_report))
 
     if Opts.Verbose:
-        print 'current (unfinished) report:'
-        print str(unfinished_report)
-
-        if finished_report != None:
-            print ''
-            print 'latest finished report:'
-            print str(finished_report)
-            print ''
+        print SerializeToJson(response)
 
     if Opts.Dbhost != '' and finished_report != None:
         # Store latest finished discard report in database.
-        (username, password) = GetCredentialsFromFile()
+        (username, password) = \
+                ParseCredentialsFileContents(
+                        ReadFileContents(Opts.Credentials))
         persist_result = \
                 PersistDiscardReport(finished_report, username, password)
 
@@ -2095,8 +1278,7 @@ def main():
                     CheckPriorPersistFailures(work_path, username, password)
         else:
             nagios_code_from_persist = HandlePersistFailure(work_path,
-                finished_report.ReportStart, discard_response, host,
-                persist_result)
+                finished_report['start_time'], response, persist_result)
     else:
         nagios_code_from_persist = EC_SUCCESS
 
@@ -2112,9 +1294,7 @@ def main():
                     ': failed to store discard report in database'
 
         print ''
-
-        for line in discard_response:
-            sys.stdout.write(line)
+        sys.stdout.write(json_response)
 
     # Nagios expects some sort of output even in the case of a successful
     # result.
