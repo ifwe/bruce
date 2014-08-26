@@ -71,7 +71,7 @@ in Bruce's RPM package.
 
 ### Installing Bruce
 
-If you built an RPM package containing bruce, they you can install it using an
+If you built an RPM package containing Bruce, they you can install it using an
 RPM command such as:
 
 ```
