@@ -86,10 +86,11 @@ that got the ACK to respond in one of four ways:
 
 To see which types of error ACKs cause wich types of responses, look in
 `src/bruce/kafka_proto/v0/wire_proto.cc`.  Socket-related errors cause the
-fourth type of response above.  Additionally, when a response of type 4 occurs,
-a failed delivery attempt count is incremented for each message in the
-corresponding message set.  Once a message's failed delivery attempt count
-exceeds a certain configurable threshold, the message is discarded.
+fourth type of response above.  Additionally, when a response of type 4 occurs
+due to an error ACK, a failed delivery attempt count is incremented for each
+message in the corresponding message set.  Once a message's failed delivery
+attempt count exceeds a certain configurable threshold, the message is
+discarded.
 
 ### Message Batching
 
