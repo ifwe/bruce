@@ -48,4 +48,42 @@ Bruce provides two different message types, *AnyPartition* messages and
 The Router thread also shares responsibility for message batching with the
 dispatcher threads, as detailed below.
 
+Once the router thread has chosen a broker for a message or batch of messages,
+it queues the message(s) for receipt by the corresponding dispatcher send
+thread.  The router thread monitors the dispatcher for conditions referred to
+as *pause events*.  These occur due to socket-related errors and certain types
+of error ACKs which indicate that the metadata is likely no longer accurate.
+On detection of a pause event, the router thread waits for the dispatcher
+threads to shut down and extracts all messages from the dispatcher.  It then
+fetches new metadata, starts new dispatcher threads, and reroutes the extracted
+messages based on the new metadata.  The router thread also periodically
+refreshes its metadata and responds to user-initiated metadata update requests.
+In these cases, it fetches new metadata, which it compares with the existing
+metadata.  If the new metadata differs, it shuts down the dispatcher threads
+and then proceeds in a manner similar to the handling of a pause event.
+
+### Dispatcher
+
+The dispatcher opens a TCP connection to each Kafka broker that serves as
+leader for at least one currently available partition.  As described above,
+each connection is serviced by a send thread and a receive thread.  A pause
+event initiated by any dispatcher thread will cause all of the other dispathcer
+threads to shut down (and also alert the router thread).  As detailed below,
+responsibility for message batching is divided between the dispatcher threads
+and the router thread, depending on the types of messages being sent and how
+batching is configured.  Compression is handled completely by the dispatcher
+send threads.  An error ACK received from Kafka will cause the receive thread
+that got the ACK to respond in one of four ways:
+
+1. Resend the corresponding message set to the same broker.
+2. Discard the corresponding message set and continue processing ACKs.
+3. Discard the corresponding message set and initiate a pause event.
+4. Initiate a pause event without discarding the corresponding message set.
+
+To see which types of error ACKs cause wich types of responses, look in
+`src/bruce/kafka_proto/v0/wire_proto.cc`.  Socket-related errors cause the
+fourth type of response above.
+
+### Message Batching
+
 (more content will be added soon)
