@@ -89,8 +89,8 @@ that got the ACK to respond in one of four ways:
 2. Discard the corresponding message set and continue processing ACKs.
 3. Discard the corresponding message set and initiate a pause event.
 4. Initiate a pause event without discarding the corresponding message set.  In
-   this case, the router thread will collect and reroute the messages once it
-   has updated the metadata and restarted the dispatcher.
+   this case, the router thread will collect the messages and reroute them once
+   it has updated the metadata and restarted the dispatcher.
 
 To see which types of error ACKs cause wich types of responses, look in
 `src/bruce/kafka_proto/v0/wire_proto.cc`.  Socket-related errors cause the
