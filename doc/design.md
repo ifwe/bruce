@@ -73,7 +73,11 @@ all of the other dispatcher threads to shut down.  As detailed below,
 responsibility for message batching is divided between the dispatcher threads
 and the router thread, according to the types of messages being sent and how
 batching is configured.  Compression is handled completely by the dispatcher
-send threads.  An error ACK received from Kafka will cause the receive thread
+send threads, which are also responsible for assembling message batches into
+produce requests and doing final partition selection as described in the
+section on batching below.
+
+An error ACK received from Kafka will cause the receive thread
 that got the ACK to respond in one of four ways:
 
 1. Queue the corresponding message set to be resent to the same broker by the
@@ -93,5 +97,53 @@ attempt count exceeds a certain configurable threshold, the message is
 discarded.
 
 ### Message Batching
+
+Batching is configurable on a per-topic basis.  Specifically, topics can be
+configured with individual batching thresholds that consist of any combination
+of the following limits:
+
+- Maximum batching delay, specified in milliseconds.
+- Maximum combined message data size, specified in bytes.
+- Maximum message count.
+
+Batching can also be configured so that topics without individual batching
+configurations are grouped together into combined (mixed) topic batches subject
+to configurable limits of the same types that govern per-topic batching.  It is
+also possible to specify that batching for certain topics is completely
+disabled, although this is not recommended due to performance considerations.
+
+When a batch is completed, it is queued for transmission by the send thread
+connected to the destination broker.  While a send thread is busy sending a
+produce request, multiple batches may arrive in its queue.  When it finishes
+sending, it will then try to combine all queued batches into the next produce
+request, up to a configurable data size limit.
+
+#### Batching of AnyPartition Messages
+
+For AnyPartition messages, per-topic batching is done by the router thread.
+When a batch for a topic is complete, Bruce chooses a destination broker for
+the batch as follows.  For each topic, Bruce maintains an array of available
+partitions.  An index in this array is chosen in a round-robin manner, and then
+the broker that hosts the lead replica for that partition is chosen as the
+destination.  However, at this point only the destination broker is determined,
+and the batch may ultimately be sent to a different partition hosted by the
+same broker.  Final partition selection is done by the send thread for the
+destination broker while it is building a produce request.  In this manner,
+batches for a given topic are sent to brokers proportionally according to how
+many partitions for the topic each broker hosts.  For instance, suppose topic T
+has a total of 10 partitions.  If 3 of the partitions are hosted by broker B1
+and 7 are hosted by broker B2, then 30% of the batches for topic T will be sent
+to B1 and 70% will be sent to B2.
+
+Combined topics batching (in which a single batch contains multiple topics) can
+be configured for topics that do not have per-topic batching configurations.
+For AnyPartition messages with these topics, a broker is chosen in the same
+manner as described above for per-topic batches.  However, this type of message
+is batched at the broker level after the router thread has chosen a destination
+broker and transferred the message to the dispatcher.
+
+#### Batching of PartitionKey Messages
+
+#### Produce Request Creation and Final Partition Selection
 
 (more content will be added soon)
