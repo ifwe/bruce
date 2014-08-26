@@ -6,8 +6,8 @@ send thread for sending produce requests and a receive thread for receiving
 produce responses.  There are also threads created by a third party HTTP server
 library that implements Bruce's status monitoring interface and a main thread
 that starts the input thread and waits for a shutdown signal.  The input thread
-creates and monitors Bruce's input socket for messages from clients.  It also
-starts the router thread during system initialization.  The router thread
+creates Bruce's input socket and monitors it for messages from clients.  It
+also starts the router thread during system initialization.  The router thread
 starts and manages the dispatcher threads.
 
 ### Input Thread
