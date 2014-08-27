@@ -184,7 +184,21 @@ The following table summarizes Bruce's *required* command line arguments:
 
 The following table summarizes Bruce's *optional* command line arguments:
 
-(more content will appear here soon)
+| Argument | Description |
+|:---------|:------------|
+| -h --help | Display help message. |
+| --version | Display version information and exit. |
+| --log_level LEVEL | This specifies the maximum enabled log level for syslog messages.  Allowed values are { LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG }.  The default value is LOG_NOTICE. |
+| --log_echo | Echo syslog messages to standard error. |
+| --protocol_version VERSION | This specifies the protocol version to use when communicating with Kafka, as specified [here]((https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).  Currently 0 is the only allowed value. |
+| --status_port PORT | This specifies the port Bruce uses for its web interface.  The default value is 9090. |
+| --max_input_msg_size | This specifies the maximum input message size in bytes expected from clients.  Messages larger than this value will be discarded.  Here, "size" means the size of the entire datagram. |
+| --allow_large_unix_datagrams | Allow large enough values for max_input_msg_size that a client sending a UNIX domain datagram of the maximum allowed size will need to increase its SO_SNDBUF socket option above the default value. |
+| --max_failed_delivery_attempts MAX_ATTEMPTS | Each time Bruce receives an error ACK causing it to initiate a "pause without discard" action as documented [here](https://github.com/tagged/bruce/blob/master/doc/design.md#dispatcher), Bruce increments the failed delivery attempt account for each message in the message set that the ACK applies to.  Once a message's failed delivery attempt count exceeds this value, the message is discarded.  The default vaule is 5. |
+| --daemon | Causes Bruce to run as a daemon. |
+| --client_id ID | This specifies the client ID string to send in produce requests, as documented [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol). |
+
+(The above table is incomplete.  More content will appear here soon.)
 
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on
