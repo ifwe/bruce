@@ -4,6 +4,8 @@ Before reading the full details of Bruce's configuration options, you will
 probably want an overview of Bruce's design, which is avaliable
 [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
 
+### Config File
+
 Bruce's config file is an XML document that specifies settings for batching and
 compression.  It also specifies a list of initial brokers to try contacting for
 metadata when Bruce is starting.  Below is an example config file.  It is well
@@ -170,8 +172,54 @@ information provided in the above-mentioned *design* section.
 </bruceConfig>
 ```
 
+### Command Line Arguments
+
+The following table summarizes Bruce's *required* command line arguments:
+
+| Argument | Description |
+|:---------|:------------|
+| --config_path PATH | This specifies the location of the config file. |
+| --msg_buffer_max MAX_KB | This specifies the amount of memory in kbytes Bruce reserves for message data.  If this buffer space is exhausted, Bruce starts discarding messages. |
+| --receive_socket_name PATH | This specifies the pathname of Bruce's UNIX domain datagram socket that clients write messages to. |
+
+The following table summarizes Bruce's *optional* command line arguments:
+
 (more content will appear here soon)
 
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on
 [troubleshooting](https://github.com/tagged/bruce#troubleshooting) helpful.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
