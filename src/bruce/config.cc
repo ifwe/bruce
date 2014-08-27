@@ -145,8 +145,9 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         false, config.RequiredAcks, "REQUIRED_ACKS");
     cmd.add(arg_required_acks);
     ValueArg<decltype(config.ReplicationTimeout)> arg_replication_timeout("",
-        "replication_timeout", "Replication timeout value to send in produce "
-        "requests.", false, config.ReplicationTimeout, "TIMEOUT");
+        "replication_timeout", "Replication timeout value in millisceonds to "
+        "send in produce requests.", false, config.ReplicationTimeout,
+        "TIMEOUT");
     cmd.add(arg_replication_timeout);
     ValueArg<decltype(config.ShutdownMaxDelay)> arg_shutdown_max_delay("",
         "shutdown_max_delay", "Maximum delay in milliseconds for sending "
