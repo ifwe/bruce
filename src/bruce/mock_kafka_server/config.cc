@@ -43,7 +43,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "error.", cmd, config.LogEcho);
     ValueArg<decltype(config.ProtocolVersion)> arg_protocol_version("",
         "protocol_version", "Version of Kafka protocol to use (currently only "
-        "0 is supported).", true, config.ProtocolVersion, "VERSION");
+        "0 is supported).", false, config.ProtocolVersion, "VERSION");
     cmd.add(arg_protocol_version);
     ValueArg<decltype(config.QuietLevel)> arg_quiet_level("", "quiet_level",
         "Limit output verbosity.", false, config.QuietLevel, "LEVEL");

@@ -108,7 +108,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "messages from web clients", true, config.ReceiveSocketName, "PATH");
     cmd.add(arg_receive_socket_name);
     ValueArg<decltype(config.ProtocolVersion)> arg_protocol_version("",
-        "protocol_version", "Version of Kafka protocol to use.", true,
+        "protocol_version", "Version of Kafka protocol to use.", false,
         config.ProtocolVersion, "VERSION");
     cmd.add(arg_protocol_version);
     ValueArg<decltype(config.StatusPort)> arg_status_port("", "status_port",

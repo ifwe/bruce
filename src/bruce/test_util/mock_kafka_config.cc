@@ -42,8 +42,6 @@ TMockKafkaConfig::TMockKafkaConfig(const std::vector<std::string> &config_file)
 
   Args.push_back("mock_kafka_server");
   Args.push_back("--log_echo");
-  Args.push_back("--protocol_version");
-  Args.push_back("0");
   Args.push_back("--output_dir");
   Args.push_back(OutputDir.GetName());
   Args.push_back("--setup_file");

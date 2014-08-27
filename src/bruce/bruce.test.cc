@@ -219,8 +219,6 @@ namespace {
     args.push_back("bruce");
     args.push_back("--config_path");
     args.push_back(tmp_file.GetName());
-    args.push_back("--protocol_version");
-    args.push_back("0");
     args.push_back("--msg_buffer_max");
     args.push_back(msg_buffer_max_str.c_str());
     args.push_back("--receive_socket_name");

@@ -72,8 +72,6 @@ namespace {
     Args.push_back("bruce");
     Args.push_back("--config_path");
     Args.push_back("/nonexistent/path");
-    Args.push_back("--protocol_version");
-    Args.push_back("0");
     Args.push_back("--msg_buffer_max");
     Args.push_back("1");  // dummy value
     Args.push_back("--receive_socket_name");
