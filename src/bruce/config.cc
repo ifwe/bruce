@@ -214,7 +214,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "skip_compare_metadata_on_refresh", "On metadata refresh, don't "
         "compare new metadata to old metadata.  Always replace the metadata "
         "even if it is unchanged.  This should be disabled for normal "
-        "operation, but setting it to false may be useful for testing.", cmd,
+        "operation, but enabling it may be useful for testing.", cmd,
         config.SkipCompareMetadataOnRefresh);
     ValueArg<decltype(config.DiscardLogPath)> arg_discard_log_path("",
         "discard_log_path", "Absolute pathname of local file where discards "
