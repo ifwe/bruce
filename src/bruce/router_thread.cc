@@ -721,7 +721,7 @@ bool TRouterThread::RefreshMetadata() {
   assert(ShutdownStartTime.IsUnknown());
   std::shared_ptr<TMetadata> meta;
 
-  if (Config.CompareMetadataOnRefresh) {
+  if (!Config.SkipCompareMetadataOnRefresh) {
     syslog(LOG_INFO, "Starting metadata fetch 1");
     meta = GetMetadata();
     syslog(LOG_INFO, "Finished metadata fetch 1");

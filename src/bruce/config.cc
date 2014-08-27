@@ -210,12 +210,12 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "msg_debug_byte_limit", "Message debugging byte limit.", false,
         config.MsgDebugByteLimit, "MAX_BYTES");
     cmd.add(arg_msg_debug_byte_limit);
-    SwitchArg arg_compare_metadata_on_refresh("",
-        "compare_metadata_on_refresh", "On metadata refresh, compare new "
-        "metadata to old metadata, and discard new metadata if they are the "
-        "same.  This should be set to true for normal operation, but setting "
-        "it to false may be useful for testing.", cmd,
-        config.CompareMetadataOnRefresh);
+    SwitchArg arg_skip_compare_metadata_on_refresh("",
+        "skip_compare_metadata_on_refresh", "On metadata refresh, don't "
+        "compare new metadata to old metadata.  Always replace the metadata "
+        "even if it is unchanged.  This should be disabled for normal "
+        "operation, but setting it to false may be useful for testing.", cmd,
+        config.SkipCompareMetadataOnRefresh);
     ValueArg<decltype(config.DiscardLogPath)> arg_discard_log_path("",
         "discard_log_path", "Absolute pathname of local file where discards "
         "will be logged.  This is intended for debugging.  If unspecified, "
@@ -294,8 +294,8 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.DebugDir = arg_debug_dir.getValue();
     config.MsgDebugTimeLimit = arg_msg_debug_time_limit.getValue();
     config.MsgDebugByteLimit = arg_msg_debug_byte_limit.getValue();
-    config.CompareMetadataOnRefresh =
-        arg_compare_metadata_on_refresh.getValue();
+    config.SkipCompareMetadataOnRefresh =
+        arg_skip_compare_metadata_on_refresh.getValue();
     config.DiscardLogPath = arg_discard_log_path.getValue();
     config.DiscardLogMaxFileSize = arg_discard_log_max_file_size.getValue();
     config.DiscardLogMaxArchiveSize =
@@ -335,7 +335,7 @@ TConfig::TConfig(int argc, char *argv[])
       DebugDir("/home/bruce/debug"),
       MsgDebugTimeLimit(3600),
       MsgDebugByteLimit(2UL * 1024UL * 1024UL * 1024UL),
-      CompareMetadataOnRefresh(true),
+      SkipCompareMetadataOnRefresh(true),
       DiscardLogMaxFileSize(1024),
       DiscardLogMaxArchiveSize(8 * 1024),
       DiscardLogBadMsgPrefixSize(256),
@@ -396,8 +396,8 @@ void Bruce::LogConfig(const TConfig &config) {
          static_cast<unsigned long>(config.MsgDebugTimeLimit));
   syslog(LOG_NOTICE, "Message debug byte limit %lu",
          static_cast<unsigned long>(config.MsgDebugByteLimit));
-  syslog(LOG_NOTICE, "Compare metadata on refresh: %s",
-         config.CompareMetadataOnRefresh ? "true" : "false");
+  syslog(LOG_NOTICE, "Skip comparing metadata on refresh: %s",
+         config.SkipCompareMetadataOnRefresh ? "true" : "false");
 
   if (config.DiscardLogPath.empty()) {
     syslog(LOG_NOTICE, "Discard logfile creation is disabled");

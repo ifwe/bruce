@@ -85,7 +85,7 @@ namespace Bruce {
 
     size_t MsgDebugByteLimit;
 
-    bool CompareMetadataOnRefresh;
+    bool SkipCompareMetadataOnRefresh;
 
     std::string DiscardLogPath;
 
