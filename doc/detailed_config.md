@@ -4,7 +4,173 @@ Before reading the full details of Bruce's configuration options, you will
 probably want an overview of Bruce's design, which is avaliable
 [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
 
-Content will be added here soon.
+Bruce's config file is an XML document that specifies settings for batching and
+compression.  It also specifies a list of initial brokers to try contacting for
+metadata when Bruce is starting.  Below is an example config file.  It is well
+commented, and should be self-explanatory once the reader is familiar with the
+information provided in the above-mentioned *design* section.
+
+```XML
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- example Bruce configuration -->
+<bruceConfig>
+    <batching>
+        <namedConfigs>
+            <config name="low_latency">
+                <!-- The "value" attribute of any of the 3 elements below can
+                     be set to "disable".  However, at least one of them must
+                     have its value set to something other than "disable". -->
+
+                <!-- Set 500 milliseconds max batching delay.  Here, you must
+                     specify integer values directly rather than using syntax
+                     such as "10k". -->
+                <time value="500" />
+
+                <!-- No limit on message count.  You can specify a value here
+                     such as "10" or "10k".  A value of "10k" is interpreted as
+                     (10 * 1024) messages. -->
+                <messages value="disable" />
+
+                <!-- Somewhat arbitrary upper bound on batch data size.  As
+                     above, "256k" is interpreted as (256 * 1024) bytes.  A
+                     simple integer value such as "10000" can also be
+                     specified.  This value applies to the actual message
+                     content (keys and values).  The total size of a batch will
+                     be a bit larger due to header overhead. -->
+                <bytes value="256k" />
+            </config>
+
+            <config name="default_latency">
+                <time value="10000" />
+                <messages value="disable" />
+                <bytes value="256k" />
+            </config>
+        </namedConfigs>
+
+        <!-- Somewhat arbitrary upper bound on produce request size.  As above,
+             a value such as "100k" is interpreted as (100 * 1024) bytes.  You
+             can also specify simple integer valuse such as "100000" directly.
+             Here, you can not specify "disable".  A nonnegative integer value
+             must be specified.  This value applies to the actual message
+             content (keys and values).  The total size of a produce request
+             will be a bit larger due to header overhead. -->
+        <produceRequestDataLimit value="1024k" />
+
+        <!-- This value should be exactly the same as the message.max.bytes
+             value in the Kafka broker configuration.  A larger value will
+             cause Kafka to send MessageSizeTooLarge error ACKs to Bruce for
+             large compressed message sets, which will cause Bruce to discard
+             them.  A smaller value will not cause data loss, but will
+             unnecessarily restrict the size of a compressed message set.  As
+             above, you can supply a value such as "1024k".  Specifying
+             "disable" here is not permitted. -->
+        <messageMaxBytes value="1000000" />
+
+        <!-- This specifies the configuration for combined topics batching
+             (where a single batch may contain multiple topics).  Setting
+             "enable" to false is strongly discouraged due to performance
+             considerations.
+          -->
+        <combinedTopics enable="true" config="default_latency" />
+
+        <!-- This specifies how batching is handled for topics not specified in
+             "topicConfigs" below.  Allowed values for the "action" attribute
+             are as follows:
+
+                 "perTopic": This setting will cause each topic not listed in
+                     "topicConfigs" to be batched individually on a per-topic
+                     basis, with the "config" attribute specifying a batching
+                     configuration from "namedConfigs" above.
+
+                 "combinedTopics": This setting will cause all topics not
+                     listed in "topicConfigs" to be batched together in mixed
+                     topic batches.  In this case, "config" must be either
+                     missing or set to the empty string, and the batching
+                     configuration is determined by the "combinedTopics"
+                     element above.  This is the setting that most people will
+                     want.
+
+                 "disable": This setting will cause batching to be disabled for
+                     all topics not listed in "topicConfigs".  In this case,
+                     the "config" attribute is optional and ignored.  This
+                     setting is strongly discouraged due to performance
+                     considerations.
+          -->
+        <defaultTopic action="combinedTopics" config="" />
+
+        <topicConfigs>
+            <!-- Uncomment and customize the settings in here if you wish to
+                 have batching configurations that differ on a per-topic basis.
+
+                 As above, allowed settings for the "action" attribute are
+                 "perTopic", "combinedTopics", and "disable".  The "disable"
+                 setting is strongly discouraged due to performance
+                 considerations.
+
+            <topic name="low_latency_topic_1" action="perTopic"
+                   config="low_latency" />
+            <topic name="low_latency_topic_2" action="perTopic"
+                   config="low_latency" />
+              -->
+        </topicConfigs>
+    </batching>
+
+    <compression>
+        <namedConfigs>
+            <!-- Don't bother to compress a message set whose total size is
+                 less than minSize bytes.  As above, a value such as "1k" is
+                 interpreted as (1 * 1024) bytes.  Here, a value of "disable"
+                 is not recognized, but you can specify "0".  The value of 128
+                 below is somewhat arbitrary, and not based on experimental
+                 data.  Currently the only allowed values for "type" are
+                 "snappy" and "none".
+              -->
+            <config name="snappy_config" type="snappy" minSize="128" />
+
+            <!-- "minSize" is ignored (and optional) if type in "none". -->
+            <config name="no_compression" type="none" />
+        </namedConfigs>
+
+        <!-- This must be an integer value at least 0 and at most 100.  If the
+             compressed size of a message set is greater than this percentage
+             of the uncompressed size, then Bruce sends the data uncompressed,
+             so the Kafka brokers don't waste CPU cycles dealing with the
+             compression.  The value below is somewhat arbitrary, and not based
+             on experimental data. -->
+        <sizeThresholdPercent value="75" />
+
+        <!-- This specifies the compression configuration for all topics not
+             listed in "topicConfigs" below.
+          -->
+        <defaultTopic config="snappy_config" />
+
+        <topicConfigs>
+            <!-- Uncomment and customize the settings in here if you wish to
+                 configure compression on a per-topic basis.
+
+            <topic name="no_compression_topic_1" config="no_compression" />
+            <topic name="no_compression_topic_2" config="no_compression" />
+              -->
+        </topicConfigs>
+    </compression>
+
+    <initialBrokers>
+        <!-- When Bruce starts, it chooses a broker in this list to contact for
+             metadata.  If Bruce cannot get metadata from the host it chooses,
+             it tries other hosts until it succeeds.  Once Bruce successfully
+             gets metadata, the broker list in the metadata determines which
+             brokers Bruce will connect to for message transmission and future
+             metadata requests.  Specifying a single host is ok, but multiple
+             hosts are recommended to guard against the case where a single
+             specified host is down.
+          -->
+        <broker host="broker_host_1" port="9092" />
+        <broker host="broker_host_2" port="9092" />
+    </initialBrokers>
+</bruceConfig>
+```
+
+(more content will appear here soon)
 
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on
