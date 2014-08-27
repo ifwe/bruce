@@ -209,7 +209,13 @@ The following table summarizes Bruce's *optional* command line arguments:
 | --discard_report_interval N | This specifies the discard report interval in seconds. |
 | --debug_dir DIR | This specifies a directory for debug instrumentation files, as described [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).  If unspecified, the debug instrumentation option is disabled. |
 | --msg_debug_time_limit N | This specifies a message debugging time limit in seconds, as described [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).  The default value is 3600. |
-| --msg_debug_time_limit N | This specifies a message debugging time limit, as described [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).  The default value is (2 * 1024 8 1024 * 1024). |
+| --msg_debug_byte_limit N | This specifies a message debugging byte limit, as described [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).  The default value is (2 * 1024 8 1024 * 1024). |
+| --skip_compare_metadata_on_refresh | On metadata refresh, don't compare new metadata to old metadata.  Always replace the metadata even if it is unchanged.  This should be disabled for normal operation, but enabling it may be useful for testing. |
+| --discard_log_path PATH | Absolute pathname of local file where discards will be logged.  This is intended for debugging.  If unspecified, logging of discards to a file will be disabled. |
+| --discard_log_bad_msg_prefix_size N | Maximum bad message prefix size in bytes to write to discard logfile when discarding |
+| --discard_log_max_file_size N | Maximum size (in Kb) of discard logfile.  When the next log entry e would exceed the maximum, the logfile (with name f) is renamed to f.N wnere N is the current time in milliseconds since the epoch.  Then a new file f is opened, and e is written to f.  See also --discard_log_max_archive_size. |
+| --discard_log_max_archive_size N | See description of --discard_log_max_file_size.  Once a discard logfile is renamed from f to f.N due to the size restriction imposed by discard_log_max_file_size, the directory containing f.N is scanned for all old discard logfiles.  If their combined size exceeds discard_log_max_archive_size (specified in Kb), then old logfiles are deleted, starting with the oldest, until their combined size no longer exceeds the maximum. |
+| --discard_report_bad_msg_prefix_size N | Maximum bad message prefix size in bytes to write to discard report available from Bruce's web interface. |
 
 (The above table is incomplete.  More content will appear here soon.)
 
