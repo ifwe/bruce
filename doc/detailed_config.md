@@ -174,13 +174,14 @@ information provided in the above-mentioned *design* section.
 
 ### Command Line Arguments
 
-The following table summarizes Bruce's *required* command line arguments:
+Bruce's *required* command line arguments are summarized below:
 
-| Argument | Description |
-|:---------|:------------|
-| --config_path PATH | This specifies the location of the config file. |
-| --msg_buffer_max MAX_KB | This specifies the amount of memory in kbytes Bruce reserves for message data.  If this buffer space is exhausted, Bruce starts discarding messages. |
-| --receive_socket_name PATH | This specifies the pathname of Bruce's UNIX domain datagram socket that clients write messages to. |
+* `--config_path PATH`: This specifies the location of the config file.
+* `--msg_buffer_max MAX_KB`: This specifies the amount of memory in kbytes
+Bruce reserves for message data.  If this buffer space is exhausted, Bruce
+starts discarding messages.
+* `--receive_socket_name PATH`: This specifies the pathname of Bruce's UNIX
+domain datagram socket that clients write messages to.
 
 The following table summarizes Bruce's *optional* command line arguments:
 
