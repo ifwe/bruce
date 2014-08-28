@@ -156,14 +156,14 @@ the client-provided ones documented
 [here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats),
 and are interpreted as milliseconds since the epoch.  A total of 15 messages
 with invalid topics were received, and recently received invalid topics are
-`bad_topic_1` and `bad_topic_2`.  Bruce's process ID is 17706, and the time
-when the discard report was created is 1408661249 (represented in seconds, not
-milliseconds, since the epoch).  The version of Bruce that produced the report
-is `1.0.6.70.ga324763`.  The default discard report interval, as shown above,
-is 600 seconds, and is configurable, as documented
+`bad_topic_1` and `bad_topic_2`.  Prefixes of recently received malformed
+messages also appear in Bruce's discard reports in base64-encoded form.
+Bruce's process ID is 17706, and the time when the discard report was created
+is 1408661249 (represented in seconds, not milliseconds, since the epoch).  The
+version of Bruce that produced the report is `1.0.6.70.ga324763`.  The default
+discard report interval, as shown above, is 600 seconds, and is configurable,
+as documented
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
-Prefixes of recently received malformed messages also appear in Bruce's
-discard reports in base64-encoded form.
 
 ### Queued Message Information
 
