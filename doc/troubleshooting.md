@@ -37,7 +37,62 @@ intervals slightly shorter that Bruce's discard reporting interval.
 It is also useful to look in `src/bruce/scripts/bruce_counters.py` to see
 which counters the script monitors and how it responds to incremented values.
 
-(more content will appear here soon)
+### Discard File Logging
+
+For debugging and troubleshooting purposes, it may be helpful to configure
+Bruce to log discards to local files.  To do this, see the
+`--discard_log_path PATH`, `--discard_log_bad_msg_prefix_size N`,
+`--discard_log_max_file_size N`, and `--discard_log_max_archive_size N` command
+line options, which are documented
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments).
+As documented
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets),
+a Kafka message consists of a key and a value, either of which may be empty.
+Currently only the values are written to Bruce's discard logfiles.  Including
+keys to the logfiles is future work.  It should also be mentioned that the
+values are base64 encoded when written to the logfiles.
+
+### Debug Logfiles
+
+As documented
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments),
+the `--debug_dir DIR`, `--msg_debug_time_limit N` and
+`--msg_debug_byte_limit N` command line options configure Bruce's debug logfile
+mechanism, which causes Bruce to maintain 3 separate logfiles: One for messages
+received from its input socket, one for messages sent to Kafka, and one for
+messages that Bruce received a successful ACK for.  The `--debug_dir DIR`
+option specifies the directory in which these files are placed.  To start
+and stop the logging mechanism, you must send HTTP requests to Bruce's web
+interface as follows:
+
+* To start logging for a specific topic, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/add_topic/name_of_topic`.
+* To stop logging for a specific topic, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/del_topic/name_of_topic`.
+* To start logging for all topics, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/add_all_topics`.
+* To stop logging for all topics, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/del_all_topics`.
+* To see which topics are currently being logged, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/get_topics`.
+* To stop logging and make the debug logfiles empty, send an HTTP GET to
+`http://bruce_host:9090/msg_debug/truncate_files`.
+
+Once debug logging is started, it will automatically stop when either the
+time limit specified by `--msg_debug_time_limit N` expires or the debug logfile
+size limit specified by `--msg_debug_byte_limit N` is reached.
+
+### Other Tools
+
+Bruce's queue status interface described
+[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#queued-message-information)
+provides per-topic information on messages being processed by Bruce.  In cases
+where Kafka isn't keeping up with the message volume, this may be helpful in
+identifying specific topics that are placing heavy load on the system.  Useful
+information can also be obtained from Bruce's syslog messages.  As documented
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments),
+the `--log_level LEVEL` command line option configures Bruce's logging
+verbosity.
 
 If you are interested in making custom modifications or contributing to Bruce,
 information is provided

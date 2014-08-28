@@ -162,6 +162,8 @@ milliseconds, since the epoch).  The version of Bruce that produced the report
 is `1.0.6.70.ga324763`.  The default discard report interval, as shown above,
 is 600 seconds, and is configurable, as documented
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+Prefixes of recently received malformed messages also appear in Bruce's
+discard reports in base64-encoded form.
 
 ### Queued Message Information
 
