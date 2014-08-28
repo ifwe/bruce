@@ -21,8 +21,6 @@ which will help track down problems.
 other counters of this type indicate various types of error ACKs received from
 Kafka, as documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes).
-`AckErrorNone` is incremented each time Bruce receives an ACK indicating
-successful storage and replication of a message set.
 * `InputThreadDiscardXxx` and `DiscardXxx`: These counters are incremented when
 Bruce discards messages for various reasons.
 * `BugXxx`: A nonzero value for any counter starting with the prefix `Bug`
