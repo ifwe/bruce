@@ -1,7 +1,13 @@
 ## Modifying Bruce's Implementation
 
-Bruce's build system is based on [SCons](http://www.scons.org/).  Files
-`SConstruct` and `src/SConscript` contain the build configuration.  As shown
+Before making changes to Bruce's implementation, it is helpful to become
+familiar with Bruce's build system, which is based on
+[SCons](http://www.scons.org/).
+
+### Build System
+
+Files `SConstruct` and `src/SConscript` contain the build configuration.  As
+shown
 [here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#building-bruce-directly),
 to build something, first source the file `bash_defs` in the root of Bruce's
 Git repository.  Then `cd` into the `src` directory or any directory beneath
@@ -23,23 +29,23 @@ repository).  For instance, the built `bruce` executable will be
 `out/debug/bruce/bruce`.  To build a release version of a target, use the
 `--release` option with the `build` command.  For instance,
 `build --release bruce` will build a release version of `bruce`, which will be
-`out/release/bruce/bruce`.  Source files ending in `.test.cc` are unit tests,
-which can be executed as standalone executables.  For instance, in the above
-example if we typed `build input_thread.test`, this would build the unit test
-for Bruce's input thread, which would then appear as executable file
+`out/release/bruce/bruce`.
+
+Source files ending in `.test.cc` are unit tests, which can be executed as
+standalone executables.  For instance, in the above example if we typed
+`build input_thread.test`, this would build the unit test for Bruce's input
+thread, which would then appear as executable file
 `out/debug/bruce/input_thread.test`.  If you type
 `build --test input_thread.test`, that will build the unit test and then
 immediately execute it.  Before building or running any unit tests, you must
 have the Google Test Framework installed, as documented
 [here](https://github.com/tagged/bruce/blob/master/doc/gtest.md).
 
-If you type `build -c`, that will remove all build
-artifacts by deleting the `out` directory.  For `make` users, this is the
-equivalent of `make clean`.  Alternatively, you can just type `rm -fr out` from
-the root of the Git repository.
-
-If you wish to change any compiler or linker flags, you can edit the following
-part of the SConstruct file:
+If you type `build -c`, that will remove all build artifacts by deleting the
+`out` directory.  For `make` users, this is the equivalent of `make clean`.
+Alternatively, you can just type `rm -fr out` from the root of the Git
+repository.  If you wish to change any compiler or linker flags, you can edit
+the following part of the SConstruct file:
 
 ```Python
 # Environment.
@@ -60,8 +66,6 @@ if GetOption('import_path'):
 
 
 def set_debug_options():
-    # Note: -fno-omit-frame-pointer is required if you specify
-    # -fsanitize=address.  Also, you must have
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
     # libasan on RHEL, Fedora, and CentOS).
@@ -81,7 +85,13 @@ def set_release_options():
 Note that SCons build files are actually Python scripts, so you can add
 arbitrary Python code.  Adding, removing or renaming source files does not
 require any changes to the build scripts, since they are written to figure out
-the dependencies on their own.
+the dependencies on their own.  If you want to build all targets (or a
+substantial subset of all targets) with a single command, you can execute the
+`build_all` script in the root of the Git repository.  For instance,
+`build_all run_tests` will build and run all unit tests.  Type
+`build_all --help` for a full description of the command line options.
+Eventually it would be nice to eliminate the `build_all` script and integrate
+its functionality directly into the SCons configuration.
 
 (more content will be added here soon)
 
