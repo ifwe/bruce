@@ -140,8 +140,6 @@ if GetOption('import_path'):
 
 
 def set_debug_options():
-    # Note: -fno-omit-frame-pointer is required if you specify
-    # -fsanitize=address.  Also, you must have
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
     # libasan on RHEL, Fedora, and CentOS).
