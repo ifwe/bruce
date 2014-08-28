@@ -115,7 +115,7 @@ tag it, commit it.  "Whatever works best for you" is the right answer to
 4. Push your changes to your cloned repository.  Once you like how your changes
 are functioning in your locally cloned repo, it's time to
 [push them back up](https://help.github.com/articles/pushing-to-a-remote) to
-your cloned repo on GitHub.
+your forked repo on GitHub.
 
 5. [Create a pull request](https://help.github.com/articles/using-pull-requests)
 to the master branch of the bruce repository.
