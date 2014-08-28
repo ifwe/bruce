@@ -13,10 +13,10 @@ value `MsgCreate - MsgDestroy` indicates the total number of messages Bruce is
 currently holding internally.  If the value gets too large, it likely indicates
 that Kafka isn't keeping up with the volume of messages directed at it.
 * `MsgUnprocessedDestroy`: This indicates destruction of a message before Bruce
-has marked it as processed.  If this occurs due to any reason other than Bruce
-exiting on a fatal error, then it indicates a bug in Bruce.  If this type of
-event occurs, Bruce will write a syslog message containing a stack trace, which
-will help track down the problem.
+has marked it as processed.  If this occurs for any reason other than Bruce
+exiting on a fatal error, then there is a bug in Bruce.  On occurrence of this
+type of event, Bruce will write a syslog message containing a stack trace,
+which will help track down the problem.
 * `AckErrorXxx`: `AckErrorNone` indicates a successful ACK from Kafka.  All
 other counters of this type indicate various types of error ACKs received from
 Kafka, as documented
