@@ -1,8 +1,7 @@
 ## Modifying Bruce's Implementation
 
-Before making changes to Bruce's implementation, it is helpful to become
-familiar with Bruce's build system, which is based on
-[SCons](http://www.scons.org/).
+Before making code changes, it is helpful to become familiar with Bruce's build
+system, which is based on [SCons](http://www.scons.org/).
 
 ### Build System
 
