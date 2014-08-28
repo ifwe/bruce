@@ -17,17 +17,19 @@ has marked it as processed.  If this occurs due to any reason other than Bruce
 exiting on a fatal error, then it indicates a bug in Bruce.  If this type of
 event occurs, Bruce will write a syslog message containing a stack trace, which
 will help track down the problem.
-* `AckErrorXxx`: These counters are incremented when Bruce receives various ACK
-errors from Kafka, which are documented
+* `AckErrorXxx`: `AckErrorNone` indicates a successful ACK from Kafka.  All
+other counters of this type indicate various types of error ACKs received from
+Kafka, as documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes).
 `AckErrorNone` is incremented each time Bruce receives an ACK indicating
 successful storage and replication of a message set.
-`InputThreadDiscardXxx` and `DiscardXxx`: These counters are incremented when
+* `InputThreadDiscardXxx` and `DiscardXxx`: These counters are incremented when
 Bruce discards messages for various reasons.
-`BugXxx`: A nonzero value for any counter starting with the prefix `Bug`
+* `BugXxx`: A nonzero value for any counter starting with the prefix `Bug`
 indicates a bug in Bruce.
-`MongooseXxx`: These counters indicate events related to Bruce's web interface.
-`NoDiscardQuery`: This is incremented when Bruce stops getting asked for
+* `MongooseXxx`: These counters indicate events related to Bruce's web
+interface.
+* `NoDiscardQuery`: This is incremented when Bruce stops getting asked for
 discard reports at frequent enough intervals.  To avoid losing discard
 information, it is recommended to query Bruce's discard reporting interface at
 intervals slightly shorter that Bruce's discard reporting interval.
