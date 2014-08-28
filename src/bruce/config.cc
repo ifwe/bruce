@@ -335,7 +335,7 @@ TConfig::TConfig(int argc, char *argv[])
       DebugDir("/home/bruce/debug"),
       MsgDebugTimeLimit(3600),
       MsgDebugByteLimit(2UL * 1024UL * 1024UL * 1024UL),
-      SkipCompareMetadataOnRefresh(true),
+      SkipCompareMetadataOnRefresh(false),
       DiscardLogMaxFileSize(1024),
       DiscardLogMaxArchiveSize(8 * 1024),
       DiscardLogBadMsgPrefixSize(256),
