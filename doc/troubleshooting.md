@@ -16,7 +16,7 @@ that Kafka isn't keeping up with the volume of messages directed at it.
 has marked it as processed.  If this occurs for any reason other than Bruce
 exiting on a fatal error, then there is a bug in Bruce.  On occurrence of this
 type of event, Bruce will write a syslog message containing a stack trace,
-which will help track down the problem.
+which will help track down problems.
 * `AckErrorXxx`: `AckErrorNone` indicates a successful ACK from Kafka.  All
 other counters of this type indicate various types of error ACKs received from
 Kafka, as documented
