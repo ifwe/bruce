@@ -216,43 +216,10 @@ The following table summarizes Bruce's *optional* command line arguments:
 | --discard_log_max_file_size N | Maximum size (in Kb) of discard logfile.  When the next log entry e would exceed the maximum, the logfile (with name f) is renamed to f.N wnere N is the current time in milliseconds since the epoch.  Then a new file f is opened, and e is written to f.  See also --discard_log_max_archive_size. |
 | --discard_log_max_archive_size N | See description of --discard_log_max_file_size.  Once a discard logfile is renamed from f to f.N due to the size restriction imposed by discard_log_max_file_size, the directory containing f.N is scanned for all old discard logfiles.  If their combined size exceeds discard_log_max_archive_size (specified in Kb), then old logfiles are deleted, starting with the oldest, until their combined size no longer exceeds the maximum. |
 | --discard_report_bad_msg_prefix_size N | Maximum bad message prefix size in bytes to write to discard report available from Bruce's web interface. |
-
-(The above table is incomplete.  More content will appear here soon.)
+| --omit_timestamp | Do not use this option, since it will soon be removed.  Its purpose is to provide compatibility with legacy infrastructure at Tagged. |
+| --use_old_input_format | Do not use this option, since it will soon be removed.  Its purpose is to provide compatibility with legacy infrastructure at Tagged. |
+| --use_old_output_format | Do not use this option, since it will soon be removed.  Its purpose is to provide compatibility with legacy infrastructure at Tagged. |
 
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on
 [troubleshooting](https://github.com/tagged/bruce#troubleshooting) helpful.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
