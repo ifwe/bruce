@@ -78,7 +78,9 @@ interface as follows:
 
 Once debug logging is started, it will automatically stop when either the
 time limit specified by `--msg_debug_time_limit N` expires or the debug logfile
-size limit specified by `--msg_debug_byte_limit N` is reached.
+size limit specified by `--msg_debug_byte_limit N` is reached.  As with discard
+logfiles, only message values are currently logged.  Adding keys to the logs is
+future work.  The values are written in base64 encoded form.
 
 ### Other Tools
 
