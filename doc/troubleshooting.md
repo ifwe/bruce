@@ -47,8 +47,8 @@ As documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets),
 a Kafka message consists of a key and a value, either of which may be empty.
 Currently only the values are written to Bruce's discard logfiles.  Including
-keys to the logfiles is future work.  It should also be mentioned that the
-values are base64 encoded when written to the logfiles.
+keys in the logfiles is future work.  It should also be mentioned that the
+values are written in base64 encoded form.
 
 ### Debug Logfiles
 
