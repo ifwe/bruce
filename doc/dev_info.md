@@ -29,7 +29,11 @@ example if we typed `build input_thread.test`, this would build the unit test
 for Bruce's input thread, which would then appear as executable file
 `out/debug/bruce/input_thread.test`.  If you type
 `build --test input_thread.test`, that will build the unit test and then
-immediately execute it.  If you type `build -c`, that will remove all build
+immediately execute it.  Before building or running any unit tests, you must
+have the Google Test Framework installed, as documented
+[here](https://github.com/tagged/bruce/blob/master/doc/gtest.md).
+
+If you type `build -c`, that will remove all build
 artifacts by deleting the `out` directory.  For `make` users, this is the
 equivalent of `make clean`.  Alternatively, you can just type `rm -fr out` from
 the root of the Git repository.
