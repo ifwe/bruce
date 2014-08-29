@@ -92,48 +92,6 @@ substantial subset of all targets) with a single command, you can execute the
 Eventually it would be nice to eliminate the `build_all` script and integrate
 its functionality directly into the SCons configuration.
 
-### Address Sanitizer in Debug Builds
-
-Support for [AddressSanitizer](https://code.google.com/p/address-sanitizer/),
-a memory error detector, was added to GCC 4.8.  Bruce makes use of this in its
-debug build.  A word of caution is therefore necessary.  Suppose you have the
-following piece of code:
-
-```C++
-/* Do something interesting to an array of int values.  'begin' points to the
-beginning of the array and 'end' points one position past the last element.
-'begin' and 'end' will be equal in the case of an empty input. */
-void DoSomethingToIntArray(int *begin, int *end) {
-  assert(begin || (end == begin));
-  assert(end >= begin);
-  // do something interesting ...
-}
-
-void foo(std::vector<int> &v) {
-  DoSomethingToIntArray(&v[0], &v[v.size()]);
-}
-```
-
-The above code is totally legitimate C++.  However, the address sanitizer will
-report an out of range vector index due to the expression `&v[v.size()]`.  In
-fact, if the vector passed to `foo()` happens to be empty, `&v[0]` is enough to
-cause the address sanitizer to report an error.  For this reason, the above
-code needs to be written a bit differently to avoid spurious errors in debug
-builds.  For instance, one might instead implement `foo()` like this:
-
-```C++
-void foo(std::vector<int> &v) {
-  if (!v.empty()) {
-    DoSomethingToIntArray(&v[0], &v[0] + v.size());
-  }
-}
-```
-
-Although this is a bit less elegant than the previous implementation, the
-benefits of a debugging tool such the address sanitizer can be huge when memory
-corruption problems occur.  Therefore please avoid code such as the first
-version of `foo()` when making changes to Bruce.
-
 ### Contributing Code
 
 The coding conventions for Bruce are documented
