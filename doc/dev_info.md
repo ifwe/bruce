@@ -132,7 +132,7 @@ Although this is a bit less elegant than the previous implementation, the
 benefits of tools such as debug mode can be great when tracking down problems.
 Therefore please avoid code such as the first version of `foo()` when making
 changes to Bruce.  In GCC 4.8, support was added for
-[AddressSanitizer](http://code.google.com/p/address-sanitizer/) another useful
+[AddressSanitizer](http://code.google.com/p/address-sanitizer/), another useful
 debugging tool.  This is enabled in debug builds of Bruce.
 
 ### Contributing Code
