@@ -33,17 +33,15 @@ input thread reads the messages.  There is no need for clients to wait for an
 ACK, since the operating system provides the same reliability guarantee for
 UNIX domain sockets as for other local IPC mechanisms such as pipes.  Note that
 this differs from UDP datagrams, which do not provide a reliable delivery
-guarantee.
-
-Like their network-oriented counterparts, UNIX domain sockets exist in both
-datagram and stream variants.  The datagram option was chosen for Bruce because
-of the greater simplicity of the programming model on both client and server
-ends.  However, a limitation of this approach is the maximum size of a single
-datagram, which has been found to be 212959 bytes on a CentOS 7 x86_64 system.
-This limit increases to 425951 bytes if clients are willing to increase
-SO_SNDBUF above the default value, although this may be inconvenient for many.
-Hopefully the lower limit will be adequate for most users.  If not, optional
-support for stream sockets can be implemented as a future extension.
+guarantee.  Like their network-oriented counterparts, UNIX domain sockets exist
+in both datagram and stream variants.  The datagram option was chosen for Bruce
+because of the greater simplicity of the programming model on both client and
+server ends.  However, a limitation of this approach is the maximum size of a
+single datagram, which has been found to be 212959 bytes on a CentOS 7 x86_64
+system.  This limit increases to 425951 bytes if clients are willing to
+increase SO_SNDBUF above the default value, although this may be inconvenient
+for many.  Hopefully the lower limit will be adequate for most users.  If not,
+optional support for stream sockets can be implemented as a future extension.
 
 ### Router Thread
 
