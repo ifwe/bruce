@@ -115,10 +115,12 @@ void foo(std::vector<int> &v) {
 }
 ```
 
-The above code is totally legitimate C++.  However, it will cause an out of
-range vector index to be reported when debug mode is enabled.  For this reason,
-the above code needs to be written a bit differently to avoid spurious errors
-in debug builds. For instance, one might instead implement foo() like this:
+The above code is totally legitimate C++.  However, the expression
+`&v[v.size()]` will cause an out of range vector index to be reported when
+running with debug mode enabled.  In fact, the expression `&v[0]` is enough to
+cause an error to be reported in the case where `v` is empty.  Therefore the
+code needs to be written a bit differently to avoid spurious errors in debug
+builds. For instance, one might instead implement foo() like this:
 
 ```C++
 void foo(std::vector<int> &v) {
