@@ -92,6 +92,49 @@ substantial subset of all targets) with a single command, you can execute the
 Eventually it would be nice to eliminate the `build_all` script and integrate
 its functionality directly into the SCons configuration.
 
+### Debug Builds
+
+GCC provides a
+[debug mode](https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode.html)
+which implements various assertion checks for STL containers.  Bruce makes use
+of this in its debug build. A word of caution is therefore necessary. Suppose
+you have the following piece of code:
+
+```C++
+/* Do something interesting to an array of int values.  'begin' points to the
+   beginning of the array and 'end' points one position past the last element.
+   'begin' and 'end' will be equal in the case of an empty input. */
+void DoSomethingToIntArray(int *begin, int *end) {
+  assert(begin || (end == begin));
+  assert(end >= begin);
+  // do something interesting ...
+}
+
+void foo(std::vector<int> &v) {
+  DoSomethingToIntArray(&v[0], &v[v.size()]);
+}
+```
+
+The above code is totally legitimate C++.  However, it will cause an out of
+range vector index to be reported when running in debug mode.  For this reason,
+the above code needs to be written a bit differently to avoid spurious errors
+in debug builds. For instance, one might instead implement foo() like this:
+
+```C++
+void foo(std::vector<int> &v) {
+  if (!v.empty()) {
+    DoSomethingToIntArray(&v[0], &v[0] + v.size());
+  }
+}
+```
+
+Although this is a bit less elegant than the previous implementation, the
+benefits of tools such as debug mode can be great when tracking down problems.
+Therefore please avoid code such as the first version of `foo()` when making
+changes to Bruce.  In GCC 4.8, support was added for
+[AddressSanitizer](http://code.google.com/p/address-sanitizer/) another useful
+debugging tool.  This is enabled in debug builds of Bruce.
+
 ### Contributing Code
 
 The coding conventions for Bruce are documented
