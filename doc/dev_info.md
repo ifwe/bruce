@@ -116,7 +116,7 @@ void foo(std::vector<int> &v) {
 ```
 
 The above code is totally legitimate C++.  However, it will cause an out of
-range vector index to be reported when running in debug mode.  For this reason,
+range vector index to be reported when debug mode is enabled.  For this reason,
 the above code needs to be written a bit differently to avoid spurious errors
 in debug builds. For instance, one might instead implement foo() like this:
 
