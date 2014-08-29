@@ -94,7 +94,7 @@ its functionality directly into the SCons configuration.
 
 ### Debug Builds
 
-GCC provides a
+The GNU C++ library provides a
 [debug mode](https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode.html)
 which implements various assertion checks for STL containers.  Bruce makes use
 of this in its debug build. A word of caution is therefore necessary. Suppose
