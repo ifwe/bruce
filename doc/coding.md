@@ -19,7 +19,7 @@ When you use a namespace, please indent it one level from the surrounding code.
 When closing a curly brace, follow it with a `//` comment declaring which
 namespace has just been closed. For example:
 
-```
+```C++
 class TExprError : public TSourceError, public Base::TFinalError<TExprError> {
   public:
   TExprError(const Base::TCodeLocation &code_location,
@@ -49,7 +49,7 @@ it's all caps, capitalize the first letter only:
 
 Attach the `*` for pointers to whatever is on the right hand side. E.g.:
 
-```
+```C++
 const char *foo;
 ```
 
