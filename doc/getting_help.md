@@ -1,3 +1,3 @@
 ## Getting Help
 
-Content will be added here soon.
+Email Dave Peterson <dspeterson at tagged dot com>.
