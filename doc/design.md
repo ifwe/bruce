@@ -258,3 +258,6 @@ the limit.  Although it's possible that the compressed size of a message set is
 within the limit while the uncompressed size exceeds it, implementing things
 this way is simple and avoids wasting CPU cycles on message sets that are found
 to still exceed the limit after compression.
+
+Next:
+[detailed configuration](https://github.com/tagged/bruce#detailed-configuration).
