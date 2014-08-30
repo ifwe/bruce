@@ -24,5 +24,5 @@
 using namespace std;
 using namespace Io;
 
-TOutputConsumer::~TOutputConsumer() {}
-
+TOutputConsumer::~TOutputConsumer() {
+}

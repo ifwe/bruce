@@ -32,30 +32,28 @@ namespace {
 
   class TMyFormat {
     public:
-  
     TMyFormat()
-        : X(DefaultX), Y(DefaultY) {}
+        : X(DefaultX), Y(DefaultY) {
+    }
   
     int X, Y;
   
     string Foo;
   
     static const int DefaultX, DefaultY;
-  
-  };
+  };  // TMyFormat
   
   const int
       TMyFormat::DefaultX = 101,
       TMyFormat::DefaultY = 202;
   
-  class TMyStream
-      : public TStream<TMyFormat> {
+  class TMyStream : public TStream<TMyFormat> {
     NO_COPY_SEMANTICS(TMyStream);
+
     public:
-  
-    TMyStream() {}
-  
-  };
+    TMyStream() {
+    }
+  };  // TMyStream
   
   typedef TFormatter<TMyFormat> TMyFormatter;
 
@@ -82,11 +80,13 @@ namespace {
     static const int expected = 303;
     strm << SetFormat(&TMyFormat::X, expected);
     ASSERT_EQ(strm.GetFormat().X, expected);
+
     /* extra */ {
       TFormatter<TMyFormat> formatter(&strm);
       formatter->Y = expected;
       ASSERT_EQ(strm.GetFormat().Y, expected);
     }
+
     ASSERT_EQ(strm.GetFormat().Y, TMyFormat::DefaultY);
   }
   

@@ -31,19 +31,17 @@ namespace Io {
   /* A consumer of out-bound data. */
   class TOutputConsumer {
     NO_COPY_SEMANTICS(TOutputConsumer);
-    public:
 
+    public:
     /* Consume the next chunk of data. */
     virtual void ConsumeOutput(const std::shared_ptr<const TChunk> &chunk) = 0;
 
     protected:
-
     /* Do-little. */
     TOutputConsumer() {}
 
     /* Do-little. */
     virtual ~TOutputConsumer();
-
   };  // TOutputConsumer
 
 }  // Io

@@ -33,13 +33,19 @@ using namespace Base;
 using namespace Rpc;
 
 TTransceiver::TDisconnected::TDisconnected()
-    : runtime_error("RPC transceiver hung up on") {}
+    : runtime_error("RPC transceiver hung up on") {
+}
 
 TTransceiver::TPastEnd::TPastEnd()
-    : logic_error("RPC transceiver advanced past end of data") {}
+    : logic_error("RPC transceiver advanced past end of data") {
+}
 
 TTransceiver::TTransceiver()
-    : AvailStart(nullptr), AvailLimit(nullptr), DataStart(nullptr), DataLimit(nullptr) {}
+    : AvailStart(nullptr),
+      AvailLimit(nullptr),
+      DataStart(nullptr),
+      DataLimit(nullptr) {
+}
 
 TTransceiver::~TTransceiver() {
   assert(this);
@@ -58,11 +64,13 @@ TTransceiver::operator bool() const noexcept {
 
 TTransceiver &TTransceiver::operator+=(size_t size) {
   assert(this);
+
   /* Advance past all descriptors which have been entirely accounted for. */
   while (DataStart < DataLimit && size >= DataStart->iov_len) {
     size -= DataStart->iov_len;
     ++DataStart;
   }
+
   if (DataStart < DataLimit) {
     /* Adjust the next descriptor to account for the balance. */
     reinterpret_cast<char *&>(DataStart->iov_base) += size;
@@ -72,22 +80,28 @@ TTransceiver &TTransceiver::operator+=(size_t size) {
        This means 'size' was impossibly large. */
     throw TPastEnd();
   }
+
   return *this;
 }
 
 iovec *TTransceiver::GetIoVecs(size_t size) {
   assert(this);
   size_t avail_size = AvailLimit - AvailStart;
+
   if (size > avail_size) {
-    AvailStart = static_cast<iovec *>(realloc(AvailStart, sizeof(iovec) * size));
+    AvailStart = static_cast<iovec *>(
+        realloc(AvailStart, sizeof(iovec) * size));
+
     if (!AvailStart) {
       AvailLimit = nullptr;
       DataStart  = nullptr;
       DataLimit  = nullptr;
       throw bad_alloc();
     }
+
     AvailLimit = AvailStart + size;
   }
+
   DataStart = AvailStart;
   DataLimit = DataStart + size;
   return DataStart;
@@ -118,12 +132,13 @@ void TTransceiver::InitHdr(msghdr &hdr) const noexcept {
 }
 
 size_t TTransceiver::GetActualIoSize(ssize_t io_result) {
-  /* A negative value indicates a system error.
-     However, if the error is EPIPE, it just means our peer has hung up on us. */
+  /* A negative value indicates a system error.  However, if the error is
+     EPIPE, it just means our peer has hung up on us. */
   if (io_result < 0) {
     if (errno == EPIPE) {
       throw TDisconnected();
     }
+
     ThrowSystemError(errno);
   }
   /* A non-negative value is the number of bytes successfully transferred.
@@ -131,6 +146,7 @@ size_t TTransceiver::GetActualIoSize(ssize_t io_result) {
   if (!io_result) {
     throw TDisconnected();
   }
+
   /* A positive value is ok to return as-is. */
   return io_result;
 }

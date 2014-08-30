@@ -65,17 +65,21 @@ namespace {
     vecs[0].iov_len  = half;
     vecs[1].iov_base = data + half;
     vecs[1].iov_len  = size - half;
+
     for (size_t part = 0; xver; xver += part) {
       part = xver.Send(sock_a);
     }
+
     /* Receive the message in one piece. */
     char actual[size];
     vecs = xver.GetIoVecs(1);
     vecs[0].iov_base = actual;
     vecs[0].iov_len  = size;
+
     for (size_t part = 0; xver; xver += part) {
       part = xver.Recv(sock_b);
     }
+
     /* Did we get it? */
     ASSERT_EQ(string(actual, size), expected);
   }

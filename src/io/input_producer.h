@@ -31,20 +31,19 @@ namespace Io {
   /* A producer of in-bound data. */
   class TInputProducer {
     NO_COPY_SEMANTICS(TInputProducer);
-    public:
 
-    /* Produce the next chunk of data.
-       If there is no more data, return null. */
+    public:
+    /* Produce the next chunk of data.  If there is no more data, return null.
+     */
     virtual std::shared_ptr<const TChunk> TryProduceInput() = 0;
 
     protected:
-
     /* Do-little. */
-    TInputProducer() {}
+    TInputProducer() {
+    }
 
     /* Do-little. */
     virtual ~TInputProducer();
-
   };  // TInputProducer
 
 }  // Io

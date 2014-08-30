@@ -30,22 +30,24 @@ namespace Io {
   /* Formatting options for binary I/O streams. */
   class TBinaryFormat {
     public:
-
     /* By default, we use network byte ordering. */
     TBinaryFormat()
-        : UseNbo(true) {}
+        : UseNbo(true) {
+    }
 
     template <typename TVal>
     void ConvertInt(TVal &val) const {
       assert(this);
       assert(&val);
+
       if (UseNbo) {
         val = SwapEnds(val);
       }
     }
 
-    /* If true, convert to network byte order when writing and convert back to host byte order when reading;
-       otherwise, use host byte ordering for writing and reading. */
+    /* If true, convert to network byte order when writing and convert back to
+       host byte order when reading; otherwise, use host byte ordering for
+       writing and reading. */
     bool UseNbo;
 
   };  // TBinaryFormat

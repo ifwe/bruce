@@ -56,24 +56,28 @@ namespace {
   }
   
   TEST_F(TChunkAndPoolTest, NoGrowth) {
-    auto pool = make_shared<TPool>(TPool::TArgs(TPool::DefaultChunkSize, 1, 0));
+    auto pool = make_shared<TPool>(
+        TPool::TArgs(TPool::DefaultChunkSize, 1, 0));
     ASSERT_EQ(pool->GetFreeChunkCount(), 1U);
     auto chunk = pool->AcquireChunk();
     ASSERT_EQ(pool->GetFreeChunkCount(), 0U);
     bool caught;
+
     try {
       auto bad = pool->AcquireChunk();
       caught = false;
     } catch (const TPool::TOutOfChunksError &) {
       caught = true;
     }
+
     ASSERT_TRUE(caught);
     chunk.reset();
     ASSERT_EQ(pool->GetFreeChunkCount(), 1U);
   }
   
   TEST_F(TChunkAndPoolTest, ExtraGrowth) {
-    auto pool = make_shared<TPool>(TPool::TArgs(TPool::DefaultChunkSize, 0, 10));
+    auto pool = make_shared<TPool>(
+        TPool::TArgs(TPool::DefaultChunkSize, 0, 10));
     ASSERT_EQ(pool->GetFreeChunkCount(), 0U);
     auto chunk = pool->AcquireChunk();
     ASSERT_EQ(pool->GetFreeChunkCount(), 9U);
@@ -86,8 +90,10 @@ namespace {
     const size_t expected_size = strlen(expected_str);
     static const size_t buffer_size = 100;
     char buffer[buffer_size];
-    auto pool = make_shared<TPool>(TPool::TArgs(TPool::DefaultChunkSize, 0, 0));
-    pool->EnqueueChunk(new TChunk(TChunk::Empty, buffer, buffer + buffer_size));
+    auto pool = make_shared<TPool>(
+        TPool::TArgs(TPool::DefaultChunkSize, 0, 0));
+    pool->EnqueueChunk(new TChunk(
+        TChunk::Empty, buffer, buffer + buffer_size));
     auto chunk = pool->AcquireChunk();
     const char *csr = expected_str;
     size_t size = expected_size;

@@ -25,7 +25,8 @@
 
 namespace Io {
 
-  /* The 8-bit version, to facilitate templates which can take any of the uint[n]_t types. */
+  /* The 8-bit version, to facilitate templates which can take any of the
+     uint[n]_t types. */
   inline uint8_t SwapEnds(uint8_t val) {
     return val;
   }

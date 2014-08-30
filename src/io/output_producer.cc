@@ -28,6 +28,7 @@ using namespace Io;
 
 TOutputProducer::~TOutputProducer() {
   assert(this);
+
   try {
     Flush();
   } catch (const exception &ex) {
@@ -39,10 +40,12 @@ TOutputProducer::~TOutputProducer() {
 
 void TOutputProducer::Flush() {
   assert(this);
+
   if (CurrentChunk) {
     if (OutputConsumer) {
       OutputConsumer->ConsumeOutput(CurrentChunk);
     }
+
     CurrentChunk.reset();
   }
 }
@@ -50,13 +53,14 @@ void TOutputProducer::Flush() {
 void TOutputProducer::WriteExactly(const void *buf, size_t size) {
   assert(this);
   const char *csr = static_cast<const char *>(buf);
+
   while (size) {
     if (!CurrentChunk) {
       CurrentChunk = Pool->AcquireChunk();
     }
+
     if (!CurrentChunk->Store(csr, size)) {
       Flush();
     }
   }
 }
-

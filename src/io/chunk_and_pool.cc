@@ -39,10 +39,12 @@ TChunk::~TChunk() {
 size_t TChunk::Store(int fd) {
   assert(this);
   size_t read_size = GetRemainingSize();
+
   if (read_size) {
     read_size = ReadAtMost(fd, Cursor, read_size);
     Cursor += read_size;
   }
+
   return read_size;
 }
 
@@ -53,6 +55,7 @@ bool TChunk::Store(const char *&buf, size_t &size) {
   assert(buf || !size);
   size_t copy_size = GetRemainingSize();
   bool success = (copy_size != 0);
+
   if (success) {
     copy_size = min(copy_size, size);
     memcpy(Cursor, buf, copy_size);
@@ -60,15 +63,18 @@ bool TChunk::Store(const char *&buf, size_t &size) {
     buf += copy_size;
     size -= copy_size;
   }
+
   return success;
 }
 
 TChunk::TChunk(size_t size) {
   assert(size);
   Start = static_cast<char *>(malloc(size));
+
   if (!Start) {
     throw bad_alloc();
   }
+
   Limit = Start + size;
   Cursor = Start;
   MustFree = true;
@@ -76,6 +82,7 @@ TChunk::TChunk(size_t size) {
 
 TPool::~TPool() {
   assert(this);
+
   while (!FreeChunks.empty()) {
     delete FreeChunks.front();
     FreeChunks.pop();
@@ -86,6 +93,7 @@ shared_ptr<TChunk> TPool::AcquireChunk() {
   assert(this);
   shared_ptr<TChunk> result;
   TChunk *chunk;
+
   if (!FreeChunks.empty()) {
     // Recycle a chunk from the free queue.
     chunk = FreeChunks.front();
@@ -97,6 +105,7 @@ shared_ptr<TChunk> TPool::AcquireChunk() {
   } else if (NextChunkCb) {
     // We're empty and have a callback for more chunks.
     chunk = (*NextChunkCb)();
+
     if (!chunk) {
       // We're empty and the callback has no more chunks.
       throw TOutOfChunksError();
@@ -118,12 +127,14 @@ shared_ptr<TChunk> TPool::AcquireChunk() {
     delete chunk;
     throw;
   }
+
   return result;
 }
 
 void TPool::EnqueueChunk(TChunk *chunk) {
   assert(this);
   assert(chunk);
+
   try {
     FreeChunks.push(chunk);
   } catch (...) {
@@ -134,6 +145,7 @@ void TPool::EnqueueChunk(TChunk *chunk) {
 
 void TPool::EnqueueNewChunks(size_t chunk_count) {
   assert(this);
+
   for (size_t i = 0; i < chunk_count; ++i) {
     EnqueueChunk(new TChunk(ChunkSize));
   }
@@ -150,4 +162,3 @@ void TPool::OnRelease(TChunk *chunk) {
   // Return the chunk to its pool.
   pool->EnqueueChunk(chunk);
 }
-

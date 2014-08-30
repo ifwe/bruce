@@ -23,5 +23,5 @@
 
 using namespace Io;
 
-TInputProducer::~TInputProducer() {}
-
+TInputProducer::~TInputProducer() {
+}

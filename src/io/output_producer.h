@@ -48,10 +48,11 @@ namespace Io {
     }
 
     protected:
-
-    /* Attach to the given consumer.  If the consumer is null, then we won't push our output anywhere.
-       Use the given pool, which must not be null. */
-    TOutputProducer(const std::shared_ptr<TOutputConsumer> &output_consumer, const std::shared_ptr<TPool> &pool)
+    /* Attach to the given consumer.  If the consumer is null, then we won't
+       push our output anywhere.  Use the given pool, which must not be null.
+     */
+    TOutputProducer(const std::shared_ptr<TOutputConsumer> &output_consumer,
+        const std::shared_ptr<TPool> &pool)
         : OutputConsumer(output_consumer), Pool(pool) {
       assert(pool);
     }
@@ -59,16 +60,16 @@ namespace Io {
     /* Flushes automatically before destruction. */
     virtual ~TOutputProducer();
 
-    /* Push our current chunk to our consumer.
-       If we have no current chunk, do nothing. */
+    /* Push our current chunk to our consumer.  If we have no current chunk, do
+       nothing. */
     void Flush();
 
-    /* Write the contents of the given buffer to our current chunk.
-       If there is too much data for our chunk, flush to our consumer and begin a new chunk. */
+    /* Write the contents of the given buffer to our current chunk.  If there
+       is too much data for our chunk, flush to our consumer and begin a new
+       chunk. */
     void WriteExactly(const void *buf, size_t size);
 
     private:
-
     /* See accessor. */
     std::shared_ptr<TOutputConsumer> OutputConsumer;
 
@@ -77,8 +78,6 @@ namespace Io {
 
     /* The chunk we are current filling, if any. */
     std::shared_ptr<TChunk> CurrentChunk;
-
   };  // TOutputProducer
 
 }  // Io
-
