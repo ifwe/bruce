@@ -25,10 +25,12 @@ using namespace Capped;
 
 size_t TBlob::DoGetDataInFirstBlock(char *&data) const {
   assert(this);
+
   if (FirstBlock == nullptr) {
     data = nullptr;
     return 0;
   }
+
   data = &FirstBlock->Data[0];
   return (FirstBlock->NextBlock == nullptr) ? LastBlockSize : GetBlockSize();
 }

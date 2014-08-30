@@ -28,20 +28,19 @@
 
 namespace Capped {
 
-  /* TODO */
   class TReader;
   class TWriter;
 
   /* A blob of data, stored as a series of linked blocks. */
   class TBlob final {
     public:
-
     /* We use the same blocks that TPool uses. */
     using TBlock = TPool::TBlock;
 
     /* Default-construct an empty blob. */
     TBlob() noexcept
-        : Pool(nullptr), FirstBlock(nullptr), LastBlockSize(0), NumBytes(0) {}
+        : Pool(nullptr), FirstBlock(nullptr), LastBlockSize(0), NumBytes(0) {
+    }
 
     /* Move the data from that blob into a new one, leaving that blob empty. */
     TBlob(TBlob &&that) noexcept
@@ -55,6 +54,7 @@ namespace Capped {
     /* Return our blocks to the pool, if we have any. */
     ~TBlob() noexcept {
       assert(this);
+
       if (Pool) {
         Pool->FreeList(FirstBlock);
       }
@@ -112,26 +112,32 @@ namespace Capped {
     /* Call back for each block of data in the blob.
        We avoid std::function here to remain low-memory safe. */
     template <typename TContext>
-    bool ForEachBlock(bool (*cb)(const void *, size_t, TContext), TContext context) const {
+    bool ForEachBlock(bool (*cb)(const void *, size_t, TContext),
+        TContext context) const {
       assert(this);
       assert(cb);
+
       for (TBlock *block = FirstBlock; block; block = block->NextBlock) {
-        if (!cb(block->Data, block->NextBlock ? GetBlockSize() : LastBlockSize, context)) {
+        if (!cb(block->Data, block->NextBlock ? GetBlockSize() : LastBlockSize,
+                context)) {
           return false;
         }
       }
+
       return true;
     }
 
-    /* Return this blob to the default-constructed state; that is, empty, but still connected to the buffer pool. */
+    /* Return this blob to the default-constructed state; that is, empty, but
+       still connected to the buffer pool. */
     TBlob &Reset() noexcept {
       assert(this);
       TBlob temp(std::move(*this));
       return *this;
     }
 
-    /* Swap this blob with that one and return this one (which is now that one).
-       The two blobs can be connected to different pools; those connections are swapped, too. */
+    /* Swap this blob with that one and return this one (which is now that
+       one).  The two blobs can be connected to different pools; those
+       connections are swapped, too. */
     TBlob &Swap(TBlob &that) noexcept {
       assert(this);
       std::swap(Pool, that.Pool);
@@ -142,12 +148,13 @@ namespace Capped {
     }
 
     private:
-
     /* The constructor used by TWriter.  We just cache these values. */
-    TBlob(TPool *pool, TBlock *first_block, size_t last_block_size, size_t num_bytes)
+    TBlob(TPool *pool, TBlock *first_block, size_t last_block_size,
+        size_t num_bytes)
         : Pool(pool), FirstBlock(first_block), LastBlockSize(last_block_size),
           NumBytes(num_bytes) {
-      assert((!pool && !first_block && !last_block_size) || (pool && first_block && last_block_size));
+      assert((!pool && !first_block && !last_block_size) ||
+             (pool && first_block && last_block_size));
     }
 
     size_t DoGetDataInFirstBlock(char *&data) const;
@@ -158,13 +165,13 @@ namespace Capped {
     /* The first buffer in our linked list, or null if we're empty. */
     TBlock *FirstBlock;
 
-    /* The number of bytes used in the last buffer's block.  All other buffers are completely full. */
+    /* The number of bytes used in the last buffer's block.  All other buffers
+       are completely full. */
     size_t LastBlockSize;
 
     /* The total size in bytes of the data contained. */
     size_t NumBytes;
 
-    /* TODO */
     friend class TReader;
     friend class TWriter;
 

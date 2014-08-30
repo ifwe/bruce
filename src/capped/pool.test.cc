@@ -35,7 +35,6 @@ namespace {
   /* A point in 3D space. */
   class TPoint {
     public:
-  
     /* Default to the origin. */
     TPoint()
         : X(0), Y(0), Z(0) {}
@@ -55,7 +54,6 @@ namespace {
   
     /* The storage pool for points. */
     static TPool Pool;
-  
   };  // TPoint
 
   /* A very constrained pool from which to allocate. */
@@ -65,12 +63,14 @@ namespace {
      Either way, don't bother to keep the point around. */
   static bool TryNewPoint() {
     bool success;
+
     try {
       unique_ptr<TPoint> p(new TPoint);
       success = true;
     } catch (const TMemoryCapReached &) {
       success = false;
     }
+
     return success;
   }
 

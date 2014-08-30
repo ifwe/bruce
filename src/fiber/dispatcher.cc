@@ -36,14 +36,20 @@ using namespace Signal;
 
 TDispatcher::THandler::~THandler() noexcept {
   assert(this);
-  assert(!Dispatcher);  // If this fails, you probably forgot to call Unregister() in your destructor.
+
+  /* If this fails, you probably forgot to call Unregister() in your
+     destructor. */
+  assert(!Dispatcher);
 }
 
-void TDispatcher::THandler::OnDeadline() {}
+void TDispatcher::THandler::OnDeadline() {
+}
 
-void TDispatcher::THandler::OnEvent(int, short) {}
+void TDispatcher::THandler::OnEvent(int, short) {
+}
 
-void TDispatcher::THandler::OnShutdown() {}
+void TDispatcher::THandler::OnShutdown() {
+}
 
 TDispatcher::THandler::THandler() noexcept {
   Init();
@@ -54,6 +60,7 @@ void TDispatcher::THandler::ChangeEvent(int fd, short flags) {
   assert(fd >= 0);
   assert(flags);
   assert(Dispatcher);
+
   /* Cache the fd and/or flags for which we will wait. */
   Fd = fd;
   Flags = flags;
@@ -64,17 +71,22 @@ void TDispatcher::THandler::ClearDeadline() {
   Deadline.Reset();
 }
 
-void TDispatcher::THandler::Register(TDispatcher *dispatcher, int fd, short flags) {
+void TDispatcher::THandler::Register(TDispatcher *dispatcher, int fd,
+    short flags) {
   assert(this);
   assert(dispatcher);
-  /* If we're only changing fd and/or flags, we can skip the linked-list stuff. */
+  /* If we're only changing fd and/or flags, we can skip the linked-list stuff.
+   */
   if (Dispatcher != dispatcher) {
-    /* If the dispatcher we're trying to register with is already full, we throw. */
+    /* If the dispatcher we're trying to register with is already full, we
+       throw. */
     if (dispatcher->HandlerCount == dispatcher->MaxHandlerCount) {
       ThrowSystemError(EFAULT);
     }
+
     /* Unregister from our current dispatcher, if any. */
     Unregister();
+
     /* Link to the end of the new dispatcher's list of handlers. */
     Dispatcher = dispatcher;
     PrevHandler = dispatcher->LastHandler;
@@ -82,6 +94,7 @@ void TDispatcher::THandler::Register(TDispatcher *dispatcher, int fd, short flag
     GetNextConj() = this;
     ++(dispatcher->HandlerCount);
   }
+
   /* Update the fd and/or flags for which we will wait. */
   ChangeEvent(fd, flags);
 }
@@ -94,9 +107,9 @@ void TDispatcher::THandler::SetDeadline(const TTimeout &timeout) {
 
 void TDispatcher::THandler::Unregister() noexcept {
   assert(this);
-  /* If we're not registered with a dispatcher, then there's nothing to do; otherwise,
-     perform the list-unlinking dance and reinitialize our pointers and related member variables
-     to their default-constructed state. */
+  /* If we're not registered with a dispatcher, then there's nothing to do;
+     otherwise, perform the list-unlinking dance and reinitialize our pointers
+     and related member variables to their default-constructed state. */
   if (Dispatcher) {
     GetPrevConj() = NextHandler;
     GetNextConj() = PrevHandler;
@@ -126,10 +139,11 @@ TDispatcher::THandler *&TDispatcher::THandler::GetPrevConj() const noexcept {
 }
 
 TDispatcher::TDispatcher(size_t max_handler_count)
-    : FirstHandler(nullptr), LastHandler(nullptr), HandlerCount(0), ShuttingDown(false),
-      Pollers(nullptr), HandlerPtrs(nullptr) {
+    : FirstHandler(nullptr), LastHandler(nullptr), HandlerCount(0),
+      ShuttingDown(false), Pollers(nullptr), HandlerPtrs(nullptr) {
   try {
-    MaxHandlerCount = max_handler_count ? max_handler_count : GetMaxEventCount();
+    MaxHandlerCount = max_handler_count ?
+        max_handler_count : GetMaxEventCount();
     Pollers = new pollfd[MaxHandlerCount];
     HandlerPtrs = new THandler*[MaxHandlerCount];
   } catch (...) {
@@ -148,25 +162,32 @@ TDispatcher::~TDispatcher() {
 bool TDispatcher::ForEachHandler(const TCb &cb) {
   assert(this);
   assert(cb);
-  /* We cache each next-pointer as we go, just in case the handler is deleted. */
+  /* We cache each next-pointer as we go, just in case the handler is deleted.
+   */
   THandler *handler = FirstHandler;
+
   while (handler) {
     THandler *next_handler = handler->GetNextHandler();
+
     if (!cb(handler)) {
       return false;
     }
+
     handler = next_handler;
   }
+
   return true;
 }
 
-void TDispatcher::Run(const TTimeout &grace_period, const std::vector<int> &allow_signals,
-    int shutdown_signal_number) {
+void TDispatcher::Run(const TTimeout &grace_period,
+    const std::vector<int> &allow_signals, int shutdown_signal_number) {
   assert(this);
   assert(&grace_period);
-  /* Install a do-nothing handler for the shutdown signal, so the shutdown won't abort the
-     whole process.  We'll mask out all signals while we're running, then unmask the shutdown
-     signal only while we're blocked in Dispatch().  That way arbitrary I/O won't be affected. */
+
+  /* Install a do-nothing handler for the shutdown signal, so the shutdown
+     won't abort the whole process.  We'll mask out all signals while we're
+     running, then unmask the shutdown signal only while we're blocked in
+     Dispatch().  That way arbitrary I/O won't be affected. */
   THandlerInstaller handle_signal(shutdown_signal_number, ShutdownSigHandler);
   TMasker masker(*TSet(TSet::Full));
   GotShutdownSignal = false;
@@ -185,9 +206,13 @@ void TDispatcher::Run(const TTimeout &grace_period, const std::vector<int> &allo
     mask_set -= shutdown_signal_number;
   }
 
-  /* Dispatch normally until we run out of events or are interrupted by our chosen signal. */
+  /* Dispatch normally until we run out of events or are interrupted by our
+     chosen signal. */
   TOptTimeout max_timeout;
-  while (!ShuttingDown && HandlerCount && Dispatch(max_timeout, mask_set.Get()));
+
+  while (!ShuttingDown && HandlerCount &&
+         Dispatch(max_timeout, mask_set.Get()));
+
   /* Let any remaining handlers know that we're starting a shutdown. */
   ForEachHandler(
       [](THandler *handler) {
@@ -197,11 +222,14 @@ void TDispatcher::Run(const TTimeout &grace_period, const std::vector<int> &allo
         return true;
       }
   );
-  /* Compute shutdown deadline (which will be in the very near future, we hope), then resume
-     dispatching until all handlers unregister or the deadline is reached.  Check for the
-     deadline every at least every 100 milliseconds.  Note that we are no longer interruptable. */
+
+  /* Compute shutdown deadline (which will be in the very near future, we
+     hope), then resume dispatching until all handlers unregister or the
+     deadline is reached.  Check for the deadline every at least every 100
+     milliseconds.  Note that we are no longer interruptable. */
   auto deadline = Now() + grace_period;
   max_timeout = milliseconds(100);
+
   while (HandlerCount && Now() < deadline) {  // When will now be now?  Soon...
     Dispatch(max_timeout, shutdown_mask_set.Get());
   }
@@ -228,26 +256,37 @@ void TDispatcher::ShutdownSigHandler(int /*signum*/) {
   GotShutdownSignal = true;
 }
 
-bool TDispatcher::Dispatch(const TOptTimeout &max_timeout, const sigset_t *mask_set) {
+bool TDispatcher::Dispatch(const TOptTimeout &max_timeout,
+    const sigset_t *mask_set) {
   assert(this);
   assert(&max_timeout);
-  /* Walk the list of regsitered handlers and initialze the poller and handler pointer arrays.
-     Also look for the nearest deadline, if any, among the handlers. */
+
+  /* Walk the list of regsitered handlers and initialze the poller and handler
+     pointer arrays.  Also look for the nearest deadline, if any, among the
+     handlers. */
   auto *poller = Pollers;
   auto *handler_ptr = HandlerPtrs;
   TOptDeadline nearest_deadline;
-  for (THandler *handler = FirstHandler; handler; handler = handler->GetNextHandler(), ++poller, ++handler_ptr) {
-    /* Each poller gets initialized with the fd and events to wait for and has its returned events cleared. */
+
+  for (THandler *handler = FirstHandler;
+       handler;
+       handler = handler->GetNextHandler(), ++poller, ++handler_ptr) {
+    /* Each poller gets initialized with the fd and events to wait for and has
+       its returned events cleared. */
     assert(poller < Pollers + MaxHandlerCount);
     poller->fd = handler->GetFd();
     poller->events = handler->GetFlags();
     poller->revents = 0;
-    /* Each handler pointer caches the handler associated with the poller of the same array index.
-       This way a handler can alter the linked list and we won't get messed up. */
+
+    /* Each handler pointer caches the handler associated with the poller of
+       the same array index.  This way a handler can alter the linked list and
+       we won't get messed up. */
     assert(handler_ptr < HandlerPtrs + MaxHandlerCount);
     *handler_ptr = handler;
+
     /* If this handler has a deadline, it might be the nearest deadline. */
     const auto &deadline = handler->GetDeadline();
+
     if (deadline && (!nearest_deadline || *deadline < *nearest_deadline)) {
       nearest_deadline = deadline;
     }
@@ -255,17 +294,24 @@ bool TDispatcher::Dispatch(const TOptTimeout &max_timeout, const sigset_t *mask_
   /* Sanity checking. */
   assert(static_cast<size_t>(poller - Pollers) == HandlerCount);
   assert(static_cast<size_t>(handler_ptr - HandlerPtrs) == HandlerCount);
-  /* Our timeout, if any, will be based on the nearest deadline and/or the maximum allowed timeout. */
+
+  /* Our timeout, if any, will be based on the nearest deadline and/or the
+     maximum allowed timeout. */
   TOptTimeout timeout;
+
   if (nearest_deadline) {
     timeout.MakeKnown(duration_cast<TTimeout>(*nearest_deadline - Now()));
   }
+
   if (max_timeout && timeout && *timeout > *max_timeout) {
     timeout = max_timeout;
   }
-  /* If we have a timeout, convert it to the system form, which is in whole seconds and nanoseconds. */
+
+  /* If we have a timeout, convert it to the system form, which is in whole
+     seconds and nanoseconds. */
   timespec ts;
   timespec *ts_ptr;
+
   if (timeout) {
     auto ticks = nanoseconds(*timeout).count();
     ts.tv_sec  = ticks / nano::den;
@@ -274,39 +320,49 @@ bool TDispatcher::Dispatch(const TOptTimeout &max_timeout, const sigset_t *mask_
   } else {
     ts_ptr = nullptr;
   }
-  /* Wait for one or more events to occur, or for our timeout, or to be interrupted by a signal.
-     If we're interrupted, return false immediately. */
+
+  /* Wait for one or more events to occur, or for our timeout, or to be
+     interrupted by a signal.  If we're interrupted, return false
+     immediately. */
   while (ppoll(Pollers, HandlerCount, ts_ptr, mask_set) < 0) {
     if (errno != EINTR) {
       ThrowSystemError(errno);
     }
+
     if (GotShutdownSignal) {
       return false;
     }
   }
-  /* Spin through the poller and handler pointer arrays in parallel, dispatching events and deadlines,
-     as appropriate.  We cache the size of the arrays before we start because the handlers could change
-     HandlerCount as we go along. */
+
+  /* Spin through the poller and handler pointer arrays in parallel,
+     dispatching events and deadlines, as appropriate.  We cache the size of
+     the arrays before we start because the handlers could change HandlerCount
+     as we go along. */
   auto size = HandlerCount;
+
   for (size_t i = 0; i < size; ++i) {
     auto &poller = Pollers[i];
     auto handler = HandlerPtrs[i];
+
     if (poller.revents) {
       /* This handler's event has fired. */
       try {
         handler->OnEvent(poller.fd, poller.revents);
-      } catch (...) {}
+      } catch (...) {
+      }
     } else {
       const auto &deadline = handler->GetDeadline();
+
       if (deadline && *deadline < Now()) {
         /* This handler's deadline has passed. */
         try {
           handler->OnDeadline();
-        } catch (...) {}
+        } catch (...) {
+        }
       }
     }
   }
+
   /* We were not interrupted, so return true. */
   return true;
 }
-

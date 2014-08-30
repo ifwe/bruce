@@ -47,16 +47,16 @@ namespace {
   class TServer final {
     NO_COPY_SEMANTICS(TServer);
     public:
-  
     /* We shutdown on this signal. */
     static constexpr int SignalNumber = SIGUSR1;
   
-    /* Construct a server which will accept connections on a system-assigned port.
-       Return the port number via out-param. */
+    /* Construct a server which will accept connections on a system-assigned
+       port.  Return the port number via out-param. */
     TServer(in_port_t &port)
         : Timeouts(0) {
       /* Construct an acceptor (below) and get the port number from it.
-         The acceptor registers itself with the dispatcher so we don't need to keep track of it. */
+         The acceptor registers itself with the dispatcher so we don't need to
+         keep track of it. */
       port = (new TAcceptor(this))->GetPort();
     }
   
@@ -66,7 +66,8 @@ namespace {
       return Dispatcher.GetHandlerCount();
     }
   
-    /* The number of times we have hung up on a client that was quiet for too long. */
+    /* The number of times we have hung up on a client that was quiet for too
+       long. */
     size_t GetTimeouts() const {
       assert(this);
       return Timeouts;
@@ -85,12 +86,10 @@ namespace {
     }
   
     private:
-  
     /* A handler for I/O with a connected client. */
     class TWorker final
         : public TDispatcher::THandler {
       public:
-  
       /* We are constructed by the acceptor when it accepts a connection.
          It passes us an already-connected socket, which we take ownership of.
          After that we accept messages from the client, which we echo back. */
@@ -108,7 +107,8 @@ namespace {
         Unregister();
       }
   
-      /* Called by the dispatcher when our client has been quiet for too long. */
+      /* Called by the dispatcher when our client has been quiet for too long.
+       */
       virtual void OnDeadline() override {
         assert(this);
         ++(Server->Timeouts);
@@ -119,10 +119,13 @@ namespace {
       virtual void OnEvent(int, short) override {
         assert(this);
         if (Limit == Buffer) {
-          /* Read data from the client.  If we get some, register to write it back. */
+          /* Read data from the client.  If we get some, register to write it
+             back. */
           ssize_t result = recv(Fd, Buffer, sizeof(Buffer), 0);
+
           if (result > 0) {
-            /* We got some data.  Switch over to writing so we can echo it back. */
+            /* We got some data.  Switch over to writing so we can echo it
+               back. */
             Limit = Buffer + result;
             ChangeEvent(Fd, POLLOUT);
             SetDeadline(Timeout);
@@ -131,12 +134,15 @@ namespace {
             delete this;
           }
         } else {
-          /* Write our data to the client.  If successful, register to read again. */
+          /* Write our data to the client.  If successful, register to read
+             again. */
           ssize_t result = send(Fd, Buffer, Limit - Buffer, MSG_NOSIGNAL);
+
           if (result > 0) {
             /* We sent some data. */
             if (Shutdown) {
-              /* If there's a shutdown underway, don't try to read from the client again. */
+              /* If there's a shutdown underway, don't try to read from the
+                 client again. */
               delete this;
             } else {
               /* Go back to reading from the client. */
@@ -164,7 +170,6 @@ namespace {
       }
   
       private:
-  
       /* The server of which we are a part. */
       TServer *Server;
   
@@ -174,7 +179,8 @@ namespace {
       /* A workspace for reading and writing. */
       char Buffer[1000];
   
-      /* Points into Buffer, above, to indicate where the last read message ends. */
+      /* Points into Buffer, above, to indicate where the last read message
+         ends. */
       char *Limit;
   
       /* If true, then we should self-destruct after we reply to the client. */
@@ -251,7 +257,6 @@ namespace {
   
     /* The dispatcher managing all the server's I/O. */
     TDispatcher Dispatcher;
-  
   };  // TServer
   
   /* See declaration. */
@@ -259,27 +264,30 @@ namespace {
   
   /* Client threads enter here. */
   void ClientMain(
-      size_t idx,                 // the unique id number of this client
-      in_port_t port,             // the port on which the server is listening
-      int io_count,               // the number of I/O rounds to try with the server, or -1 to go forever
+      size_t idx,  // the unique id number of this client
+      in_port_t port,  // the port on which the server is listening
+      int io_count,  // the number of I/O rounds to try with the server, or -1
+                     // to go forever
       atomic_size_t &pass_count,  // counts successful I/O rounds
       atomic_size_t &fail_count,  // counts unsuccessful I/O rounds
-      atomic_size_t &rude_count   // counts number of threads which end rudely
-    ) {
+      atomic_size_t &rude_count) { // counts number of threads which end rudely
     try {
       /* Connect to the server. */
       TFd fd(socket(AF_INET, SOCK_STREAM, 0));
       Connect(fd, TAddress(TAddress::IPv4Any, port));
       /* Do some rounds of I/O. */
       char actual[1000];
+
       for (int i = 0; i < io_count || io_count < 0; ++i) {
         /* Compose a unique message to send. */
         string expected;
+
         /* extra */ {
           ostringstream strm;
           strm << "client #" << idx << ", call #" << i;
           expected = strm.str();
         }
+
         /* Send the message and expect to get it echoed back. */
         IfLt0(send(fd, expected.data(), expected.size(), MSG_NOSIGNAL));
         memset(actual, 0, sizeof(actual));
@@ -319,16 +327,21 @@ namespace {
       TServer server(port);
       auto server_thread = thread(&TServer::Run, &server);
       /* Launch some client threads.
-         These clients will disconnect on their own after completing their I/O rounds. */
+         These clients will disconnect on their own after completing their I/O
+         rounds. */
       atomic_size_t pass_count(0), fail_count(0), rude_count(0);
       vector<thread> clients;
+
       for (size_t idx = 0; idx < client_count; ++idx) {
-        clients.push_back(thread(ClientMain, idx, port, io_count, ref(pass_count), ref(fail_count), ref(rude_count)));
+        clients.push_back(thread(ClientMain, idx, port, io_count,
+            ref(pass_count), ref(fail_count), ref(rude_count)));
       }
+
       /* Wait for the clients to finish. */
       for (auto &client: clients) {
         client.join();
       }
+
       /* Shut down the server and make sure it went cleanly. */
       server.Shutdown(server_thread);
       ASSERT_EQ(server.GetHandlerCount(), 0u);
@@ -344,6 +357,7 @@ namespace {
     const size_t
         repeat_count = 10,  // number of times to repeat the whole test
         client_count = 10;  // number of clients connecting to the test server
+
     /* Repeat the whole test a few times. */
     for (size_t repeat = 0; repeat < repeat_count; ++repeat) {
       /* Construct a server and launch it in a background thread. */
@@ -354,17 +368,22 @@ namespace {
          These clients will never voluntarily disconnect. */
       atomic_size_t pass_count(0), fail_count(0), rude_count(0);
       vector<thread> clients;
+
       for (size_t idx = 0; idx < client_count; ++idx) {
-        clients.push_back(thread(ClientMain, idx, port, -1, ref(pass_count), ref(fail_count), ref(rude_count)));
+        clients.push_back(thread(ClientMain, idx, port, -1, ref(pass_count),
+            ref(fail_count), ref(rude_count)));
       }
+
       /* Shut down the server and make sure it went cleanly. */
       server.Shutdown(server_thread);
       ASSERT_EQ(server.GetHandlerCount(), 0u);
       ASSERT_EQ(server.GetTimeouts(), 0u);
+
       /* Wait for the clients to finish. */
       for (auto &client: clients) {
         client.join();
       }
+
       /* How did we do? */
       ASSERT_EQ(rude_count, client_count);
     }

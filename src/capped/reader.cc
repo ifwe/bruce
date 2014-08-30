@@ -52,10 +52,15 @@ TReader &TReader::Advance(void *data, size_t size) {
     if (!Cursor) {
       throw TMemoryCapReached();
     }
-    /* See how much data is available in the current block.  If it's more than enough to satisfy the read,
-       we'll just finish up and exit the loop. */
-    size_t avail = Block ? (Block->Data + (Block->NextBlock ? block_size : Blob->LastBlockSize) - Cursor) : 0;
+
+    /* See how much data is available in the current block.  If it's more than
+       enough to satisfy the read, we'll just finish up and exit the loop. */
+    size_t avail = Block ?
+        (Block->Data + (Block->NextBlock ?
+             block_size : Blob->LastBlockSize) - Cursor) :
+        0;
     assert(BytesRemaining >= avail);
+
     if (size < avail) {
       if (data) {
         memcpy(data, Cursor, size);
@@ -65,6 +70,7 @@ TReader &TReader::Advance(void *data, size_t size) {
       BytesRemaining -= size;
       break;
     }
+
     /* Copy the available data from this block and reduce the remaining read.
        This might reduce the remaining read to zero. */
 
@@ -74,7 +80,9 @@ TReader &TReader::Advance(void *data, size_t size) {
     }
 
     size -= avail;
-    /* Try to move to the next block and, if successful, position the cursor at the start of the new block's block. */
+
+    /* Try to move to the next block and, if successful, position the cursor at
+       the start of the new block's block. */
     Block = Block->NextBlock;
     Cursor = Block ? Block->Data : nullptr;
     BytesRemaining -= avail;

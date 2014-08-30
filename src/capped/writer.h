@@ -26,15 +26,17 @@
 
 namespace Capped {
 
-  /* Builds blobs incrementally.  Construct a writer by giving it a pool from which to draw blocks.
-     Then you call Write() zero or more times to copy data into the writer.  The writer will allocate
-     blocks from the pool as required.  When you have finished writing, call DraftBlob() to return
-     your data in blob form.  The writer is then ready to be used again.  If you wish to reset
-     the writer without constructing a blob, call CancelBlob(). */
+  /* Builds blobs incrementally.  Construct a writer by giving it a pool from
+     which to draw blocks.  Then you call Write() zero or more times to copy
+     data into the writer.  The writer will allocate blocks from the pool as
+     required.  When you have finished writing, call DraftBlob() to return your
+     data in blob form.  The writer is then ready to be used again.  If you
+     wish to reset the writer without constructing a blob, call CancelBlob().
+   */
   class TWriter final {
     NO_COPY_SEMANTICS(TWriter);
-    public:
 
+    public:
     /* We use the same blocks that TPool uses. */
     using TBlock = TPool::TBlock;
 
@@ -44,10 +46,12 @@ namespace Capped {
     /* Any pending blob will be canceled automatically. */
     ~TWriter() noexcept;
 
-    /* Drop any data we've written so far and return to the default-constructed state. */
+    /* Drop any data we've written so far and return to the default-constructed
+       state. */
     void CancelBlob() noexcept;
 
-    /* Return the blob we've built and reset to the default-constructed state. */
+    /* Return the blob we've built and reset to the default-constructed state.
+     */
     TBlob DraftBlob() noexcept;
 
     /* Copy the given data to the end of the blob we're building. */
@@ -55,22 +59,24 @@ namespace Capped {
 
     private:
 
-    /* Returns the writer to the empty state.  This simply nulls out FirstBlock, LastBlock,
-       and Cursor without freeing anything, so make sure ownership of the data has been
-       transferred to some other structure before you call this function. */
+    /* Returns the writer to the empty state.  This simply nulls out
+       FirstBlock, LastBlock, and Cursor without freeing anything, so make sure
+       ownership of the data has been transferred to some other structure
+       before you call this function. */
     void Init() noexcept;
 
     /* The pool which we allocate blocks. */
     TPool *Pool;
 
-    /* The first and last blocks in our linked list.  These are both null iff. we're empty.
-       If we're non-empty but, both pointers will be non-null.  If all our data fits in one
-       chunk, both pointers will point to the same block.  If we use two or more chunks,
-       then these pointers will point to different blocks. */
+    /* The first and last blocks in our linked list.  These are both null iff.
+       we're empty.  If we're non-empty but, both pointers will be non-null.
+       If all our data fits in one chunk, both pointers will point to the same
+       block.  If we use two or more chunks, then these pointers will point to
+       different blocks. */
     TBlock *FirstBlock, *LastBlock;
 
-    /* The position with in our last block's chunk where Write() will append more data.
-       This is null iff. LastBlock is null. */
+    /* The position with in our last block's chunk where Write() will append
+       more data.  This is null iff. LastBlock is null. */
     char *Cursor;
 
     /* The total # of bytes that have been written so far. */
@@ -79,4 +85,3 @@ namespace Capped {
   };  // TWriter
 
 }  // Capped
-

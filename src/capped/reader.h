@@ -27,19 +27,19 @@
 
 namespace Capped {
 
-  /* Provides sequential access to the data in a blob.  This object provides a single forward
-     pass over the blob.  A reader doesn't allow rewinding; however, readers can be cheaply copied.
-     Feel free to do so if you need to read ahead speculatively while keeping your finger on a
-     particular position within a blob. */
+  /* Provides sequential access to the data in a blob.  This object provides a
+     single forward pass over the blob.  A reader doesn't allow rewinding;
+     however, readers can be cheaply copied.  Feel free to do so if you need to
+     read ahead speculatively while keeping your finger on a particular
+     position within a blob. */
   class TReader final {
     public:
-
     /* We use the same blocks that TPool uses. */
     using TBlock = TPool::TBlock;
 
-    /* Construct a reader to read the data from the given blob.  The reader does NOT make its
-       own copy of the blob's data, so you must make sure that the blob continues to exist as
-       long as it has readers. */
+    /* Construct a reader to read the data from the given blob.  The reader
+       does NOT make its own copy of the blob's data, so you must make sure
+       that the blob continues to exist as long as it has readers. */
     explicit TReader(const TBlob *blob) noexcept {
       assert(blob);
       Blob = blob;
@@ -61,8 +61,9 @@ namespace Capped {
       return Cursor;
     }
 
-    /* Copy data from the blob and advance our position.  If you attempt to read past the end
-       of the blob, this function throws TMemoryCapReached.  Note that a read of zero bytes is always safe. */
+    /* Copy data from the blob and advance our position.  If you attempt to
+       read past the end of the blob, this function throws TMemoryCapReached.
+       Note that a read of zero bytes is always safe. */
     TReader &Read(void *data, size_t size) {
       assert(this);
       assert(data || (size == 0));
@@ -94,15 +95,16 @@ namespace Capped {
     /* The blob we are reading. */
     const TBlob *Blob;
 
-    /* The block from which we are currently reading.  Null iff. we have reached the end. */
+    /* The block from which we are currently reading.  Null iff. we have
+       reached the end. */
     TBlock *Block;
 
-    /* Our position within our current block.  Null iff. we have reached the end. */
+    /* Our position within our current block.  Null iff. we have reached the
+       end. */
     char *Cursor;
 
     /* The total number of bytes remaining to be consumed. */
     size_t BytesRemaining;
-
   };  // TReader
 
 }  // Capped

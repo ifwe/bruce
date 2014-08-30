@@ -46,32 +46,39 @@ void TWriter::CancelBlob() noexcept {
 TBlob TWriter::DraftBlob() noexcept {
   assert(this);
   TBlob result;
+
   if (FirstBlock) {
     result = TBlob(Pool, FirstBlock, Cursor - LastBlock->Data, NumBytes);
     Init();
   }
+
   return result;
 }
 
 TWriter &TWriter::Write(const void *data, size_t size) {
   assert(this);
   assert(data || !size);
-  /* Determine if we need to allocate more blocks and, if so, where we'll link them on to our list. */
+  /* Determine if we need to allocate more blocks and, if so, where we'll link
+     them on to our list. */
   size_t block_size = Pool->GetDataSize();
   TBlock **link;
   size_t bytes_to_write = size;
+
   if (LastBlock) {
     size_t avail = LastBlock->Data + block_size - Cursor;
+
     if (size <= avail) {
-      /* The new data fits entirely in the existing space, so we won't need to link on any more blocks. */
+      /* The new data fits entirely in the existing space, so we won't need to
+         link on any more blocks. */
       memcpy(Cursor, data, size);
       Cursor += size;
       NumBytes += size;
       return *this;
     }
 
-    /* The new data doesn't entirely fit, but we'll make a start.  We will need to allocate more blocks,
-       and we'll link them to the end of our existing list. */
+    /* The new data doesn't entirely fit, but we'll make a start.  We will need
+       to allocate more blocks, and we'll link them to the end of our existing
+       list. */
     memcpy(Cursor, data, avail);
     reinterpret_cast<const char *&>(data) += avail;
     size -= avail;
@@ -81,10 +88,14 @@ TWriter &TWriter::Write(const void *data, size_t size) {
        We'll link them on as the first blocks in our list. */
     link = &FirstBlock;
   }
+
   assert(link);
-  /* Allocate enough blocks to hold the remainder of the new data and link them on. */
+
+  /* Allocate enough blocks to hold the remainder of the new data and link them
+     on. */
   TBlock *block = Pool->AllocList((size + block_size - 1) / block_size);
   *link = block;
+
   /* Copy as many whole blocks as we can. */
   while (size > block_size) {
     assert(block);
@@ -93,7 +104,9 @@ TWriter &TWriter::Write(const void *data, size_t size) {
     size -= block_size;
     block = block->NextBlock;
   }
-  /* Copy in the last of the new data (a whole or partial block) and get ready for the next write. */
+
+  /* Copy in the last of the new data (a whole or partial block) and get ready
+     for the next write. */
   memcpy(block->Data, data, size);
   LastBlock = block;
   Cursor = block->Data + size;
@@ -108,4 +121,3 @@ void TWriter::Init() noexcept {
   Cursor = nullptr;
   NumBytes = 0;
 }
-

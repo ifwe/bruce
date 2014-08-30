@@ -34,8 +34,8 @@ namespace Capped {
   /* A pool of storage blocks with capped memory usage. */
   class TPool final {
     NO_COPY_SEMANTICS(TPool);
-    public:
 
+    public:
     enum class TSync : bool {
       Unguarded = false,
       Mutexed = true
@@ -49,8 +49,8 @@ namespace Capped {
         Link(first_block);
       }
 
-      /* Link this block to the head of the given list.  The previous linkage of
-         this block is ignored and overwritten. */
+      /* Link this block to the head of the given list.  The previous linkage
+         of this block is ignored and overwritten. */
       void Link(TBlock *&first_block) noexcept {
         assert(this);
         assert(&first_block);
@@ -58,17 +58,19 @@ namespace Capped {
         first_block = this;
       }
 
-      /* Unlink and return the first block from a list, updating the list pointer.
-         If the list is empty, do nothing and return null. */
+      /* Unlink and return the first block from a list, updating the list
+         pointer.  If the list is empty, do nothing and return null. */
       static TBlock *Unlink(TBlock *&first_block) noexcept {
         assert(&first_block);
         TBlock *result;
+
         if (first_block) {
           result = first_block;
           first_block = result->NextBlock;
         } else {
           result = nullptr;
         }
+
         return result;
       }
 
@@ -77,7 +79,6 @@ namespace Capped {
 
       /* A place-holder for data. */
       char Data[sizeof(void *)];
-
     };  // TPool::TBlock
 
     /* Return the number of bytes of overhead contained in a block.  This is
@@ -86,23 +87,27 @@ namespace Capped {
       return sizeof(void *);
     }
 
-    /* Construct a pool which will hold the given number of blocks, each of which
-       is of the given size.  */
+    /* Construct a pool which will hold the given number of blocks, each of
+       which is of the given size.  */
     TPool(size_t block_size, size_t block_count, TSync sync_policy);
 
-    /* Free all storage.  Make sure no one is using our storage before this happens. */
+    /* Free all storage.  Make sure no one is using our storage before this
+       happens. */
     ~TPool() noexcept;
 
     /* Allocate a block of storage, or throw TMemoryCapReached if we're out. */
     void *Alloc();
 
-    /* Allocate a linked list of blocks, or throw TMemoryCapReached we don't have enough. */
+    /* Allocate a linked list of blocks, or throw TMemoryCapReached we don't
+       have enough. */
     TBlock *AllocList(size_t block_count);
 
-    /* Return a block of storage to the pool.  It's safe to free a null pointer, we just do nothing. */
+    /* Return a block of storage to the pool.  It's safe to free a null
+       pointer, we just do nothing. */
     void Free(void *ptr) noexcept;
 
-    /* Return a linked list of blocks to the pool.  It's safe to free an empty list, we just do nothing. */
+    /* Return a linked list of blocks to the pool.  It's safe to free an empty
+       list, we just do nothing. */
     void FreeList(TBlock *first_block);
 
     /* The size of the data field in each block. */
@@ -124,7 +129,6 @@ namespace Capped {
     }
 
     private:
-
     /* Similar to Free() but mutex is not acquired.  Assumes that 'ptr' is not
        null. */
     void DoFree(void *ptr) noexcept;
@@ -145,13 +149,12 @@ namespace Capped {
        unguarded. */
     std::mutex Mutex;
 
-    /* The first block available to be allocated, or null if we're out of blocks. */
+    /* The first block available to be allocated, or null if we're out of
+       blocks. */
     TBlock *FirstFreeBlock;
 
     /* Our storage space.  Never null. */
     char *Storage;
-
   };  // TPool
 
 }  // Capped
-

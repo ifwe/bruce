@@ -37,6 +37,7 @@ TPool::TPool(size_t block_size, size_t block_count, TSync sync_policy)
   /* Allocate enough storage space for all our blocks. */
   size_t size = BlockSize * BlockCount;
   Storage = static_cast<char *>(malloc(size));
+
   /* Walk across the storage space, forming a linked list of free blocks. */
   for (char *ptr = Storage; ptr < Storage + size; ptr += BlockSize) {
     new (ptr) TBlock(FirstFreeBlock);
@@ -50,7 +51,6 @@ TPool::~TPool() noexcept {
 
 void *TPool::Alloc() {
   assert(this);
-
   TOpt<std::lock_guard<std::mutex>> opt_lock;
 
   if (Guarded) {
@@ -58,9 +58,11 @@ void *TPool::Alloc() {
   }
 
   auto *result = FirstFreeBlock;
+
   if (!result) {
     throw TMemoryCapReached();
   }
+
   return TBlock::Unlink(FirstFreeBlock);
 }
 
@@ -80,8 +82,10 @@ TPool::TBlock *TPool::AllocList(size_t block_count) {
         if (first_block) {
           DoFreeList(first_block);
         }
+
         throw TMemoryCapReached();
       }
+
       TBlock::Unlink(FirstFreeBlock)->Link(first_block);
     }
   }
@@ -91,6 +95,7 @@ TPool::TBlock *TPool::AllocList(size_t block_count) {
 
 void TPool::Free(void *ptr) noexcept {
   assert(this);
+
   if (ptr) {
     TOpt<std::lock_guard<std::mutex>> opt_lock;
 
