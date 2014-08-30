@@ -38,7 +38,6 @@ namespace Signal {
 
     /* How to construct a new set. */
     enum TOp0 {
-
       /* Construct an empty set. */
       Empty,
 
@@ -47,18 +46,15 @@ namespace Signal {
 
       /* Construct a set with the calling thread's mask in it. */
       Mask
-
     };  // TOp0
 
     /* How to construct a new set from an initializer list. */
     enum TOp1 {
-
       /* Include only the signals in the list. */
       Include,
 
       /* Include all signals except the ones in the list. */
       Exclude
-
     };  // TOp1
 
     /* See TOp0. */
@@ -161,11 +157,8 @@ namespace Signal {
     }
 
     private:
-
     /* The OS representation of the set. */
     sigset_t OsObj;
-
   };  // TSet
 
 }  // Signal
-

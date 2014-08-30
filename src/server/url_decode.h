@@ -27,12 +27,12 @@
 
 namespace Server {
 
-  //TODO: use Base::TError
-  class TUrlDecodeError
-      : public std::runtime_error {
+  // TODO: use Base::TError
+  class TUrlDecodeError : public std::runtime_error {
     public:
     TUrlDecodeError(unsigned int offset, const char *msg)
-        : runtime_error(msg), Offset(offset) {}
+        : runtime_error(msg), Offset(offset) {
+    }
 
     unsigned int GetOffset() const {
       assert(this);
@@ -41,8 +41,9 @@ namespace Server {
 
     private:
     unsigned int Offset;
-  };
+  };  // TUrlDecodeError
 
   /* Decode a urlencoded block of text. */
   void UrlDecode(const Base::TPiece<const char> &in, std::string &out);
-}
+
+}  // Server

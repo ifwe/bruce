@@ -34,8 +34,8 @@ namespace Signal {
   /* RAII for installing a signal handler. */
   class THandlerInstaller {
     NO_COPY_SEMANTICS(THandlerInstaller);
-    public:
 
+    public:
     /* Set the mask to the given set. */
     THandlerInstaller(int sig, void (*handler)(int) = DoNothing)
         : SignalNumber(sig) {
@@ -58,7 +58,6 @@ namespace Signal {
     }
 
     private:
-
     /* The do-nothing handler. */
     static void DoNothing(int sig);
 
@@ -67,8 +66,6 @@ namespace Signal {
 
     /* The action which we will restore. */
     struct sigaction OldAct;
-
   };  // THandlerInstaller
 
 }  // Signal
-

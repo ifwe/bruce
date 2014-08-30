@@ -37,6 +37,7 @@ namespace {
   /* The fixture for testing class TSocketOption. */
   class TSocketOptionTest : public ::testing::Test {
     protected:
+
     TSocketOptionTest() {
     }
 

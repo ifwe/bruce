@@ -28,21 +28,17 @@ namespace Socket {
   namespace Db {
 
     /* A runtime error arising from the host/serv database. */
-    class TError
-        : public std::runtime_error {
+    class TError : public std::runtime_error {
       public:
-
       /* Construct an error for the given code. */
       TError(int error_code);
-
     };  // TError
 
     /* Throw an error if the given code is non-zero.
-       If the code indicates an OS error, throw an operating system error object;
-       otherwise, throw socket db error object. */
+       If the code indicates an OS error, throw an operating system error
+       object; otherwise, throw socket db error object. */
     void IfNe0(int error_code);
 
   }  // Db
 
 }  // Socket
-

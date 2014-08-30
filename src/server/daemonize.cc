@@ -58,7 +58,8 @@ static void HandleSignal(int sig) {
 }
 
 /* Install the given hander over a list of signals. */
-static void InstallSignalHandlers(initializer_list<int> signals, void (*handler)(int)) {
+static void InstallSignalHandlers(initializer_list<int> signals,
+    void (*handler)(int)) {
   for (auto iter = signals.begin(); iter != signals.end(); ++iter) {
     signal(*iter, handler);
   }
@@ -69,10 +70,13 @@ void Server::BacktraceToLog() {
   void *frames[max_frame_count];
   int frame_count = backtrace(frames, max_frame_count);
   char **symbols = backtrace_symbols(frames, frame_count);
+
   if (symbols) {
     for (int frame_idx = 0; frame_idx < frame_count; ++frame_idx) {
-      syslog(LOG_ERR, "[backtrace][frame %d of %d][%s]", frame_idx + 1, frame_count, symbols[frame_idx]);
+      syslog(LOG_ERR, "[backtrace][frame %d of %d][%s]", frame_idx + 1,
+             frame_count, symbols[frame_idx]);
     }
+
     free(symbols);
   } else {
       syslog(LOG_ERR, "[backtrace][failed to get %d frames]", frame_count);
@@ -81,11 +85,13 @@ void Server::BacktraceToLog() {
 
 pid_t Server::Daemonize() {
   pid_t result;
+
   /* Check our parent's PID to see if we're already a daemon. */
   if (getppid() != 1) {
     /* We're not already a daemon. */
     TOsError::IfLt0(HERE, result = fork());
     /* We've forked.  If we're the daemon child... */
+
     if (!result) {
       /* Obtain a new process group. */
       setsid();
@@ -108,8 +114,10 @@ pid_t Server::Daemonize() {
     /* We're already a daemon. */
     result = 0;
   }
+
   return result;
 }
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 void Server::DefendAgainstSignals() {
@@ -117,4 +125,3 @@ void Server::DefendAgainstSignals() {
   InstallSignalHandlers({ SIGINT, SIGTERM, SIGHUP }, HandleSignal);
 }
 #pragma GCC diagnostic pop
-

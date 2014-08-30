@@ -73,9 +73,10 @@ TAddress::TAddress(TSpecial special, in_port_t port) {
 
 TAddress::TAddress(istream &&strm) {
   assert(&strm);
+
   if (ws(strm).peek() == '!') {
-    /* We skipped whitespace and found the mark indicating an unspecified address.
-       This is an easy, early-out for us. */
+    /* We skipped whitespace and found the mark indicating an unspecified
+       address.  This is an easy, early-out for us. */
     strm.ignore();
     Storage.ss_family = AF_UNSPEC;
   } else if (strm.peek() == '@') {
@@ -86,28 +87,35 @@ TAddress::TAddress(istream &&strm) {
     strncpy(Local.sun_path, path.c_str(), sizeof(Local.sun_path));
     Local.sun_path[sizeof(Local.sun_path) - 1] = '\0';
   } else {
-    /* Read the IP portion of the address into a temp buffer.  The buffer must be big enough
-       for a v6 address with square brackets around it, plus a null terminator. */
+    /* Read the IP portion of the address into a temp buffer.  The buffer must
+       be big enough for a v6 address with square brackets around it, plus a
+       null terminator. */
     static const size_t max_size = NI_MAXHOST + 3;
     char buf[max_size];
     char *csr = buf, *end = buf + max_size;
     bool is_ipv6 = (strm.peek() == '[');
+
     if (is_ipv6) {
       /* It started with an open-bracket, so it must be v6. */
       strm.ignore();
+
       for (;;) {
         int c = strm.peek();
+
         if (c < 0) {
           break;
         }
+
         if (c == ']') {
           strm.ignore();
           break;
         }
+
         if (isxdigit(c) || c == '.' || c == ':') {
           if (csr >= end) {
             throw 0; // TODO
           }
+
           *csr++ = c;
           strm.ignore();
         } else {
@@ -115,13 +123,16 @@ TAddress::TAddress(istream &&strm) {
         }
       }
     } else {
+
       /* It didn't start with an open-bracket, so it must be v4. */
       for (;;) {
         int c = strm.peek();
+
         if (isxdigit(c) || c == '.') {
           if (csr >= end) {
             throw 0; // TODO
           }
+
           *csr++ = c;
           strm.ignore();
         } else {
@@ -129,28 +140,36 @@ TAddress::TAddress(istream &&strm) {
         }
       }
     }
+
     *csr = '\0';
-    /* If we're positioned at a colon, read in the port number; otherwise, default to port 0. */
+    /* If we're positioned at a colon, read in the port number; otherwise,
+       default to port 0. */
     in_port_t port = 0;
     int c = strm.peek();
+
     if (c == ':') {
       strm.ignore();
       strm >> port;
       port = SwapEnds(port);
     }
+
     /* Translate the IP. */
     if (is_ipv6) {
       Zero(IPv4);
+
       if (!inet_pton(AF_INET6, buf, &IPv6.sin6_addr)) {
         throw TOsError(HERE);
       }
+
       IPv6.sin6_family = AF_INET6;
       IPv6.sin6_port = port;
     } else {
       Zero(IPv6);
+
       if (!inet_pton(AF_INET, buf, &IPv4.sin_addr)) {
         throw TOsError(HERE);
       }
+
       IPv4.sin_family = AF_INET;
       IPv4.sin_port = port;
     }
@@ -160,21 +179,22 @@ TAddress::TAddress(istream &&strm) {
 bool TAddress::operator==(const TAddress &that) const {
   assert(this);
   bool result = (Storage.ss_family == that.Storage.ss_family);
+
   if (result) {
     switch (Storage.ss_family) {
       case AF_UNSPEC: {
         break;
       }
       case AF_INET: {
-        result =
-            memcmp(&IPv4.sin_addr.s_addr, &that.IPv4.sin_addr.s_addr, sizeof(IPv4.sin_addr.s_addr)) == 0 &&
-            IPv4.sin_port == that.IPv4.sin_port;
+        result = (memcmp(&IPv4.sin_addr.s_addr, &that.IPv4.sin_addr.s_addr,
+                         sizeof(IPv4.sin_addr.s_addr)) == 0) &&
+                 (IPv4.sin_port == that.IPv4.sin_port);
         break;
       }
       case AF_INET6: {
-        result =
-            memcmp(&IPv6.sin6_addr, &that.IPv6.sin6_addr, sizeof(IPv6.sin6_addr)) == 0 &&
-            IPv6.sin6_port == that.IPv6.sin6_port;
+        result = (memcmp(&IPv6.sin6_addr, &that.IPv6.sin6_addr,
+                         sizeof(IPv6.sin6_addr)) == 0) &&
+                 (IPv6.sin6_port == that.IPv6.sin6_port);
         break;
       }
       case AF_LOCAL: {
@@ -183,6 +203,7 @@ bool TAddress::operator==(const TAddress &that) const {
       NO_DEFAULT_CASE;
     }
   }
+
   return result;
 }
 
@@ -197,12 +218,14 @@ void TAddress::GetName(
   assert(this);
   assert(node_buf || !node_buf_size);
   assert(serv_buf || !serv_buf_size);
-  Db::IfNe0(getnameinfo(&Generic, GetLen(), node_buf, node_buf_size, serv_buf, serv_buf_size, flags));
+  Db::IfNe0(getnameinfo(&Generic, GetLen(), node_buf, node_buf_size, serv_buf,
+                        serv_buf_size, flags));
 }
 
 in_port_t TAddress::GetPort() const {
   assert(this);
   in_port_t result;
+
   switch (Storage.ss_family) {
     case AF_UNSPEC: {
       result = 0;
@@ -218,11 +241,13 @@ in_port_t TAddress::GetPort() const {
     }
     NO_DEFAULT_CASE;
   }
+
   return SwapEnds(result);
 }
 
 TAddress &TAddress::SetPort(in_port_t port) {
   assert(this);
+
   switch (Storage.ss_family) {
     case AF_UNSPEC: {
       break;
@@ -237,12 +262,14 @@ TAddress &TAddress::SetPort(in_port_t port) {
     }
     NO_DEFAULT_CASE;
   }
+
   return *this;
 }
 
 const char *TAddress::GetPath() const {
   assert(this);
   const char *result = nullptr;
+
   switch (Storage.ss_family) {
     case AF_LOCAL: {
       result = Local.sun_path;
@@ -250,11 +277,13 @@ const char *TAddress::GetPath() const {
     }
     NO_DEFAULT_CASE;
   }
+
   return result;
 }
 
 TAddress &TAddress::SetPath(const char *path) {
   assert(this);
+
   switch (Storage.ss_family) {
     case AF_LOCAL: {
       strncpy(Local.sun_path, path, sizeof(Local.sun_path));
@@ -266,6 +295,7 @@ TAddress &TAddress::SetPath(const char *path) {
     }
     NO_DEFAULT_CASE;
   }
+
   return *this;
 }
 
@@ -273,6 +303,7 @@ void TAddress::Write(ostream &strm) const {
   assert(this);
   assert(&strm);
   in_port_t port = 0;
+
   switch (Storage.ss_family) {
     case AF_UNSPEC: {
       strm << '!';
@@ -301,6 +332,7 @@ void TAddress::Write(ostream &strm) const {
     }
     NO_DEFAULT_CASE;
   }
+
   if (port) {
     strm << ':' << SwapEnds(port);
   }
@@ -308,6 +340,7 @@ void TAddress::Write(ostream &strm) const {
 
 socklen_t TAddress::GetLen(sa_family_t family) {
   socklen_t result;
+
   switch (family) {
     case AF_UNSPEC: {
       result = sizeof(sa_family_t);
@@ -327,6 +360,7 @@ socklen_t TAddress::GetLen(sa_family_t family) {
     }
     NO_DEFAULT_CASE;
   }
+
   return result;
 }
 
@@ -338,6 +372,7 @@ void Socket::Bind(TNamedUnixSocket &socket, const TAddress &address) {
 
   /* Make sure socket file doesn't already exist. */
   int ret = unlink(path.c_str());
+
   if (errno != ENOENT) {
     IfLt0(ret);
   }

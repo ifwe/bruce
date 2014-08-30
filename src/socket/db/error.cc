@@ -30,7 +30,8 @@ using namespace Base;
 using namespace Socket::Db;
 
 TError::TError(int error_code)
-    : runtime_error(gai_strerror(error_code)) {}
+    : runtime_error(gai_strerror(error_code)) {
+}
 
 void Socket::Db::IfNe0(int error_code) {
   switch (error_code) {
@@ -45,4 +46,3 @@ void Socket::Db::IfNe0(int error_code) {
     }
   }
 }
-

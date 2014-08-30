@@ -35,14 +35,12 @@ namespace Socket {
     /* An RAII wrapper around getaddrinfo. */
     class TCursor {
       NO_COPY_SEMANTICS(TCursor);
-      public:
 
+      public:
       /* Iterate over address for the given node and service.
          See getadddrinfo() for more information. */
-      TCursor(
-          const char *node, const char *serv,
-          int family = AF_UNSPEC, int socktype = 0, int protocol = 0,
-          int flags = 0);
+      TCursor(const char *node, const char *serv, int family = AF_UNSPEC,
+          int socktype = 0, int protocol = 0, int flags = 0);
 
       /* Calls freeaddinfo(). */
       ~TCursor();
@@ -88,7 +86,6 @@ namespace Socket {
       }
 
       private:
-
       /* Make sure we have a current address. */
       void Freshen() const {
         assert(this);
@@ -103,7 +100,8 @@ namespace Socket {
       addrinfo *First;
 
       /* Our current position in the linked list returned by getaddrinfo().
-         Null if we've reached the end of the list or if we've invalidated our current position. */
+         Null if we've reached the end of the list or if we've invalidated our
+         current position. */
       mutable addrinfo *Csr;
 
       /* The pointer after Csr, if any.
@@ -118,4 +116,3 @@ namespace Socket {
   }  // Db
 
 }  // Socket
-

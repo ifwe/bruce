@@ -24,27 +24,33 @@
 #include <cstring>
 #include <cctype>
 
-#include <iostream> //TODO
+#include <iostream>
+
 using namespace std;
 
 using namespace Base;
 using namespace Server;
 
-//TODO: This to hex conversion I feel could be heavily optimized.
+// TODO: This to hex conversion I feel could be heavily optimized.
 static inline unsigned char HexToNum(const char *c_in, const char *start) {
   unsigned char c = tolower(*c_in);
+
   if(!isxdigit(c)) {
-    throw TUrlDecodeError(c_in - start, "Expected a hex digit but found something else.");
+    throw TUrlDecodeError(c_in - start,
+        "Expected a hex digit but found something else.");
   }
+
   unsigned char res = 0;
-  if(c >= '0' && c <= '9') {
+
+  if (c >= '0' && c <= '9') {
     res = c - '0';
   } else if (c >= 'a' && c <= 'f') {
     res = c - 'a' + 10;
   } else {
-    //TODO: Change to a runtime assertion for executing web server.
-    assert(false); //Should (in theory) be unreachable.
+    // TODO: Change to a runtime assertion for executing web server.
+    assert(false);
   }
+
   assert(res < 16);
   return res;
 }
@@ -53,17 +59,17 @@ void Server::UrlDecode(const TPiece<const char> &in, std::string &out) {
   assert(&in);
   assert(&out);
 
-  //If the in string is empty, clear out and no-op.
+  // If the in string is empty, clear out and no-op.
   if(!in) {
     out.clear();
     return;
   }
 
-  //Copy the contents of the piece to a non-const buffer
+  // Copy the contents of the piece to a non-const buffer
   char *str = new char[in.GetSize()];
   memcpy(str, in.GetStart(), in.GetSize());
 
-  //Convert the string character by character until the whole thing is decoded
+  // Convert the string character by character until the whole thing is decoded
   char *store_csr = str;
   const char *read_csr = in.GetStart();
 
@@ -72,18 +78,18 @@ void Server::UrlDecode(const TPiece<const char> &in, std::string &out) {
       *store_csr = ' ';
       ++read_csr;
       ++store_csr;
-
     } else if(*read_csr != '%') {
       *store_csr = *read_csr;
-
       ++read_csr;
       ++store_csr;
-
     } else {
       ++read_csr;
+
       if(read_csr + 2 > in.GetLimit()) {
-        throw TUrlDecodeError(read_csr - in.GetStart(), "Expected two hex digits, but found end of stream");
+        throw TUrlDecodeError(read_csr - in.GetStart(),
+            "Expected two hex digits, but found end of stream");
       }
+
       unsigned char buf = HexToNum(read_csr, in.GetStart()) * 16;
       ++read_csr;
       buf += HexToNum(read_csr, in.GetStart());
@@ -93,7 +99,7 @@ void Server::UrlDecode(const TPiece<const char> &in, std::string &out) {
     }
   }
 
-  //convert the temporary buffer into a std::string
+  // convert the temporary buffer into a std::string
   try {
     out.assign(str, store_csr - str);
   } catch (...) {
@@ -101,6 +107,6 @@ void Server::UrlDecode(const TPiece<const char> &in, std::string &out) {
     throw;
   }
 
-  //Clean up the temporary buffer
+  // Clean up the temporary buffer
   delete [] str;
 }

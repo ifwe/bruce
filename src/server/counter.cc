@@ -27,7 +27,10 @@ using namespace Base;
 using namespace Server;
 
 TCounter::TCounter(const TCodeLocation &code_location, const char *name)
-    : CodeLocation(code_location), Name(name), UnsampledCount(0), SampledCount(0) {
+    : CodeLocation(code_location),
+      Name(name),
+      UnsampledCount(0),
+      SampledCount(0) {
   assert(name);
   NextCounter = FirstCounter;
   FirstCounter = this;
@@ -36,16 +39,23 @@ TCounter::TCounter(const TCodeLocation &code_location, const char *name)
 time_t TCounter::Reset() {
   TExclusiveLock<TBlockingAsset> lock(Asset);
   ResetTime = time(0);
-  for (TCounter *counter = FirstCounter; counter; counter = counter->NextCounter) {
+
+  for (TCounter *counter = FirstCounter;
+       counter;
+       counter = counter->NextCounter) {
     counter->SampledCount = 0;
   }
+
   return ResetTime;
 }
 
 void TCounter::Sample() {
   TExclusiveLock<TBlockingAsset> lock(Asset);
   SampleTime = time(0);
-  for (TCounter *counter = FirstCounter; counter; counter = counter->NextCounter) {
+
+  for (TCounter *counter = FirstCounter;
+       counter;
+       counter = counter->NextCounter) {
     counter->SampledCount += counter->UnsampledCount;
     counter->UnsampledCount = 0;
   }
@@ -56,4 +66,3 @@ TBlockingAsset TCounter::Asset;
 TCounter *TCounter::FirstCounter = 0;
 
 time_t TCounter::SampleTime = time(0), TCounter::ResetTime = SampleTime;
-

@@ -31,8 +31,8 @@ namespace Server {
   template <typename TAsset>
   class TSharedLock {
     NO_COPY_SEMANTICS(TSharedLock);
-    public:
 
+    public:
     /* Will not return until the lock is granted. */
     TSharedLock(const TAsset &asset)
         : Asset(asset) {
@@ -47,11 +47,8 @@ namespace Server {
     }
 
     private:
-
     /* The asset we're locking. */
     const TAsset &Asset;
-
   };  // TSharedLock
 
 }  // Server
-

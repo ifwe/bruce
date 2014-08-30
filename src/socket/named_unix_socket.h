@@ -31,6 +31,7 @@ namespace Socket {
 
   class TAddress;
   class TNamedUnixSocket;
+
   void Bind(TNamedUnixSocket &socket, const TAddress &address);
 
   class TNamedUnixSocket final {
@@ -72,7 +73,6 @@ namespace Socket {
     void Reset();
 
     private:
-
     Base::TFd Fd;
 
     std::string Path;

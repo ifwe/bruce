@@ -31,8 +31,8 @@ namespace Server {
   template <typename TAsset>
   class TExclusiveLock {
     NO_COPY_SEMANTICS(TExclusiveLock);
-    public:
 
+    public:
     /* Will not return until the lock is granted. */
     TExclusiveLock(const TAsset &asset)
         : Asset(asset) {
@@ -47,11 +47,8 @@ namespace Server {
     }
 
     private:
-
     /* The asset we're locking. */
     const TAsset &Asset;
-
   };  // TExclusiveLock
 
 }  // Server
-

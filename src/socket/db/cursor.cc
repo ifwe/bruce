@@ -27,9 +27,8 @@
 using namespace Base;
 using namespace Socket::Db;
 
-TCursor::TCursor(
-    const char *node, const char *serv,
-    int family, int socktype, int protocol, int flags) {
+TCursor::TCursor(const char *node, const char *serv, int family, int socktype,
+    int protocol, int flags) {
   addrinfo hints;
   Zero(hints);
   hints.ai_family = family;
@@ -53,12 +52,13 @@ TFd TCursor::NewCompatSocket() const {
 
 void TCursor::TryFreshen() const {
   assert(this);
+
   if (!Csr) {
     Csr = Next;
+
     if (Csr) {
       Next = Next->ai_next;
       Address = *(Csr->ai_addr);
     }
   }
 }
-

@@ -58,21 +58,27 @@ namespace {
       event.data.fd = sock;
       event.events = EPOLLIN;
       TOsError::IfLt0(HERE, epoll_ctl(ep, EPOLL_CTL_ADD, sock, &event));
-      for (;;) {
+
+      for (; ; ) {
         TOsError::IfLt0(HERE, epoll_wait(ep, &event, 1, -1));
+
         if (event.data.fd == die) {
           break;
         }
+
         if (event.data.fd == sock) {
           Connections.Increment();
           TFd cli(accept(sock, 0, 0));
-          for (;;) {
+
+          for (; ; ) {
             char buf[BufSize];
             ssize_t size;
             TOsError::IfLt0(HERE, size = read(cli, buf, BufSize));
+
             if (!size) {
               break;
             }
+
             Requests.Increment();
             TOsError::IfLt0(HERE, write(cli, buf, size));
           }
@@ -83,23 +89,28 @@ namespace {
     }
   }
   
-  static void ClientMain(int id, const TAddress &address, uint32_t request_count, bool &success) {
+  static void ClientMain(int id, const TAddress &address,
+      uint32_t request_count, bool &success) {
     try {
       success = true;
       TFd my_socket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
       Connect(my_socket, address);
+
       for (uint32_t i = 0; i < request_count; ++i) {
         char request[BufSize];
         sprintf(request, "%d %d", id, i);
         ssize_t request_size = strlen(request);
         ssize_t size;
         TOsError::IfLt0(HERE, size = write(my_socket, request, request_size));
+
         if (size != request_size) {
           throw 0;
         }
+
         char reply[BufSize];
         TOsError::IfLt0(HERE, size = read(my_socket, reply, BufSize));
-        if (size != request_size || strncmp(request, reply, request_size) != 0) {
+
+        if ((size != request_size) || strncmp(request, reply, request_size)) {
           throw 0;
         }
       }
@@ -132,13 +143,20 @@ namespace {
     Bind(listening_socket, TAddress(TAddress::IPv4Loopback));
     TOsError::IfLt0(HERE, listen(listening_socket, 5));
     TAddress address = GetSockName(listening_socket);
-    bool server_success = false, client_1_success = false, client_2_success = false, client_3_success = false;
+    bool server_success = false,
+        client_1_success = false,
+        client_2_success = false,
+        client_3_success = false;
     static const uint32_t request_count = 5;
     thread
-      server(ServerMain, static_cast<int>(recv_die), static_cast<int>(listening_socket), ref(server_success)),
-      client_1(ClientMain, 101, cref(address), request_count, ref(client_1_success)),
-      client_2(ClientMain, 102, cref(address), request_count, ref(client_2_success)),
-      client_3(ClientMain, 103, cref(address), request_count, ref(client_3_success));
+        server(ServerMain, static_cast<int>(recv_die),
+               static_cast<int>(listening_socket), ref(server_success)),
+        client_1(ClientMain, 101, cref(address), request_count,
+                 ref(client_1_success)),
+        client_2(ClientMain, 102, cref(address), request_count,
+                 ref(client_2_success)),
+        client_3(ClientMain, 103, cref(address), request_count,
+                 ref(client_3_success));
     client_1.join();
     client_2.join();
     client_3.join();

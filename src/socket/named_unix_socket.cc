@@ -31,12 +31,13 @@ using namespace Base;
 using namespace Socket;
 
 TNamedUnixSocket::TNamedUnixSocket(int type, int protocol)
-    : Fd(IfLt0(socket(AF_LOCAL, type, protocol)))
-{}
+    : Fd(IfLt0(socket(AF_LOCAL, type, protocol))) {
+}
 
 void TNamedUnixSocket::Reset() {
   assert(this);
   Fd.Reset();
+
   if (!Path.empty()) {
     unlink(Path.c_str());
     Path.clear();

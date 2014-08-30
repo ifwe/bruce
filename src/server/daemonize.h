@@ -40,25 +40,26 @@ namespace Server {
         * ignore child and TTY signals, and
         * catch hang-up, kill, and interrupt signals.
 
-     The function returns the id of the daemon process to the parent process and
-     zero to the daemon process.  If the calling process is already a daemon, the
-     function does nothing and returns zero.
+     The function returns the id of the daemon process to the parent process
+     and zero to the daemon process.  If the calling process is already a
+     daemon, the function does nothing and returns zero.
 
-     It is the responsibility of the caller to detect multiple invocations of the
-     daemon on the same machine.  (This often happens when second and subsequent
-     invocation of the daemon try to bind to a port that's already allocated.)  It
-     is usually necessary to report the id of the daemon process to the user by
-     some means. */
+     It is the responsibility of the caller to detect multiple invocations of
+     the daemon on the same machine.  (This often happens when second and
+     subsequent invocation of the daemon try to bind to a port that's already
+     allocated.)  It is usually necessary to report the id of the daemon
+     process to the user by some means. */
   pid_t Daemonize();
 
-  /* Does as above, but it launches func() as a daemond process, catching exceptions that it throws
-     and printing them out nicely to syslog, rather then forcing the caller to implement the logic. */
+  /* Does as above, but it launches func() as a daemond process, catching
+     exceptions that it throws and printing them out nicely to syslog, rather
+     then forcing the caller to implement the logic. */
   pid_t Daemonize(std::function<void()> func);
 
-  /* The calling process will begin ignoring child and TTY signals and will catch
-     hang-up, kill, and interrupt signals.  The process can then dead-end into
-     a pause() call, waiting to be signaled that it is time to continue. */
+  /* The calling process will begin ignoring child and TTY signals and will
+     catch hang-up, kill, and interrupt signals.  The process can then dead-end
+     into a pause() call, waiting to be signaled that it is time to continue.
+   */
   void DefendAgainstSignals();
 
 }  // Server
-

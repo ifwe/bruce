@@ -33,8 +33,8 @@ namespace Server {
   /* A non-reentrant target for read-write synchronization. */
   class TBlockingAsset {
     NO_COPY_SEMANTICS(TBlockingAsset);
-    public:
 
+    public:
     /* Constructs a new, unlocked asset. */
     TBlockingAsset() {
       Base::TOsError::IfNe0(HERE, pthread_rwlock_init(&RwLock, 0));
@@ -48,37 +48,30 @@ namespace Server {
       pthread_rwlock_destroy(&RwLock);
     }
 
-    /* TODO */
     void AcquireExclusive() const {
       assert(this);
       Base::TOsError::IfNe0(HERE, pthread_rwlock_wrlock(&RwLock));
     }
 
-    /* TODO */
     void AcquireShared() const {
       assert(this);
       Base::TOsError::IfNe0(HERE, pthread_rwlock_rdlock(&RwLock));
     }
 
-    /* TODO */
     void ReleaseExclusive() const {
       assert(this);
       pthread_rwlock_unlock(&RwLock);
     }
 
-    /* TODO */
     void ReleaseShared() const {
       assert(this);
       pthread_rwlock_unlock(&RwLock);
     }
 
     private:
-
     /* The rw-lock for which threads will contend.
        It's mutable so we can lock and unlock a constant target. */
     mutable pthread_rwlock_t RwLock;
-
   };  // TBlockingAsset
 
 }  // Server
-

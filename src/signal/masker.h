@@ -33,8 +33,8 @@ namespace Signal {
   /* RAII for setting the signal mask. */
   class TMasker {
     NO_COPY_SEMANTICS(TMasker);
-    public:
 
+    public:
     /* Set the mask to the given set. */
     TMasker(const sigset_t &new_set) {
       Base::IfNe0(pthread_sigmask(SIG_SETMASK, &new_set, &OldSet));
@@ -51,11 +51,8 @@ namespace Signal {
     }
 
     private:
-
     /* The set to which we will restore. */
     sigset_t OldSet;
-
   };  // TMasker
 
 }  // Signal
-

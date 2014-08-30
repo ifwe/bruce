@@ -23,5 +23,5 @@
 
 using namespace Signal;
 
-void THandlerInstaller::DoNothing(int) {}
-
+void THandlerInstaller::DoNothing(int) {
+}

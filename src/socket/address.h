@@ -47,7 +47,6 @@ namespace Socket {
      are _not_ supported. */
   class TAddress {
     public:
-
     DEFINE_ERROR(TPathTooLong, std::runtime_error,
                  "UNIX domain socket path too long");
 
@@ -180,13 +179,12 @@ namespace Socket {
       return GetLen(Storage.ss_family);
     }
 
-    /* Format the address for human presenatation as 'name of node' and 'name of service'.
-       The two buffers should be of sizes NI_MAXHOST and NI_MAXSERV, respecitvely.
-       See the OS function getnameinfo() for information about the flags. */
-    void GetName(
-        char *node_buf, size_t node_buf_size,
-        char *serv_buf, size_t serv_buf_size,
-        int flags = 0) const;
+    /* Format the address for human presenatation as 'name of node' and 'name
+       of service'.  The two buffers should be of sizes NI_MAXHOST and
+       NI_MAXSERV, respecitvely.  See the OS function getnameinfo() for
+       information about the flags. */
+    void GetName(char *node_buf, size_t node_buf_size, char *serv_buf,
+        size_t serv_buf_size, int flags = 0) const;
 
     /* The port number in host order.
        The port number of an AF_UNSPEC address is always 0. */
@@ -207,6 +205,7 @@ namespace Socket {
        throws an exception. */
     void Verify() {
       assert(this);
+
       switch (Storage.ss_family) {
         case AF_UNSPEC:
         case AF_INET:
@@ -221,8 +220,8 @@ namespace Socket {
       }
     }
 
-    /* Insert the address onto the stream in a format which can be extracted later
-       by the extraction constructor.  */
+    /* Insert the address onto the stream in a format which can be extracted
+       later by the extraction constructor.  */
     void Write(std::ostream &strm) const;
 
     /* Return to the default-constructed state. */
@@ -235,7 +234,6 @@ namespace Socket {
     static socklen_t GetLen(sa_family_t family);
 
     private:
-
     /* A union of all supported sockaddr families.
        This union can be discriminated by examining Storage.ss_family. */
     union {
@@ -245,7 +243,6 @@ namespace Socket {
       sockaddr_un Local;
       sockaddr Generic;
     };
-
   };  // TAddress
 
   /* A version of accept() using TAddress. */
@@ -293,20 +290,24 @@ namespace Socket {
   }
 
   /* A version of recvfrom() using TAddress. */
-  inline size_t RecvFrom(int socket, void *buffer, size_t max_size, int flags, TAddress &address) {
+  inline size_t RecvFrom(int socket, void *buffer, size_t max_size, int flags,
+      TAddress &address) {
     assert(&address);
     ssize_t result;
     socklen_t len = TAddress::MaxLen;
-    Base::IfLt0(result = recvfrom(socket, buffer, max_size, flags, address, &len));
+    Base::IfLt0(result = recvfrom(socket, buffer, max_size, flags, address,
+                                  &len));
     address.Verify();
     return result;
   }
 
   /* A version of sendto() using TAddress. */
-  inline size_t SendTo(int socket, const void *buffer, size_t max_size, int flags, const TAddress &address) {
+  inline size_t SendTo(int socket, const void *buffer, size_t max_size,
+      int flags, const TAddress &address) {
     assert(&address);
     ssize_t result;
-    Base::IfLt0(result = sendto(socket, buffer, max_size, flags, address, address.GetLen()));
+    Base::IfLt0(result = sendto(socket, buffer, max_size, flags, address,
+                                address.GetLen()));
     return result;
   }
 
@@ -317,12 +318,15 @@ namespace Socket {
     assert(&address);
     socklen_t len = TAddress::MaxLen;
     int result = accept(socket, address, &len);
+
     if (result < 0) {
       if (errno == EWOULDBLOCK) {
         return false;
       }
+
       Base::ThrowSystemError(errno);
     }
+
     address.Verify();
     new_socket = result;
     return true;
@@ -332,45 +336,58 @@ namespace Socket {
      Returns false iff. it would block. */
   inline bool TryConnect(int socket, const TAddress &address) {
     assert(&address);
+
     if (connect(socket, address, address.GetLen()) < 0) {
       if (errno == EWOULDBLOCK) {
         return false;
       }
+
       Base::ThrowSystemError(errno);
     }
+
     return true;
   }
 
   /* An async version of recvfrom() using TAddress.
      Returns false iff. it would block. */
-  inline size_t TryRecvFrom(int socket, void *buffer, size_t max_size, int flags, TAddress &address, size_t &size) {
+  inline size_t TryRecvFrom(int socket, void *buffer, size_t max_size,
+      int flags, TAddress &address, size_t &size) {
     assert(&address);
     assert(&size);
     socklen_t len = TAddress::MaxLen;
     ssize_t result = recvfrom(socket, buffer, max_size, flags, address, &len);
+
     if (result < 0) {
       if (errno == EWOULDBLOCK) {
         return false;
       }
+
       Base::ThrowSystemError(errno);
     }
+
     address.Verify();
     size = result;
     return true;
   }
 
-  /* An async version of sendto() using TAddress.
-     Returns false iff. it would block. */
-  inline bool TrySendTo(int socket, const void *buffer, size_t max_size, int flags, const TAddress &address, size_t &size) {
+  /* An async version of sendto() using TAddress.  Returns false iff. it would
+     block. */
+  inline bool TrySendTo(int socket, const void *buffer, size_t max_size,
+      int flags, const TAddress &address, size_t &size) {
     assert(&address);
     assert(&size);
-    ssize_t result = sendto(socket, buffer, max_size, flags, address, address.GetLen());
+
+    ssize_t result = sendto(socket, buffer, max_size, flags, address,
+        address.GetLen());
+
     if (result < 0) {
       if (errno == EWOULDBLOCK) {
         return false;
       }
+
       Base::ThrowSystemError(errno);
     }
+
     size = result;
     return true;
   }
@@ -400,7 +417,6 @@ namespace std {
       assert(&that);
       return that.GetHash();
     }
-  };
+  };  // hash
 
 }
-

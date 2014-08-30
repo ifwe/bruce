@@ -37,9 +37,9 @@ namespace Server {
 
   /* A counter useful for providing health reports.
 
-     Declare counters in your static data segment, then increment them during server
-     operations.  You can later query the counters to discover how many times
-     particular operations have been done.
+     Declare counters in your static data segment, then increment them during
+     server operations.  You can later query the counters to discover how many
+     times particular operations have been done.
 
      For example, this counter will keep track of the number of connections a
      listening socket accepts:
@@ -59,9 +59,10 @@ namespace Server {
 
         SERVER_COUNTER(Connections);
 
-     When you want to query your counters, you must first call Sample().  This will
-     copy all of the counters' values, adding them to the sampled values.  You may
-     then query these sampled values while the counters continue to count.
+     When you want to query your counters, you must first call Sample().  This
+     will copy all of the counters' values, adding them to the sampled values.
+     You may then query these sampled values while the counters continue to
+     count.
 
      For example:
 
@@ -76,23 +77,24 @@ namespace Server {
           }
         }
 
-     You may also call Reset(), which resets all the sampled values to zero.  Doing
-     this periodically helps to avoid overflows; however, the counters are unsigned
-     32-bit numbers, so don't sweat it.
+     You may also call Reset(), which resets all the sampled values to zero.
+     Doing this periodically helps to avoid overflows; however, the counters
+     are unsigned 32-bit numbers, so don't sweat it.
 
-     You may also call GetSampleTime() to get the time at which the counters were last
-     sampled, and GetResetTime() to get the time at which the counters were last
-     reset.  These times are drawn from the system clock.
+     You may also call GetSampleTime() to get the time at which the counters
+     were last sampled, and GetResetTime() to get the time at which the
+     counters were last reset.  These times are drawn from the system clock.
 
      The counters in the program are kept in a singly-linked list formed during
-     pre-main initialization.  The GetFirstCounter() and GetNextCounter() functions
-     allow you to access this list.  The counters appear in no particular order. */
+     pre-main initialization.  The GetFirstCounter() and GetNextCounter()
+     functions allow you to access this list.  The counters appear in no
+     particular order. */
   class TCounter {
     NO_COPY_SEMANTICS(TCounter);
-    public:
 
-    /* Construct with all counts zero.  The given name should point to a string in
-       the data segment, as we do not copy it.  */
+    public:
+    /* Construct with all counts zero.  The given name should point to a string
+       in the data segment, as we do not copy it.  */
     TCounter(const Base::TCodeLocation &code_location, const char *name);
 
     /* The code location at which the counter was declared. */
@@ -158,7 +160,6 @@ namespace Server {
     }
 
     private:
-
     /* See accessor. */
     Base::TCodeLocation CodeLocation;
 
@@ -166,8 +167,8 @@ namespace Server {
     const char *Name;
 
     /* The currently incrementing count.  There is no direct access to this
-       variable; instead, the Sample() function adds this variable to SampledCount,
-       then sets this variable back to zero. */
+       variable; instead, the Sample() function adds this variable to
+       SampledCount, then sets this variable back to zero. */
     uint32_t UnsampledCount;
 
     /* See accessor. */
@@ -181,8 +182,8 @@ namespace Server {
        This allows multiple counters to be incrementing simultaneously with a
        minimum of synchronization overhead.  During a freeze operation, this
        asset is acquired exclusively, temporarily blocking all increments while
-       the frozen values are copied.  This allows us to get a consistent snapshot
-       of all counters at a single moment in time. */
+       the frozen values are copied.  This allows us to get a consistent
+       snapshot of all counters at a single moment in time. */
     static TBlockingAsset Asset;
 
     /* See accessor. */
@@ -190,8 +191,6 @@ namespace Server {
 
     /* See accessors. */
     static time_t SampleTime, ResetTime;
-
   };  // TCounter
 
 }  // Server
-
