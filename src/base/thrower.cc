@@ -24,4 +24,3 @@
 const Base::TEndOfPart Base::EndOfPart;
 
 const char *Base::PartDelimiter = "; ";
-

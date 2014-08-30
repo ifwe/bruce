@@ -32,11 +32,13 @@
 
 namespace Base {
 
-  /* An optional value; that is, a value which may or may not be known.  This is a value type, and TVal must also be a value type.  The domain of TVal
+  /* An optional value; that is, a value which may or may not be known.  This
+     is a value type, and TVal must also be a value type.  The domain of TVal
      is augmented with the additional state of being unknown.
 
-     The interface to TOpt<> looks like that of a smart-pointer.  The implicit cast to bool and deference operators are overloaded.  You can therefore
-     do things like this:
+     The interface to TOpt<> looks like that of a smart-pointer.  The implicit
+     cast to bool and deference operators are overloaded.  You can therefore do
+     things like this:
 
         void OtherFunc(const TFoo &foo);
 
@@ -46,27 +48,33 @@ namespace Base {
           }
         }
 
-     Note that deferencing an unknown TOpt<> is illegal.  You can, however, call MakeKnown() to force an unknown TOpt<TVal> to construct a
-     TVal if it doesn't already have one.
+     Note that deferencing an unknown TOpt<> is illegal.  You can, however,
+     call MakeKnown() to force an unknown TOpt<TVal> to construct a TVal if it
+     doesn't already have one.
 
-     The storage for the instance of TVal is allocated within the TOpt<TVal> instance, but remains uninitialized until the TVal is referred to.  This
-     allows you to pass instances of TOpt<> around without worrying about extra heap allocations.  If TVal has light-weight copying semantics (such
-     as a COW scheme), then it plausible to pass instances of TOpt<TVal> by value.
+     The storage for the instance of TVal is allocated within the TOpt<TVal>
+     instance, but remains uninitialized until the TVal is referred to.  This
+     allows you to pass instances of TOpt<> around without worrying about extra
+     heap allocations.  If TVal has light-weight copying semantics (such as a
+     COW scheme), then it plausible to pass instances of TOpt<TVal> by value.
 
-     A constant of the type TOpt<TVal> and with the unknown value is defined for you as a convenience.  Refer to it as TOpt<TVal>::Unknown.
+     A constant of the type TOpt<TVal> and with the unknown value is defined
+     for you as a convenience.  Refer to it as TOpt<TVal>::Unknown.
 
      There is a std stream inserter for this type. */
   template <typename TVal>
   class TOpt {
     public:
-
     /* Default-construct as an unknown. */
     TOpt()
-        : Val(nullptr) {}
+        : Val(nullptr) {
+    }
 
-    /* Move contructor.  We get the donor's value (if any) and the donor becomes unknown. */
+    /* Move contructor.  We get the donor's value (if any) and the donor
+       becomes unknown. */
     TOpt(TOpt &&that) {
       assert(&that);
+
       if (that.Val) {
         Val = new (Storage) TVal(std::move(*that.Val));
         that.Reset();
@@ -104,6 +112,7 @@ namespace Base {
     TOpt &operator=(TOpt &&that) {
       assert(this);
       assert(&that);
+
       if (this != &that) {
         if (Val && that.Val) {
           std::swap(*Val, *that.Val);
@@ -115,6 +124,7 @@ namespace Base {
           Reset();
         }
       }
+
       return *this;
     }
 
@@ -129,6 +139,7 @@ namespace Base {
     TOpt &operator=(TVal &&that) {
       assert(this);
       assert(&that);
+
       if (Val != &that) {
         if (Val) {
           std::swap(*Val, that);
@@ -136,10 +147,12 @@ namespace Base {
           Val = new (Storage) TVal(std::move(that));
         }
       }
+
       return *this;
     }
 
-    /* Assume a copy of the given value.  If we weren't known before, we will be now. */
+    /* Assume a copy of the given value.  If we weren't known before, we will
+       be now. */
     TOpt &operator=(const TVal &that) {
       assert(this);
       return (Val != &that) ? *this = TOpt(that) : *this;
@@ -205,14 +218,16 @@ namespace Base {
       return Val == nullptr;
     }
 
-    /* If we're already known, do nothing; otherwise, construct a new value using the given args.
-       Return a refernce to our (possibly new) value. */
+    /* If we're already known, do nothing; otherwise, construct a new value
+       using the given args.  Return a refernce to our (possibly new) value. */
     template <typename... TArgs>
     TVal &MakeKnown(TArgs &&... args) {
       assert(this);
+
       if (!Val) {
         Val = new (Storage) TVal(std::forward<TArgs>(args)...);
       }
+
       return *Val;
     }
 
@@ -222,6 +237,7 @@ namespace Base {
       assert(&strm);
       bool is_known;
       strm >> is_known;
+
       if (is_known) {
         strm >> MakeKnown();
       } else {
@@ -242,10 +258,12 @@ namespace Base {
     /* Reset to the unknown state. */
     TOpt &Reset() {
       assert(this);
+
       if (Val) {
         Val->~TVal();
         Val = 0;
       }
+
       return *this;
     }
 
@@ -267,6 +285,7 @@ namespace Base {
       assert(&strm);
       bool is_known = *this;
       strm << is_known;
+
       if (is_known) {
         strm << **this;
       }
@@ -276,28 +295,34 @@ namespace Base {
     static const TSafeGlobal<TOpt> Unknown;
 
     private:
-
-    /* The storage space used to hold our known value, if any.  We use in-place new operators and explicit destruction to make values come and go
-       from this storage space. */
+    /* The storage space used to hold our known value, if any.  We use in-place
+       new operators and explicit destruction to make values come and go from
+       this storage space. */
     char Storage[sizeof(TVal)] __attribute__((aligned(__BIGGEST_ALIGNMENT__)));
 
-    /* A pointer to our current value.  If this is null, then our value is unknown.  If it is non-null, then it points to Storage. */
+    /* A pointer to our current value.  If this is null, then our value is
+       unknown.  If it is non-null, then it points to Storage. */
     TVal *Val;
-
   };  // TOpt
 
   /* See declaration. */
   template <typename TVal>
-  const TSafeGlobal<TOpt<TVal>> TOpt<TVal>::Unknown([] { return new TOpt<TVal>(); });
+  const TSafeGlobal<TOpt<TVal>> TOpt<TVal>::Unknown(
+      [] {
+        return new TOpt<TVal>();
+      });
 
-  /* A std stream inserter for Base::TOpt<>.  If the TOpt<> is unknown, then this function inserts nothing. */
+  /* A std stream inserter for Base::TOpt<>.  If the TOpt<> is unknown, then
+     this function inserts nothing. */
   template <typename TVal>
   std::ostream &operator<<(std::ostream &strm, const Base::TOpt<TVal> &that) {
     assert(&strm);
     assert(&that);
+
     if (that) {
       strm << *that;
     }
+
     return strm;
   }
 
@@ -306,17 +331,20 @@ namespace Base {
   std::istream &operator>>(std::istream &strm, Base::TOpt<TVal> &that) {
     assert(&strm);
     assert(&that);
+
     if (!strm.eof()) {
       strm >> that.MakeKnown();
     } else {
       that.Reset();
     }
+
     return strm;
   }
 
   /* Binary stream inserter for Base::TOpt<>. */
   template <typename TVal>
-  Io::TBinaryOutputStream &operator<<(Io::TBinaryOutputStream &strm, const Base::TOpt<TVal> &that) {
+  Io::TBinaryOutputStream &operator<<(Io::TBinaryOutputStream &strm,
+      const Base::TOpt<TVal> &that) {
     assert(&that);
     that.Write(strm);
     return strm;
@@ -324,7 +352,8 @@ namespace Base {
 
   /* Binary stream extractor for Base::TOpt<>. */
   template <typename TVal>
-  Io::TBinaryInputStream &operator>>(Io::TBinaryInputStream &strm, Base::TOpt<TVal> &that) {
+  Io::TBinaryInputStream &operator>>(Io::TBinaryInputStream &strm,
+      Base::TOpt<TVal> &that) {
     assert(&that);
     that.Read(strm);
     return strm;

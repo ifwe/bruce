@@ -23,8 +23,8 @@
   
 #include <gtest/gtest.h>
   
-#include <climits> //TODO
-#include <iostream> //TODO
+#include <climits>
+#include <iostream>
   
 using namespace Base;
  
@@ -47,13 +47,13 @@ namespace {
 
   // TODO: Get to full coverage. Currently just a compile test.
   TEST_F(TConvertTest, Int) {
-    int i;
+    int i = 0;
     TConverter(AsPiece("42")).ReadInt(i);
     ASSERT_EQ(i, 42);
   }
   
   TEST_F(TConvertTest, TypeLimits) {
-    long i;
+    long i = 0;
     TConverter(AsPiece("9223372036854775807")).ReadInt(i);
     ASSERT_EQ(i, 9223372036854775807l);
     TConverter(AsPiece("-9223372036854775808")).ReadInt(i);

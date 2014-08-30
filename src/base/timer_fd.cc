@@ -49,4 +49,3 @@ uint64_t TTimerFd::Pop() {
   IfLt0(read(Fd, &count, sizeof(count)));
   return count;
 }
-

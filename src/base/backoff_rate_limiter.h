@@ -38,9 +38,7 @@ namespace Base {
      long ago the action was last performed.  Uses random exponential backoff
      to compute wait times. */
   class TBackoffRateLimiter final {
-
     public:
-
     /* Parameter 'initial_delay' specifies the initial delay between actions
        that you wish to impose (plus or minus some random noise).  Parameter
        'max_double' specifies the maximum number of times the value given by
@@ -67,7 +65,6 @@ namespace Base {
     }
 
     private:
-
     static void GetCurrentTime(struct timespec &result) {
       IfLt0(clock_gettime(CLOCK_MONOTONIC_RAW, &result));
     }

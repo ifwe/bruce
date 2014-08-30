@@ -51,17 +51,20 @@ void TDirIter::Rewind() {
 
 bool TDirIter::TryRefresh() const {
   assert(this);
+
   while (Pos == NotFresh) {
     dirent *ptr;
     IfLt0(readdir_r(Handle, &DirEnt, &ptr));
+
     if (ptr) {
-      if (DirEnt.d_type != DT_DIR || (strcmp(DirEnt.d_name, "..") && strcmp(DirEnt.d_name, "."))) {
+      if (DirEnt.d_type != DT_DIR || (strcmp(DirEnt.d_name, "..") &&
+          strcmp(DirEnt.d_name, "."))) {
         Pos = AtEntry;
       }
     } else {
       Pos = AtEnd;
     }
   }
-  return Pos == AtEntry;
-}
 
+  return (Pos == AtEntry);
+}

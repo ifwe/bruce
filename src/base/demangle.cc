@@ -22,10 +22,9 @@
 #include <base/demangle.h>
 #include <base/error.h>
 
-#include <cxxabi.h> //To demangle the true name of the exception type.
+#include <cxxabi.h> // To demangle the true name of the exception type.
 
 using namespace Base;
-
 
 //NOTE: This can throw a TDemangleError
 TDemangle::TDemangle(const std::type_info &t) : Buf(0) {
@@ -45,16 +44,14 @@ TDemangle::~TDemangle() {
 const char *TDemangle::Get() const {
   assert(this);
   assert(Buf);
-
   return Buf;
 }
 
 void TDemangle::DoDemangle(const char *str) {
   int st = 0;
-
   Buf = abi::__cxa_demangle(str, nullptr, nullptr, &st);
 
-  if(st != 0) {
+  if (st != 0) {
     throw TDemangleError(HERE, st);
   }
 }

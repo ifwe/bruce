@@ -25,5 +25,6 @@ using namespace Base;
 
 const TSafeGlobal<TPos> TPos::Start(NewStart), TPos::Limit(NewLimit);
 
-const TSafeGlobal<TPos> TPos::ReverseStart(NewReverseStart), TPos::ReverseLimit(NewReverseLimit);
+const TSafeGlobal<TPos> TPos::ReverseStart(NewReverseStart),
+    TPos::ReverseLimit(NewReverseLimit);
 

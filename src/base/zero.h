@@ -32,4 +32,4 @@ namespace Base {
     return val;
   }
 
-}
+}  // Base

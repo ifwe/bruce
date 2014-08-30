@@ -26,7 +26,6 @@ namespace Base {
   /* TODO */
   class TImpossibleError : public TFinalError<TImpossibleError> {
     public:
-
     /* TODO */
     TImpossibleError(const TCodeLocation &code_location) {
       PostCtor(code_location);
@@ -35,8 +34,7 @@ namespace Base {
     TImpossibleError(const TCodeLocation &code_location, const char *msg) {
       PostCtor(code_location, msg);
     }
-
   };
 
-}
+}  // Base
 

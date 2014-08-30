@@ -31,29 +31,21 @@
 
 namespace Base {
 
-  /* TODO */
   class TTimerFd {
     NO_COPY_SEMANTICS(TTimerFd);
-    public:
 
-    /* TODO */
+    public:
     TTimerFd(size_t milliseconds);
 
-    /* TODO */
     const TFd &GetFd() const {
       assert(this);
       return Fd;
     }
 
-    /* TODO */
     uint64_t Pop();
 
     private:
-
-    /* TODO */
     TFd Fd;
-
   };  // TTimerFd
 
 }  // Base
-

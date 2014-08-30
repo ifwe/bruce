@@ -29,9 +29,8 @@ namespace Base {
 
   class TDemangle {
     NO_COPY_SEMANTICS(TDemangle);
-  public:
 
-
+    public:
     //NOTE: This can throw a TDemangleError, defined in <base/error.h>
     TDemangle(const std::type_info &t);
 
@@ -42,12 +41,10 @@ namespace Base {
 
     const char *Get() const;
 
-  private:
-
+    private:
     void DoDemangle(const char *str);
 
     char *Buf;
   };
 
-
-}
+}  // Base

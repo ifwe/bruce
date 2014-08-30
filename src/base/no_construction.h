@@ -47,7 +47,8 @@
    essentially are.
 
    All the members of a type without construction must obviously be static.  A
-   per-instance member makes no sense in a type that will never be instantiated.
+   per-instance member makes no sense in a type that will never be
+   instantiated.
 
    If you attempt to default-construct, destruct, copy-construct or assign an
    instance of a type declared with this macro, you'll get a compile-time error

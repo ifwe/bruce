@@ -43,15 +43,14 @@ namespace Base {
 
     explicit TOFdStream(int fd)
         : Filebuf(fd, std::ios::out),
-          Os(&Filebuf)
-    {}
+          Os(&Filebuf) {
+    }
 
     std::ostream &Get() {
       return Os;
     }
 
     private:
-
     __gnu_cxx::stdio_filebuf<char> Filebuf;
 
     std::ostream Os;

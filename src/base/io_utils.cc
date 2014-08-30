@@ -58,7 +58,8 @@ size_t Base::ReadAtMost(int fd, void *buf, size_t max_size, int timeout_ms) {
 size_t Base::WriteAtMost(int fd, const void *buf, size_t max_size) {
   struct stat stat;
   IfLt0(fstat(fd, &stat));
-  return IfLt0(S_ISSOCK(stat.st_mode) ? send(fd, buf, max_size, MSG_NOSIGNAL) : write(fd, buf, max_size));
+  return IfLt0(S_ISSOCK(stat.st_mode) ?
+      send(fd, buf, max_size, MSG_NOSIGNAL) : write(fd, buf, max_size));
 }
 
 size_t Base::WriteAtMost(int fd, const void *buf, size_t max_size,
@@ -79,19 +80,23 @@ size_t Base::WriteAtMost(int fd, const void *buf, size_t max_size,
 }
 
 bool Base::TryReadExactly(int fd, void *buf, size_t size) {
-  char
-      *csr = static_cast<char *>(buf),
-      *end = csr + size;;
+  char *csr = static_cast<char *>(buf);
+  char *end = csr + size;
+
   while (csr < end) {
     size_t actual_size = ReadAtMost(fd, csr, end - csr);
+
     if (!actual_size) {
       if (csr > buf) {
         throw TUnexpectedEnd();
       }
+
       return false;
     }
+
     csr += actual_size;
   }
+
   return true;
 }
 
@@ -104,9 +109,8 @@ bool Base::TryReadExactly(int fd, void *buf, size_t size, int timeout_ms) {
     return true;
   }
 
-  char
-      *csr = static_cast<char *>(buf),
-      *end = csr + size;;
+  char *csr = static_cast<char *>(buf);
+  char *end = csr + size;
   const clockid_t CLOCK_TYPE = CLOCK_MONOTONIC_RAW;
   TTime deadline;
   deadline.Now(CLOCK_TYPE);
@@ -139,19 +143,23 @@ bool Base::TryReadExactly(int fd, void *buf, size_t size, int timeout_ms) {
 
 bool Base::TryWriteExactly(int fd, const void *buf,
     size_t size) {
-  const char
-      *csr = static_cast<const char *>(buf),
-      *end = csr + size;;
+  const char *csr = static_cast<const char *>(buf);
+  const char *end = csr + size;
+
   while (csr < end) {
     size_t actual_size = WriteAtMost(fd, csr, end - csr);
+
     if (!actual_size) {
       if (csr > buf) {
         throw TUnexpectedEnd();
       }
+
       return false;
     }
+
     csr += actual_size;
   }
+
   return true;
 }
 
@@ -165,9 +173,8 @@ bool Base::TryWriteExactly(int fd, const void *buf, size_t size,
     return true;
   }
 
-  const char
-      *csr = static_cast<const char *>(buf),
-      *end = csr + size;;
+  const char *csr = static_cast<const char *>(buf);
+  const char *end = csr + size;
   const clockid_t CLOCK_TYPE = CLOCK_MONOTONIC_RAW;
   TTime deadline;
   deadline.Now(CLOCK_TYPE);
@@ -209,4 +216,3 @@ void Base::SetNonBlocking(int fd) {
   IfLt0(flags = fcntl(fd, F_GETFL, 0));
   IfLt0(fcntl(fd, F_SETFL, flags | O_NONBLOCK));
 }
-

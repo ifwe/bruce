@@ -40,4 +40,3 @@ void TCodeLocation::Write(ostream &strm) const {
 const char *TCodeLocation::SrcRoot = SRC_ROOT;
 
 size_t TCodeLocation::SrcRootLen = strlen(SrcRoot);
-

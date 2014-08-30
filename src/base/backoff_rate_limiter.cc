@@ -55,12 +55,11 @@ TBackoffRateLimiter::TBackoffRateLimiter(
       DelayGenerator(initial_delay, max_double, random_number_generator),
       FirstTime(true),
       WindowStartTime({ 0, 0 }),
-      LastEventTime({ 0, 0 })
-{}
+      LastEventTime({ 0, 0 }) {
+}
 
 size_t TBackoffRateLimiter::ComputeDelay() {
   assert(this);
-
   struct timespec now;
   GetCurrentTime(now);
 

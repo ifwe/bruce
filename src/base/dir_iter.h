@@ -69,7 +69,6 @@ namespace Base {
       /* We have no idea what kind of entry this or, or the file system
          doesn't support the concept of kinds of entries. */
       Unknown = DT_UNKNOWN
-
     };  // TDirIter::TKind
 
     /* Thrown by Refresh() when we try to go past the end of the directory. */
@@ -88,7 +87,8 @@ namespace Base {
     }
 
     /* Advance to the next entry in the directory.
-       Calling this function when we've already reached the end of the directory is a logic error. */
+       Calling this function when we've already reached the end of the
+       directory is a logic error. */
     TDirIter &operator++() {
       assert(this);
       Refresh();
@@ -96,8 +96,10 @@ namespace Base {
       return *this;
     }
 
-    /* The kind of the current directory entry, which can be unknown for some file systems.
-       Calling this function when we've already reached the end of the directory is a logic error. */
+    /* The kind of the current directory entry, which can be unknown for some
+       file systems.
+       Calling this function when we've already reached the end of the
+       directory is a logic error. */
     TKind GetKind() const {
       assert(this);
       Refresh();
@@ -105,7 +107,8 @@ namespace Base {
     }
 
     /* The name of the current directory entry.  Never null.
-       Calling this function when we've already reached the end of the directory is a logic error. */
+       Calling this function when we've already reached the end of the
+       directory is a logic error. */
     const char *GetName() const {
       assert(this);
       Refresh();
@@ -116,31 +119,33 @@ namespace Base {
     void Rewind();
 
     private:
-
-    /* What we know about our current position within the directory we're iterating. */
+    /* What we know about our current position within the directory we're
+       iterating. */
     enum TPos {
-
       /* We don't know our position. */
       NotFresh,
 
       /* We know we're positioned at a valid directory entry. */
       AtEntry,
 
-      /* We know we're positioned at the end of the directory, where there are no more entries. */
+      /* We know we're positioned at the end of the directory, where there are
+         no more entries. */
       AtEnd
-
     };  // TDirIter::TPos
 
     /* Like TryRefresh(), but we throw if we're at the end. */
     void Refresh() const {
       assert(this);
+
       if (!TryRefresh()) {
         THROW_ERROR(TPastEnd);
       }
     }
 
-    /* If Pos says we're already positioned at directory entry, do nothing and return true.
-       If not, try to position to the next entry, update Pos, and return success/failure. */
+    /* If Pos says we're already positioned at directory entry, do nothing and
+       return true.
+       If not, try to position to the next entry, update Pos, and return
+       success/failure. */
     bool TryRefresh() const;
 
     /* The return of opendir().  Never null. */
@@ -151,8 +156,6 @@ namespace Base {
 
     /* Our current entry.  Only valid when Pos == AtEntry. */
     mutable dirent DirEnt;
-
   };  // TDirIter
 
 }  // Base
-

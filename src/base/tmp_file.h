@@ -30,8 +30,8 @@ namespace Base {
 
   class TTmpFile final {
     NO_COPY_SEMANTICS(TTmpFile);
-    public:
 
+    public:
     TTmpFile(const char *name_template = "/tmp/bruce_tmp.XXXXXX",
              bool delete_on_destroy = false);
 
@@ -50,10 +50,11 @@ namespace Base {
     }
 
     private:
-
-    /* Name of the temporary file. This is a std::vector<char> instead of a std::string, because the data gets passed to
-       mkstemps() call which modifies the data we pass it. std::string's data() function returns a non-const pointer, which if we
-       const_cast<> it away we land in undefined behavior. */
+    /* Name of the temporary file. This is a std::vector<char> instead of a
+       std::string, because the data gets passed to mkstemps() call which
+       modifies the data we pass it.  std::string's data() function returns a
+       non-const pointer, which if we const_cast<> it away we land in undefined
+       behavior. */
     std::vector<char> Name;
 
     /* Whether we unlink the file on destruction of the object or not. */

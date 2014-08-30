@@ -30,10 +30,10 @@ namespace Base {
     public:
 
     /* Constructor */
-    TNotFoundError(const TCodeLocation &code_location, const char *message = nullptr) {
+    TNotFoundError(const TCodeLocation &code_location,
+        const char *message = nullptr) {
       PostCtor(code_location, message);
     }
-
   };  // TNotFoundError
 
 }  // Base

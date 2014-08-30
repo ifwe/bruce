@@ -47,31 +47,17 @@ namespace {
   /* The fixture for testing I/O utils. */
   class TIoUtilsTest : public ::testing::Test {
     protected:
-    // You can remove any or all of the following functions if its body
-    // is empty.
-
     TIoUtilsTest() {
-      // You can do set-up work for each test here.
     }
 
     virtual ~TIoUtilsTest() {
-      // You can do clean-up work that doesn't throw exceptions here.
     }
 
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-
     virtual void SetUp() {
-      // Code here will be called immediately after the constructor (right
-      // before each test).
     }
 
     virtual void TearDown() {
-      // Code here will be called immediately after each test (right
-      // before the destructor).
     }
-
-    // Objects declared here can be used by all tests in the test case for Foo.
   };  // TIoUtilsTest
 
   TEST_F(TIoUtilsTest, ReadAtMost) {
@@ -83,6 +69,7 @@ namespace {
     ASSERT_EQ(actual_size, ExpectedSize);
     ASSERT_FALSE(strcmp(ActualData, ExpectedData));
     bool timed_out = false;
+
     try {
       actual_size = ReadAtMost(readable, ActualData, MaxActualSize, 1000);
     } catch (const system_error &x) {
@@ -92,6 +79,7 @@ namespace {
         ASSERT_TRUE(false);
       }
     }
+
     ASSERT_TRUE(timed_out);
   }
   
@@ -106,16 +94,19 @@ namespace {
     size_t actual_size = WriteAtMost(writeable, 0, 0);
     ASSERT_FALSE(actual_size);
     bool caught_broken_pipe = false;
+
     try {
       WriteAtMost(writeable, ExpectedData, ExpectedSize);
     } catch (const system_error &error) {
       /* TODO: change this to error.code() == errc::broken_pipe */
       caught_broken_pipe = (error.code().value() == EPIPE);
     }
+
     ASSERT_TRUE(caught_broken_pipe);
     writeable.Reset();
     TFd::Pipe(readable, writeable);
     bool timed_out = false;
+
     try {
       for (; ; ) {
         WriteAtMost(writeable, ExpectedData, ExpectedSize, 1000);
@@ -127,6 +118,7 @@ namespace {
         ASSERT_TRUE(false);
       }
     }
+
     ASSERT_TRUE(timed_out);
   }
   
@@ -148,6 +140,7 @@ namespace {
     TFd readable, writeable;
     TFd::Pipe(readable, writeable);
     bool timed_out = false;
+
     try {
       TryReadExactly(readable, ActualData, ExpectedSize, 1000);
     } catch (const system_error &x) {
@@ -157,6 +150,7 @@ namespace {
         ASSERT_TRUE(false);
       }
     }
+
     ASSERT_TRUE(timed_out);
   }
   
@@ -164,6 +158,7 @@ namespace {
     TFd readable, writeable;
     TFd::Pipe(readable, writeable);
     bool timed_out = false;
+
     try {
       for (; ; ) {
         TryWriteExactly(writeable, ExpectedData, ExpectedSize, 1000);
@@ -175,6 +170,7 @@ namespace {
         ASSERT_TRUE(false);
       }
     }
+
     ASSERT_TRUE(timed_out);
   }
   
@@ -184,11 +180,13 @@ namespace {
     WriteExactly(writeable, ExpectedData, ExpectedSize / 2);
     writeable.Reset();
     bool caught_unexpected_end = false;
+
     try {
       TryReadExactly(readable, ActualData, ExpectedSize);
     } catch (const TUnexpectedEnd &) {
       caught_unexpected_end = true;
     }
+
     ASSERT_TRUE(caught_unexpected_end);
   }
   
@@ -197,11 +195,13 @@ namespace {
     TFd::Pipe(readable, writeable);
     writeable.Reset();
     bool caught_could_not_start = false;
+
     try {
       ReadExactly(readable, ActualData, ExpectedSize);
     } catch (const TCouldNotStart &) {
       caught_could_not_start = true;
     }
+
     ASSERT_TRUE(caught_could_not_start);
   }
   
@@ -220,11 +220,13 @@ namespace {
     WriteExactly(writeable, ExpectedData, ExpectedSize / 2);
     writeable.Reset();
     bool caught_unexpected_end = false;
+
     try {
       ReadExactly(readable, ActualData, ExpectedSize);
     } catch (const TUnexpectedEnd &) {
       caught_unexpected_end = true;
     }
+
     ASSERT_TRUE(caught_unexpected_end);
   }
 

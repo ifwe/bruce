@@ -30,7 +30,6 @@ namespace Base {
 
   class TIndent final {
     public:
-
     static const char DEFAULT_INDENT_CHAR = ' ';
 
     static const size_t DEFAULT_INDENT_COUNT = 2;
@@ -54,12 +53,12 @@ namespace Base {
 
     TIndent(TIndent &indent)
         : TIndent(indent.IndentStr, StartAt::Indented, indent.Count,
-                  indent.IndentChar)
-    {}
+                  indent.IndentChar) {
+    }
 
     TIndent(TIndent &indent, size_t count, char indent_char)
-        : TIndent(indent.IndentStr, StartAt::Indented, count, indent_char)
-    {}
+        : TIndent(indent.IndentStr, StartAt::Indented, count, indent_char) {
+    }
 
     TIndent& operator=(const TIndent &) = delete;
 
@@ -90,7 +89,6 @@ namespace Base {
     }
 
     private:
-
     std::string &IndentStr;
     size_t InitialIndentSize;
     const size_t Count;

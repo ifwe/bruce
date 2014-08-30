@@ -79,6 +79,7 @@ namespace {
   
   TEST_F(TErrorUtilsTest, UtilsGenerated) {
     bool caught = false;
+
     try {
       IfLt0(read(-1, 0, 0));
     } catch (const system_error &error) {

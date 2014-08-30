@@ -29,15 +29,12 @@
 
 namespace Base {
 
-  /* TODO */
   class TEventSemaphore {
     NO_COPY_SEMANTICS(TEventSemaphore);
-    public:
 
-    /* TODO */
+    public:
     TEventSemaphore(uint64_t initial_count = 0, bool nonblocking = false);
 
-    /* TODO */
     const TFd &GetFd() const {
       assert(this);
       return Fd;
@@ -55,14 +52,10 @@ namespace Base {
        returns true. */
     bool Pop();
 
-    /* TODO */
     void Push(uint64_t count = 1);
 
     private:
-
-    /* TODO */
     TFd Fd;
-
   };  // TEventSemaphore
 
 }  // Base

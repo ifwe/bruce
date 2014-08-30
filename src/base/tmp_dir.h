@@ -32,7 +32,6 @@ namespace Base {
     NO_COPY_SEMANTICS(TTmpDir);
 
     public:
-
     TTmpDir(const char *name_template = "/tmp/bruce_tmp.XXXXXX",
             bool delete_on_destroy = false);
 
@@ -49,7 +48,6 @@ namespace Base {
     }
 
     private:
-
     std::vector<char> Name;
 
     bool DeleteOnDestroy;

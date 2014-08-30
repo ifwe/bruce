@@ -23,4 +23,5 @@
 
 using namespace Base;
 
-const TSafeGlobal<TSlice> TSlice::All(NewAll), TSlice::AtLimit(NewAtLimit), TSlice::AtStart(NewAtStart);
+const TSafeGlobal<TSlice> TSlice::All(NewAll), TSlice::AtLimit(NewAtLimit),
+    TSlice::AtStart(NewAtStart);

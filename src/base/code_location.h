@@ -37,21 +37,22 @@
      SomeFunc(HERE, ...); */
 #define HERE ::Base::TCodeLocation(__FILE__, __LINE__)
 
-// Works like a HERE but allows you to use C string concatenation to build an error message.
+/* Works like a HERE but allows you to use C string concatenation to build an
+   error message. */
 #define S2(x) #x
 #define S(x) S2(x)
 #define HERE_STRING "[" S(__FILE__) ":" S(__LINE__) "]"
 
 namespace Base {
 
-  /* Represents a location (file and line) within the body of source
-     code.  This is a value type. */
+  /* Represents a location (file and line) within the body of source code.
+     This is a value type. */
   class TCodeLocation {
     public:
-
     /* The default is a blank file at line 1. */
     TCodeLocation()
-        : File(""), LineNumber(1) {}
+        : File(""), LineNumber(1) {
+    }
 
     /* Represents the given file and line.  'file' must not be null and
        'line_number' must be > 0. */
@@ -91,7 +92,8 @@ namespace Base {
   };  // TCodeLocation
 
   /* Standard stream inserter for Base::TCodeLocation. */
-  inline std::ostream &operator<<(std::ostream &strm, const Base::TCodeLocation &that) {
+  inline std::ostream &operator<<(std::ostream &strm,
+      const Base::TCodeLocation &that) {
     assert(&that);
     that.Write(strm);
     return strm;

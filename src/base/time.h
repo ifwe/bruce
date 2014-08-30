@@ -27,28 +27,22 @@
 
 namespace Base {
 
-  /* TODO */
   class TTime {
     public:
-
-    /* TODO */
     TTime() {
       Time.tv_sec = 0;
       Time.tv_nsec = 0;
     }
 
-    /* TODO */
     TTime(time_t sec, long nsec) {
       Time.tv_sec = sec;
       Time.tv_nsec = nsec;
     }
 
-    /* TODO */
     void Now(clockid_t clk_id = CLOCK_REALTIME) {
       clock_gettime(clk_id, &Time);
     }
 
-    /* TODO */
     size_t Remaining(clockid_t clk_id = CLOCK_REALTIME) const {
       TTime t;
       t.Now(clk_id);
@@ -57,75 +51,58 @@ namespace Base {
       return diff.Sec() * 1000 + diff.Nsec() / 1000000;
     }
 
-    /* TODO */
     size_t RemainingMicroseconds(clockid_t clk_id = CLOCK_REALTIME) const {
       TTime t;
       t.Now(clk_id);
-      if (*this <= t) return 0;
+
+      if (*this <= t) {
+        return 0;
+      }
+
       TTime diff = *this - t;
       return diff.Sec() * 1000000 + diff.Nsec() / 1000;
     }
 
-    /* TODO */
     time_t Sec() const {
       return Time.tv_sec;
     }
 
-    /* TODO */
     long Nsec() const {
       return Time.tv_nsec;
     }
 
-    /* TODO */
     TTime &operator=(const TTime &rhs);
 
-    /* TODO */
     bool operator==(const TTime &rhs) const;
 
-    /* TODO */
     bool operator!=(const TTime &rhs) const;
 
-    /* TODO */
     bool operator<(const TTime &rhs) const;
 
-    /* TODO */
     bool operator>(const TTime &rhs) const;
 
-    /* TODO */
     bool operator<=(const TTime &rhs) const;
 
-    /* TODO */
     bool operator>=(const TTime &rhs) const;
 
-    /* TODO */
     TTime &operator+=(const TTime &rhs);
 
-    /* TODO */
     TTime &operator-=(const TTime &rhs);
 
-    /* TODO */
     const TTime operator+(const TTime &rhs) const;
 
-    /* TODO */
     const TTime operator-(const TTime &rhs) const;
 
-    /* TODO */
     TTime &operator+=(size_t msec);
 
-    /* TODO */
     TTime &operator-=(size_t msec);
 
-    /* TODO */
     TTime &AddMicroseconds(size_t usec);
 
-    /* TODO */
     TTime &SubtractMicroseconds(size_t usec);
 
     private:
-
-    /* TODO */
     struct timespec Time;
+  };  // TTime
 
-  };
-
-}
+}  // Base

@@ -27,51 +27,60 @@ TTime &TTime::operator=(const TTime &rhs) {
   if (this == &rhs) {
     return *this;
   }
+
   Time = rhs.Time;
   return *this;
 }
 
 bool TTime::operator==(const TTime &rhs) const {
-  return Time.tv_sec == rhs.Time.tv_sec && Time.tv_nsec == rhs.Time.tv_nsec;
+  return (Time.tv_sec == rhs.Time.tv_sec) &&
+         (Time.tv_nsec == rhs.Time.tv_nsec);
 }
 
 bool TTime::operator!=(const TTime &rhs) const {
-  return Time.tv_sec != rhs.Time.tv_sec || Time.tv_nsec != rhs.Time.tv_nsec;
+  return (Time.tv_sec != rhs.Time.tv_sec) ||
+         (Time.tv_nsec != rhs.Time.tv_nsec);
 }
 
 bool TTime::operator<(const TTime &rhs) const {
-  return Time.tv_sec < rhs.Time.tv_sec || (Time.tv_sec == rhs.Time.tv_sec && Time.tv_nsec < rhs.Time.tv_nsec);
+  return (Time.tv_sec < rhs.Time.tv_sec) ||
+      ((Time.tv_sec == rhs.Time.tv_sec) && (Time.tv_nsec < rhs.Time.tv_nsec));
 }
 
 bool TTime::operator>(const TTime &rhs) const {
-  return Time.tv_sec > rhs.Time.tv_sec || (Time.tv_sec == rhs.Time.tv_sec && Time.tv_nsec > rhs.Time.tv_nsec);
+  return (Time.tv_sec > rhs.Time.tv_sec) ||
+      ((Time.tv_sec == rhs.Time.tv_sec) && (Time.tv_nsec > rhs.Time.tv_nsec));
 }
 
 bool TTime::operator<=(const TTime &rhs) const {
-  return *this < rhs || *this == rhs;
+  return (*this < rhs) || (*this == rhs);
 }
 
 bool TTime::operator>=(const TTime &rhs) const {
-  return *this > rhs || *this == rhs;
+  return (*this > rhs) || (*this == rhs);
 }
 
 TTime &TTime::operator+=(const TTime &rhs) {
   Time.tv_sec += rhs.Time.tv_sec;
   Time.tv_nsec += rhs.Time.tv_nsec;
+
   if (Time.tv_nsec >= 1000000000L) {
     ++Time.tv_sec;
     Time.tv_nsec -= 1000000000L;
   }
+
   return *this;
 }
 
 TTime &TTime::operator-=(const TTime &rhs) {
   Time.tv_sec -= rhs.Time.tv_sec;
   Time.tv_nsec -= rhs.Time.tv_nsec;
+
   if (Time.tv_nsec < 0L) {
     --Time.tv_sec;
     Time.tv_nsec += 1000000000L;
   }
+
   return *this;
 }
 

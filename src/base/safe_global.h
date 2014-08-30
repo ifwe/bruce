@@ -30,61 +30,51 @@
 
 namespace Base {
 
-  /* TODO */
   template <typename TVal>
   class TSafeGlobal {
     NO_COPY_SEMANTICS(TSafeGlobal);
     public:
 
-    /* TODO */
     typedef std::function<TVal *()> TFactory;
 
-    /* TODO */
     TSafeGlobal(const TFactory &factory)
         : Factory(factory), Val(0), Constructing(false) {}
 
-    /* TODO */
     ~TSafeGlobal() {
       assert(this);
       delete Val;
     }
 
-    /* TODO */
     const TVal &operator*() const {
       assert(this);
       Freshen();
       return *AssertTrue(Val);
     }
 
-    /* TODO */
     TVal &operator*() {
       assert(this);
       Freshen();
       return *AssertTrue(Val);
     }
 
-    /* TODO */
     const TVal *operator->() const {
       assert(this);
       Freshen();
       return AssertTrue(Val);
     }
 
-    /* TODO */
     TVal *operator->() {
       assert(this);
       Freshen();
       return AssertTrue(Val);
     }
 
-    /* TODO */
     const TVal *GetObj() const {
       assert(this);
       Freshen();
       return AssertTrue(Val);
     }
 
-    /* TODO */
     TVal *GetObj() {
       assert(this);
       Freshen();
@@ -92,8 +82,6 @@ namespace Base {
     }
 
     private:
-
-    /* TODO */
     void Freshen() const {
       assert(this);
       TSpinLock::TLock lock(SpinLock);
@@ -106,18 +94,13 @@ namespace Base {
       }
     }
 
-    /* TODO */
     TSpinLock SpinLock;
 
-    /* TODO */
     TFactory Factory;
 
-    /* TODO */
     mutable TVal *Val;
 
-    /* TODO */
     mutable bool Constructing;
-  };
+  };  // TSafeGlobal
 
-}
-
+}  // Base

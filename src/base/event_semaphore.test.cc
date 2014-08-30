@@ -67,10 +67,12 @@ namespace {
     TEventSemaphore sem;
     ASSERT_FALSE(sem.GetFd().IsReadable());
     sem.Push(actual_count);
+
     for (uint64_t i = 0; i < actual_count; ++i) {
       ASSERT_TRUE(sem.GetFd().IsReadable());
       sem.Pop();
     }
+
     ASSERT_FALSE(sem.GetFd().IsReadable());
   }
   
@@ -81,10 +83,12 @@ namespace {
     ASSERT_FALSE(sem.Pop());
     ASSERT_FALSE(sem.GetFd().IsReadable());
     sem.Push(actual_count);
+
     for (uint64_t i = 0; i < actual_count; ++i) {
       ASSERT_TRUE(sem.GetFd().IsReadable());
       ASSERT_TRUE(sem.Pop());
     }
+
     ASSERT_FALSE(sem.GetFd().IsReadable());
     ASSERT_FALSE(sem.Pop());
   }

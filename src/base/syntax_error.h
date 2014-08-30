@@ -24,16 +24,18 @@
 #include <base/error.h>
 
 namespace Base {
-  /* TODO */
+
   class TSyntaxError : public TFinalError<TSyntaxError> {
   public:
-    /* TODO */
-    TSyntaxError(const TCodeLocation &code_location, const char *description=0) {
+    TSyntaxError(const TCodeLocation &code_location,
+        const char *description = 0) {
       PostCtor(code_location, description);
     }
 
-    TSyntaxError(const TCodeLocation &code_location, const char *description_start, const char *description_end) {
+    TSyntaxError(const TCodeLocation &code_location,
+        const char *description_start, const char *description_end) {
       PostCtor(code_location, description_start, description_end);
     }
-  };
-}
+  };  // TSyntaxError
+
+}  // Base

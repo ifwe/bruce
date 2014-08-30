@@ -35,7 +35,8 @@ char *Base::BuildCStr(const TPiece<const char> &piece) {
   return out_str;
 }
 
-std::ostream &Base::operator<<(std::ostream &strm, const Base::TPiece<const char> &piece) {
+std::ostream &Base::operator<<(std::ostream &strm,
+    const Base::TPiece<const char> &piece) {
   strm.write(piece.GetStart(), piece.GetSize());
   return strm;
 }

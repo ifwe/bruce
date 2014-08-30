@@ -53,7 +53,7 @@ namespace {
         const char *details_end) {
       PostCtor(code_location, details_start, details_end);
     }
-  };
+  };  // TMyError
   
   TEST_F(TErrorTest, Typical) {
     TMyError my_error(HERE);

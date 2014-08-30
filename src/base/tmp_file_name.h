@@ -31,7 +31,6 @@ namespace Base {
 
   class TTmpFileName final {
     public:
-
     DEFINE_ERROR(TCannotCreateName, std::runtime_error,
                  "Cannot create temporary filename");
 
@@ -42,7 +41,6 @@ namespace Base {
     }
 
     private:
-
     std::vector<char> Name;
   };  // TTmpFileName
 

@@ -28,8 +28,8 @@
 namespace Base {
 
   /* Returns the value given, after asserting that the value, when cast to
-     bool, equals true.  This means non-null pointers and non-zero numbers
-     will pass through, but null pointers and zeros will not. */
+     bool, equals true.  This means non-null pointers and non-zero numbers will
+     pass through, but null pointers and zeros will not. */
   template <typename TVal>
   const TVal &AssertTrue(const TVal &val) {
     assert(val);
