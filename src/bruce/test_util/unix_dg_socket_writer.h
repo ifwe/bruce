@@ -42,20 +42,20 @@ namespace Bruce {
       explicit TUnixDgSocketWriter(const char *socket_path);
 
       /* Write 'msg' to the socket, where 'msg' is a C-style string. */
-      void WriteMsg(const char *msg) {
+      void WriteMsg(const char *msg) const {
         assert(this);
         WriteMsg(msg, std::strlen(msg));
       }
 
       /* Write 'msg' to the socket. */
-      void WriteMsg(const std::string &msg) {
+      void WriteMsg(const std::string &msg) const {
         assert(this);
         WriteMsg(msg.c_str(), msg.size());
       }
 
       /* Write message to socket, where 'msg' points to the first byte of the
          message, and 'msg_size' gives the message size in bytes. */
-      void WriteMsg(const void *msg, size_t msg_size) {
+      void WriteMsg(const void *msg, size_t msg_size) const {
         assert(this);
         Socket::SendTo(Sock.GetFd(), msg, msg_size, 0, ServerAddress);
       }
