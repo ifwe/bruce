@@ -34,7 +34,7 @@ using namespace Bruce::InputDg::PartitionKey;
 using namespace Bruce::InputDg::PartitionKey::V0;
 using namespace Bruce::Util;
 
-static inline size_t GetDgOverhead() {
+static inline size_t GetDgOverhead() noexcept {
   return SZ_FIELD_SIZE + API_KEY_FIELD_SIZE + API_VERSION_FIELD_SIZE +
       FLAGS_FIELD_SIZE + PARTITION_KEY_FIELD_SIZE + TOPIC_SZ_FIELD_SIZE +
       TS_FIELD_SIZE + KEY_SZ_FIELD_SIZE + VALUE_SZ_FIELD_SIZE;
@@ -42,7 +42,7 @@ static inline size_t GetDgOverhead() {
 
 TV0InputDgWriter::TDgSizeResult
 TV0InputDgWriter::CheckDgSize(size_t topic_size, size_t key_size,
-    size_t value_size) {
+    size_t value_size) noexcept {
   if (topic_size > std::numeric_limits<int8_t>::max()) {
     return TDgSizeResult::TopicTooLarge;
   }
@@ -59,13 +59,13 @@ TV0InputDgWriter::CheckDgSize(size_t topic_size, size_t key_size,
 }
 
 static inline size_t DoComputeDgSize(size_t topic_size, size_t key_size,
-    size_t value_size) {
+    size_t value_size) noexcept {
   return GetDgOverhead() + topic_size + key_size + value_size;
 }
 
 TV0InputDgWriter::TDgSizeResult
 TV0InputDgWriter::ComputeDgSize(size_t &result, size_t topic_size,
-    size_t key_size, size_t value_size) {
+    size_t key_size, size_t value_size) noexcept {
   result = 0;
   TDgSizeResult ret = CheckDgSize(topic_size, key_size, value_size);
 
@@ -111,7 +111,7 @@ size_t TV0InputDgWriter::WriteDg(std::vector<uint8_t> &result_buf,
 void TV0InputDgWriter::DoWriteDg(bool check_size, void *result_buf,
     int64_t timestamp, int32_t partition_key, const void *topic_begin,
     const void *topic_end, const void *key_begin, const void *key_end,
-    const void *value_begin, const void *value_end) {
+    const void *value_begin, const void *value_end) noexcept {
   assert(this);
   assert(result_buf);
   assert(topic_begin);

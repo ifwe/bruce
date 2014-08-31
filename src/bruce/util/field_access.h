@@ -33,68 +33,68 @@ namespace Bruce {
 
   namespace Util {
 
-    inline uint16_t ReadUint16FromHeader(const void *src) {
+    inline uint16_t ReadUint16FromHeader(const void *src) noexcept {
       uint16_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return ntohs(header_data);
     }
 
-    inline uint32_t ReadUint32FromHeader(const void *src) {
+    inline uint32_t ReadUint32FromHeader(const void *src) noexcept {
       uint32_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return ntohl(header_data);
     }
 
-    inline uint64_t ReadUint64FromHeader(const void *src) {
+    inline uint64_t ReadUint64FromHeader(const void *src) noexcept {
       uint64_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return be64toh(header_data);
     }
 
-    inline void WriteUint16ToHeader(void *dst, uint16_t value) {
+    inline void WriteUint16ToHeader(void *dst, uint16_t value) noexcept {
       uint16_t header_data = htons(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }
 
-    inline void WriteUint32ToHeader(void *dst, uint32_t value) {
+    inline void WriteUint32ToHeader(void *dst, uint32_t value) noexcept {
       uint32_t header_data = htonl(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }
 
-    inline void WriteUint64ToHeader(void *dst, uint64_t value) {
+    inline void WriteUint64ToHeader(void *dst, uint64_t value) noexcept {
       uint64_t header_data = htobe64(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }
 
-    inline int16_t ReadInt16FromHeader(const void *src) {
+    inline int16_t ReadInt16FromHeader(const void *src) noexcept {
       int16_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return ntohs(header_data);
     }
 
-    inline int32_t ReadInt32FromHeader(const void *src) {
+    inline int32_t ReadInt32FromHeader(const void *src) noexcept {
       int32_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return ntohl(header_data);
     }
 
-    inline int64_t ReadInt64FromHeader(const void *src) {
+    inline int64_t ReadInt64FromHeader(const void *src) noexcept {
       int64_t header_data;
       std::memcpy(&header_data, src, sizeof(header_data));
       return be64toh(header_data);
     }
 
-    inline void WriteInt16ToHeader(void *dst, int16_t value) {
+    inline void WriteInt16ToHeader(void *dst, int16_t value) noexcept {
       int16_t header_data = htons(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }
 
-    inline void WriteInt32ToHeader(void *dst, int32_t value) {
+    inline void WriteInt32ToHeader(void *dst, int32_t value) noexcept {
       int32_t header_data = htonl(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }
 
-    inline void WriteInt64ToHeader(void *dst, int64_t value) {
+    inline void WriteInt64ToHeader(void *dst, int64_t value) noexcept {
       int64_t header_data = htobe64(value);
       std::memcpy(dst, &header_data, sizeof(header_data));
     }

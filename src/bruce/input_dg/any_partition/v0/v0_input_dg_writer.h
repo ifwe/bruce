@@ -41,7 +41,7 @@ namespace Bruce {
           NO_COPY_SEMANTICS(TV0InputDgWriter);
 
           public:
-          TV0InputDgWriter() = default;
+          TV0InputDgWriter() noexcept = default;
 
           enum class TDgSizeResult {
             Ok,  // size computed successfully
@@ -50,19 +50,19 @@ namespace Bruce {
           };  // TDgSizeResult
 
           static TDgSizeResult CheckDgSize(size_t topic_size, size_t key_size,
-              size_t value_size);
+              size_t value_size) noexcept;
 
           /* If return value is TDgSizeResult::Ok then on return, 'result' will
              contain the number of bytes required for the entire datagram. */
           static TDgSizeResult ComputeDgSize(size_t &result, size_t topic_size,
-              size_t key_size, size_t value_size);
+              size_t key_size, size_t value_size) noexcept;
 
           /* Write datagram into 'result_buf'.  It is assumed that 'result_buf'
              has enough space for entire datagram (see ComputeDgSize()). */
           void WriteDg(void *result_buf, int64_t timestamp,
               const void *topic_begin, const void *topic_end,
               const void *key_begin, const void *key_end,
-              const void *value_begin, const void *value_end) {
+              const void *value_begin, const void *value_end) noexcept {
             DoWriteDg(true, result_buf, timestamp, topic_begin, topic_end,
                       key_begin, key_end, value_begin, value_end);
           }
@@ -81,7 +81,7 @@ namespace Bruce {
           void DoWriteDg(bool check_size, void *result_buf, int64_t timestamp,
               const void *topic_begin, const void *topic_end,
               const void *key_begin, const void *key_end,
-              const void *value_begin, const void *value_end);
+              const void *value_begin, const void *value_end) noexcept;
         };  // class TV0InputDgWriter
 
       }  // V0
