@@ -106,8 +106,10 @@ namespace {
     std::string key("Why did the chicken cross the road?");
     std::string value("Because he got bored writing unit tests.");
     std::vector<uint8_t> buf;
-    size_t expected_dg_size = TV0InputDgWriter::ComputeDgSize(topic.size(),
-        key.size(), value.size());
+    size_t expected_dg_size = 0;
+    TV0InputDgWriter::TDgSizeResult result = TV0InputDgWriter::ComputeDgSize(
+        expected_dg_size, topic.size(), key.size(), value.size());
+    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
     size_t dg_size = TV0InputDgWriter().WriteDg(buf, timestamp, partition_key,
         topic.data(), topic.data() + topic.size(), key.data(),
         key.data() + key.size(), value.data(), value.data() + value.size());

@@ -43,27 +43,29 @@ namespace Bruce {
           public:
           TV0InputDgWriter() = default;
 
-          /* Maximum allowed topic size in bytes. */
-          enum { MAX_TOPIC_SIZE = std::numeric_limits<int8_t>::max() };
+          enum class TDgSizeResult {
+            Ok,  // size computed successfully
+            TopicTooLarge,  // topic exceeds max allowed length
+            MsgTooLarge  // datagram would exceed max possible size
+          };  // TDgSizeResult
 
-          /* Maximum allowed key size in bytes. */
-          enum { MAX_KEY_SIZE = std::numeric_limits<int32_t>::max() };
-
-          /* Maximum allowed value size in bytes. */
-          enum { MAX_VALUE_SIZE = std::numeric_limits<int32_t>::max() };
-
-          /* Return number of bytes required for entire datagram, assuming that
-             'topic_size' gives topic size in bytes, 'key_size' gives key
-             size in bytes, and 'value_size' gives value size in bytes. */
-          static size_t ComputeDgSize(size_t topic_size, size_t key_size,
+          static TDgSizeResult CheckDgSize(size_t topic_size, size_t key_size,
               size_t value_size);
+
+          /* If return value is TDgSizeResult::Ok then on return, 'result' will
+             contain the number of bytes required for the entire datagram. */
+          static TDgSizeResult ComputeDgSize(size_t &result, size_t topic_size,
+              size_t key_size, size_t value_size);
 
           /* Write datagram into 'result_buf'.  It is assumed that 'result_buf'
              has enough space for entire datagram (see ComputeDgSize()). */
           void WriteDg(void *result_buf, int64_t timestamp,
               const void *topic_begin, const void *topic_end,
               const void *key_begin, const void *key_end,
-              const void *value_begin, const void *value_end);
+              const void *value_begin, const void *value_end) {
+            DoWriteDg(true, result_buf, timestamp, topic_begin, topic_end,
+                      key_begin, key_end, value_begin, value_end);
+          }
 
           /* Write datagram into 'result_buf'.  If 'result_buf' does not have
              enough space for entire datagram, then resize it to exactly the
@@ -71,6 +73,12 @@ namespace Bruce {
              space, then leave its size unchanged.  Return the size in bytes of
              the written datagram. */
           size_t WriteDg(std::vector<uint8_t> &result_buf, int64_t timestamp,
+              const void *topic_begin, const void *topic_end,
+              const void *key_begin, const void *key_end,
+              const void *value_begin, const void *value_end);
+
+          private:
+          void DoWriteDg(bool check_size, void *result_buf, int64_t timestamp,
               const void *topic_begin, const void *topic_end,
               const void *key_begin, const void *key_end,
               const void *value_begin, const void *value_end);

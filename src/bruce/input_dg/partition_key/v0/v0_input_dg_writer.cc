@@ -34,42 +34,84 @@ using namespace Bruce::InputDg::PartitionKey;
 using namespace Bruce::InputDg::PartitionKey::V0;
 using namespace Bruce::Util;
 
-static void CheckSizes(size_t &topic_size, size_t &key_size,
-    size_t &value_size) {
-  if (topic_size > TV0InputDgWriter::MAX_TOPIC_SIZE) {
-    assert(false);
-    topic_size = TV0InputDgWriter::MAX_TOPIC_SIZE;
+static inline size_t GetDgOverhead() {
+  return SZ_FIELD_SIZE + API_KEY_FIELD_SIZE + API_VERSION_FIELD_SIZE +
+      FLAGS_FIELD_SIZE + PARTITION_KEY_FIELD_SIZE + TOPIC_SZ_FIELD_SIZE +
+      TS_FIELD_SIZE + KEY_SZ_FIELD_SIZE + VALUE_SZ_FIELD_SIZE;
+}
+
+TV0InputDgWriter::TDgSizeResult
+TV0InputDgWriter::CheckDgSize(size_t topic_size, size_t key_size,
+    size_t value_size) {
+  if (topic_size > std::numeric_limits<int8_t>::max()) {
+    return TDgSizeResult::TopicTooLarge;
   }
 
-  if (key_size > TV0InputDgWriter::MAX_KEY_SIZE) {
-    assert(false);
-    key_size = TV0InputDgWriter::MAX_KEY_SIZE;
+  size_t key_value_space = std::numeric_limits<int32_t>::max() -
+      GetDgOverhead() - topic_size;
+
+  if ((key_size > key_value_space) ||
+      (value_size > (key_value_space - key_size))) {
+    return TDgSizeResult::MsgTooLarge;
   }
 
-  if (value_size > TV0InputDgWriter::MAX_VALUE_SIZE) {
-    assert(false);
-    value_size = TV0InputDgWriter::MAX_VALUE_SIZE;
-  }
+  return TDgSizeResult::Ok;
 }
 
 static inline size_t DoComputeDgSize(size_t topic_size, size_t key_size,
     size_t value_size) {
-  return SZ_FIELD_SIZE + API_KEY_FIELD_SIZE + API_VERSION_FIELD_SIZE +
-      FLAGS_FIELD_SIZE + PARTITION_KEY_FIELD_SIZE + TOPIC_SZ_FIELD_SIZE +
-      topic_size + TS_FIELD_SIZE + KEY_SZ_FIELD_SIZE + key_size +
-      VALUE_SZ_FIELD_SIZE + value_size;
+  return GetDgOverhead() + topic_size + key_size + value_size;
 }
 
-size_t TV0InputDgWriter::ComputeDgSize(size_t topic_size, size_t key_size,
-    size_t value_size) {
-  CheckSizes(topic_size, key_size, value_size);
-  return DoComputeDgSize(topic_size, key_size, value_size);
+TV0InputDgWriter::TDgSizeResult
+TV0InputDgWriter::ComputeDgSize(size_t &result, size_t topic_size,
+    size_t key_size, size_t value_size) {
+  result = 0;
+  TDgSizeResult ret = CheckDgSize(topic_size, key_size, value_size);
+
+  if (ret != TDgSizeResult::Ok) {
+    return ret;
+  }
+
+  result = DoComputeDgSize(topic_size, key_size, value_size);
+  return TDgSizeResult::Ok;
 }
 
-void TV0InputDgWriter::WriteDg(void *result_buf, int64_t timestamp,
-    int32_t partition_key, const void *topic_begin, const void *topic_end,
-    const void *key_begin, const void *key_end, const void *value_begin,
-    const void *value_end) {
+size_t TV0InputDgWriter::WriteDg(std::vector<uint8_t> &result_buf,
+    int64_t timestamp, int32_t partition_key, const void *topic_begin,
+    const void *topic_end, const void *key_begin, const void *key_end,
+    const void *value_begin, const void *value_end) {
+  assert(this);
+  assert(topic_begin);
+  assert(topic_end >= topic_begin);
+  assert(key_begin || (key_end == key_begin));
+  assert(key_end >= key_begin);
+  assert(value_begin || (value_end == value_begin));
+  assert(value_end >= value_begin);
+  size_t topic_size = reinterpret_cast<const uint8_t *>(topic_end) -
+      reinterpret_cast<const uint8_t *>(topic_begin);
+  size_t key_size = reinterpret_cast<const uint8_t *>(key_end) -
+      reinterpret_cast<const uint8_t *>(key_begin);
+  size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
+      reinterpret_cast<const uint8_t *>(value_begin);
+  size_t dg_size = 0;
+
+  if (ComputeDgSize(dg_size, topic_size, key_size, value_size) !=
+      TDgSizeResult::Ok) {
+    assert(false);
+    return 0;
+  }
+
+  result_buf.resize(dg_size);
+  DoWriteDg(false, &result_buf[0], timestamp, partition_key, topic_begin,
+            topic_end, key_begin, key_end, value_begin, value_end);
+  return dg_size;
+}
+
+void TV0InputDgWriter::DoWriteDg(bool check_size, void *result_buf,
+    int64_t timestamp, int32_t partition_key, const void *topic_begin,
+    const void *topic_end, const void *key_begin, const void *key_end,
+    const void *value_begin, const void *value_end) {
   assert(this);
   assert(result_buf);
   assert(topic_begin);
@@ -88,11 +130,22 @@ void TV0InputDgWriter::WriteDg(void *result_buf, int64_t timestamp,
   size_t topic_size = topic_finish - topic_start;
   size_t key_size = key_finish - key_start;
   size_t value_size = value_finish - value_start;
-  CheckSizes(topic_size, key_size, value_size);
+  size_t dg_size = 0;
+
+  if (check_size) {
+    if (ComputeDgSize(dg_size, topic_size, key_size, value_size) !=
+        TDgSizeResult::Ok) {
+      assert(false);
+      return;
+    }
+  } else {
+    dg_size = DoComputeDgSize(topic_size, key_size, value_size);
+  }
+
   topic_finish = topic_start + topic_size;
   key_finish = key_start + key_size;
   value_finish = value_start + value_size;
-  WriteInt32ToHeader(pos, DoComputeDgSize(topic_size, key_size, value_size));
+  WriteInt32ToHeader(pos, dg_size);
   pos += SZ_FIELD_SIZE;
 
   WriteInt16ToHeader(pos, 257);
@@ -124,28 +177,4 @@ void TV0InputDgWriter::WriteDg(void *result_buf, int64_t timestamp,
   if (value_start) {
     std::memcpy(pos, value_start, value_size);
   }
-}
-
-size_t TV0InputDgWriter::WriteDg(std::vector<uint8_t> &result_buf,
-    int64_t timestamp, int32_t partition_key, const void *topic_begin,
-    const void *topic_end, const void *key_begin, const void *key_end,
-    const void *value_begin, const void *value_end) {
-  assert(this);
-  assert(topic_begin);
-  assert(topic_end >= topic_begin);
-  assert(key_begin || (key_end == key_begin));
-  assert(key_end >= key_begin);
-  assert(value_begin || (value_end == value_begin));
-  assert(value_end >= value_begin);
-  size_t topic_size = reinterpret_cast<const uint8_t *>(topic_end) -
-      reinterpret_cast<const uint8_t *>(topic_begin);
-  size_t key_size = reinterpret_cast<const uint8_t *>(key_end) -
-      reinterpret_cast<const uint8_t *>(key_begin);
-  size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
-      reinterpret_cast<const uint8_t *>(value_begin);
-  size_t dg_size = ComputeDgSize(topic_size, key_size, value_size);
-  result_buf.resize(dg_size);
-  WriteDg(&result_buf[0], timestamp, partition_key, topic_begin, topic_end,
-          key_begin, key_end, value_begin, value_end);
-  return dg_size;
 }

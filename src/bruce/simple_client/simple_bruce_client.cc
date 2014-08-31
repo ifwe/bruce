@@ -32,6 +32,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <base/basename.h>
+#include <base/no_default_case.h>
 #include <base/time.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
@@ -333,19 +334,42 @@ int simple_bruce_client_main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
 
-    if (cfg->Key.size() > AnyPartition::V0::TV0InputDgWriter::MAX_KEY_SIZE) {
-      std::cerr << "Key size can be at most "
-          << AnyPartition::V0::TV0InputDgWriter::MAX_KEY_SIZE << " bytes"
-          << std::endl;
-      return EXIT_FAILURE;
-    }
+    if (cfg->UsePartitionKey) {
+      using namespace Bruce::InputDg::PartitionKey::V0;
 
-    if (cfg->Value.size() >
-        AnyPartition::V0::TV0InputDgWriter::MAX_VALUE_SIZE) {
-      std::cerr << "Value size can be at most "
-          << AnyPartition::V0::TV0InputDgWriter::MAX_VALUE_SIZE << " bytes"
-          << std::endl;
-      return EXIT_FAILURE;
+      switch (TV0InputDgWriter::CheckDgSize(
+          cfg->Topic.size(), cfg->Key.size(), cfg->Value.size())) {
+        case TV0InputDgWriter::TDgSizeResult::Ok: {
+          break;
+        }
+        case TV0InputDgWriter::TDgSizeResult::TopicTooLarge: {
+          std::cerr << "Topic too large" << std::endl;
+          return EXIT_FAILURE;
+        }
+        case TV0InputDgWriter::TDgSizeResult::MsgTooLarge: {
+          std::cerr << "Message too large" << std::endl;
+          return EXIT_FAILURE;
+        }
+        NO_DEFAULT_CASE;
+      }
+    } else {
+      using namespace Bruce::InputDg::AnyPartition::V0;
+
+      switch (TV0InputDgWriter::CheckDgSize(
+          cfg->Topic.size(), cfg->Key.size(), cfg->Value.size())) {
+        case TV0InputDgWriter::TDgSizeResult::Ok: {
+          break;
+        }
+        case TV0InputDgWriter::TDgSizeResult::TopicTooLarge: {
+          std::cerr << "Topic too large" << std::endl;
+          return EXIT_FAILURE;
+        }
+        case TV0InputDgWriter::TDgSizeResult::MsgTooLarge: {
+          std::cerr << "Message too large" << std::endl;
+          return EXIT_FAILURE;
+        }
+        NO_DEFAULT_CASE;
+      }
     }
   }
 
