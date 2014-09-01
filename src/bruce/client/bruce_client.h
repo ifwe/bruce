@@ -85,32 +85,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <bruce/client/status_codes.h>
+
 struct bruce_dg_socket_writer;
-
-/* Status codes for library calls. */
-enum {
-  /* Success. */
-  BRUCE_OK = 0,
-
-  /* Internal error (should never occur). */
-  BRUCE_INTERNAL_ERROR = -1,
-
-  /* One or more input parameters is invalid. */
-  BRUCE_INVALID_INPUT = -2,
-
-  /* Supplied output buffer does not have enough space for result. */
-  BRUCE_BUF_TOO_SMALL = -3,
-
-  /* Kafka topic is too large. */
-  BRUCE_TOPIC_TOO_LARGE = -4,
-
-  /* Result message would exceed maximum possible size. */
-  BRUCE_MSG_TOO_LARGE = -5
-};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* See <bruce/client/status_codes.h> for definitions of status codes returned
+   by library functions. */
 
 /* Compute the total size of an AnyPartition message with topic size (as
    reported by strlen()) 'topic_size', key size 'key_size', and value size
