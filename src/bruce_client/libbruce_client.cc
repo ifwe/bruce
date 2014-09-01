@@ -29,6 +29,7 @@
 #include <memory>
 #include <system_error>
 
+#include <base/export_sym.h>
 #include <base/no_default_case.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
 #include <bruce/input_dg/partition_key/v0/v0_input_dg_writer.h>
@@ -38,7 +39,7 @@ using namespace Bruce;
 using namespace Bruce::InputDg;
 using namespace Bruce::TestUtil;
 
-int FindAnyPartitionMsgSize(size_t topic_size, size_t key_size,
+static int FindAnyPartitionMsgSize(size_t topic_size, size_t key_size,
     size_t value_size, size_t &out_size) noexcept {
   using namespace Bruce::InputDg::AnyPartition::V0;
   out_size = 0;
@@ -71,7 +72,7 @@ int FindAnyPartitionMsgSize(size_t topic_size, size_t key_size,
   return BRUCE_OK;
 }
 
-int FindPartitionKeyMsgSize(size_t topic_size, size_t key_size,
+static int FindPartitionKeyMsgSize(size_t topic_size, size_t key_size,
     size_t value_size, size_t &out_size) noexcept {
   using namespace Bruce::InputDg::PartitionKey::V0;
   out_size = 0;
@@ -105,8 +106,8 @@ int FindPartitionKeyMsgSize(size_t topic_size, size_t key_size,
 }
 
 extern "C"
-int bruce_find_any_partition_msg_size(size_t topic_size, size_t key_size,
-    size_t value_size, size_t *out_size) {
+int EXPORT_SYM bruce_find_any_partition_msg_size(size_t topic_size,
+    size_t key_size, size_t value_size, size_t *out_size) {
   if (out_size == nullptr) {
     return BRUCE_INVALID_INPUT;
   }
@@ -115,8 +116,8 @@ int bruce_find_any_partition_msg_size(size_t topic_size, size_t key_size,
 }
 
 extern "C"
-int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
-    size_t value_size, size_t *out_size) {
+int EXPORT_SYM bruce_find_partition_key_msg_size(size_t topic_size,
+    size_t key_size, size_t value_size, size_t *out_size) {
   if (out_size == nullptr) {
     return BRUCE_INVALID_INPUT;
   }
@@ -125,9 +126,9 @@ int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
 }
 
 extern "C"
-int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
-    const char *topic, int64_t timestamp, const void *key, size_t key_size,
-    const void *value, size_t value_size) {
+int EXPORT_SYM bruce_write_any_partition_msg(void *out_buf,
+    size_t out_buf_size, const char *topic, int64_t timestamp, const void *key,
+    size_t key_size, const void *value, size_t value_size) {
   using namespace Bruce::InputDg::AnyPartition::V0;
 
   if ((out_buf == nullptr) || (topic == nullptr) || (key == nullptr) ||
@@ -154,9 +155,10 @@ int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
 }
 
 extern "C"
-int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
-    int32_t partition_key, const char *topic, int64_t timestamp,
-    const void *key, size_t key_size, const void *value, size_t value_size) {
+int EXPORT_SYM bruce_write_partition_key_msg(void *out_buf,
+    size_t out_buf_size, int32_t partition_key, const char *topic,
+    int64_t timestamp, const void *key, size_t key_size, const void *value,
+    size_t value_size) {
   using namespace Bruce::InputDg::PartitionKey::V0;
 
   if ((out_buf == nullptr) || (topic == nullptr) || (key == nullptr) ||
@@ -188,7 +190,7 @@ struct bruce_dg_socket_writer {
 };  // bruce_dg_socket_writer
 
 extern "C"
-int bruce_create_dg_socket_writer(const char *socket_path,
+int EXPORT_SYM bruce_create_dg_socket_writer(const char *socket_path,
     struct bruce_dg_socket_writer **out_sw) {
   if ((socket_path == nullptr) || (out_sw == nullptr)) {
     return BRUCE_INVALID_INPUT;
@@ -216,7 +218,8 @@ int bruce_create_dg_socket_writer(const char *socket_path,
 }
 
 extern "C"
-void bruce_destroy_dg_socket_writer(struct bruce_dg_socket_writer *sw) {
+void EXPORT_SYM bruce_destroy_dg_socket_writer(
+    struct bruce_dg_socket_writer *sw) {
   if (sw) {
     delete sw->writer;
     delete sw;
@@ -224,7 +227,7 @@ void bruce_destroy_dg_socket_writer(struct bruce_dg_socket_writer *sw) {
 }
 
 extern "C"
-int bruce_write_to_dg_socket(struct bruce_dg_socket_writer *sw,
+int EXPORT_SYM bruce_write_to_dg_socket(struct bruce_dg_socket_writer *sw,
     const void *msg, size_t msg_size) {
   if ((sw == nullptr) || (msg == nullptr)) {
     return BRUCE_INVALID_INPUT;

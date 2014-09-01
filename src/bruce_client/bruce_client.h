@@ -67,7 +67,7 @@
        ret = bruce_write_to_dg_socket(sw, msg_buf, msg_size);
 
        if (ret != BRUCE_OK) {
-          // handle error
+         // handle error
        }
 
        // Clean up.

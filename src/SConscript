@@ -186,10 +186,12 @@ for target_path in BUILD_TARGETS:
     source = {env['PROGSUFFIX'] : lambda:
                   get_dep_sources(get_one_dep_source(target_path,
                           env['DEP_SUFFIXES'], True)),
-              env['LIBSUFFIX']  : lambda: get_one_dep_source(
-                          target_path, env['DEP_SUFFIXES'], True),
-              env['SHLIBSUFFIX']: lambda: get_one_dep_source(
-                          target_path, env['DEP_SUFFIXES'], True),
+              env['LIBSUFFIX']  : lambda:
+                  get_dep_sources(get_one_dep_source(target_path,
+                          env['DEP_SUFFIXES'], True)),
+              env['SHLIBSUFFIX']: lambda:
+                  get_dep_sources(get_one_dep_source(target_path,
+                          env['DEP_SUFFIXES'], True)),
               env['OBJSUFFIX']  : lambda: get_one_dep_source(
                           target_path, env['DEP_SUFFIXES'], True),
               env['SHOBJSUFFIX']: lambda: get_one_dep_source(

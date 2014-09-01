@@ -26,8 +26,8 @@ import sys
 def parse_args():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('target', nargs='*',
-            help='Target to build: one of {apps, tests, run_tests}.  If ' +
-                 'none specified, build all.')
+            help='Target to build: one of {apps, client_libs, tests, ' + \
+                 'run_tests}.  If none specified, build all.')
     parser.add_argument('-h', '--help',
             help='Show this help message and exit.', action='store_true')
     parser.add_argument('-v', '--verbose', help='Show verbose output.',
@@ -171,7 +171,7 @@ if args.clean:
         sys.exit(1)
 
 target_set = {target for target in args.target}
-allowed_targets = {'apps', 'tests', 'run_tests'}
+allowed_targets = {'apps', 'client_libs', 'tests', 'run_tests'}
 
 if not target_set:
     # By default, build everything but don't run the tests.
@@ -191,6 +191,8 @@ all_apps = ['bruce/bruce',
             'bruce/mock_kafka_server/mock_kafka_server',
             'bruce/mock_kafka_server/inject_error/inject_error',
             'bruce/simple_client/simple_bruce_client']
+client_libs = ['bruce_client/libbruce_client.a',
+               'bruce_client/libbruce_client.so']
 root = os.getcwd()
 
 for target in target_set:
@@ -199,6 +201,13 @@ for target in target_set:
         print 'Building apps:'
         print ''
         build_targets(all_apps, args.path_filter, args.verbose, args.mode,
+                      args.import_path, False)
+        print '============================================================'
+    elif target == 'client_libs':
+        print '============================================================'
+        print 'Building client_libs:'
+        print ''
+        build_targets(client_libs, args.path_filter, args.verbose, args.mode,
                       args.import_path, False)
         print '============================================================'
     elif target == 'tests':
