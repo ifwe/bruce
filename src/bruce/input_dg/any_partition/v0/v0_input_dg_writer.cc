@@ -78,37 +78,6 @@ TV0InputDgWriter::ComputeDgSize(size_t &result, size_t topic_size,
   return TDgSizeResult::Ok;
 }
 
-size_t TV0InputDgWriter::WriteDg(std::vector<uint8_t> &result_buf,
-    int64_t timestamp, const void *topic_begin, const void *topic_end,
-    const void *key_begin, const void *key_end, const void *value_begin,
-    const void *value_end) {
-  assert(this);
-  assert(topic_begin);
-  assert(topic_end >= topic_begin);
-  assert(key_begin || (key_end == key_begin));
-  assert(key_end >= key_begin);
-  assert(value_begin || (value_end == value_begin));
-  assert(value_end >= value_begin);
-  size_t topic_size = reinterpret_cast<const uint8_t *>(topic_end) -
-      reinterpret_cast<const uint8_t *>(topic_begin);
-  size_t key_size = reinterpret_cast<const uint8_t *>(key_end) -
-      reinterpret_cast<const uint8_t *>(key_begin);
-  size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
-      reinterpret_cast<const uint8_t *>(value_begin);
-  size_t dg_size = 0;
-
-  if (ComputeDgSize(dg_size, topic_size, key_size, value_size) !=
-      TDgSizeResult::Ok) {
-    assert(false);
-    return 0;
-  }
-
-  result_buf.resize(dg_size);
-  DoWriteDg(false, &result_buf[0], timestamp, topic_begin, topic_end,
-            key_begin, key_end, value_begin, value_end);
-  return dg_size;
-}
-
 void TV0InputDgWriter::DoWriteDg(bool check_size, void *result_buf,
     int64_t timestamp, const void *topic_begin, const void *topic_end,
     const void *key_begin, const void *key_end, const void *value_begin,

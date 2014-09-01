@@ -51,7 +51,7 @@
 #include <bruce/bruce_server.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
-#include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
+#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_thread.h>
 #include <bruce/kafka_proto/choose_proto.h>
 #include <bruce/kafka_proto/v0/wire_proto.h>
@@ -319,8 +319,10 @@ namespace {
     const uint8_t *topic_end = topic_begin + topic.size();
     const uint8_t *body_begin = reinterpret_cast<const uint8_t *>(body.data());
     const uint8_t *body_end = body_begin + body.size();
-    TV0InputDgWriter().WriteDg(dg, GetEpochMilliseconds(), topic_begin,
-        topic_end, nullptr, nullptr, body_begin, body_end);
+    TV0InputDgWriter::TDgSizeResult result =
+    WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end, nullptr,
+        nullptr, body_begin, body_end);
+    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
   }
 
   void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
@@ -334,8 +336,10 @@ namespace {
     const uint8_t *value_begin =
         reinterpret_cast<const uint8_t *>(value.data());
     const uint8_t *value_end = value_begin + value.size();
-    TV0InputDgWriter().WriteDg(dg, GetEpochMilliseconds(), topic_begin,
-        topic_end, key_begin, key_end, value_begin, value_end);
+    TV0InputDgWriter::TDgSizeResult result =
+    WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end, key_begin,
+        key_end, value_begin, value_end);
+    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
   }
 
   void GetKeyAndValue(TBruceServer &bruce,

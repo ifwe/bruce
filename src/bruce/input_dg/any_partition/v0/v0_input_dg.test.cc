@@ -23,6 +23,7 @@
 
 #include <bruce/input_dg/input_dg_util.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
+#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 
 #include <cstdint>
 #include <limits>
@@ -109,13 +110,12 @@ namespace {
     TV0InputDgWriter::TDgSizeResult result = TV0InputDgWriter::ComputeDgSize(
         expected_dg_size, topic.size(), key.size(), value.size());
     ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
-    size_t dg_size = TV0InputDgWriter().WriteDg(buf, timestamp, topic.data(),
-        topic.data() + topic.size(), key.data(), key.data() + key.size(),
-        value.data(), value.data() + value.size());
-    ASSERT_EQ(dg_size, expected_dg_size);
-    ASSERT_EQ(buf.size(), dg_size);
-
-    TMsg::TPtr msg = BuildMsgFromDg(&buf[0], dg_size, *cfg.Cfg, *cfg.Pool,
+    result = WriteDg(buf, timestamp, topic.data(), topic.data() + topic.size(),
+        key.data(), key.data() + key.size(), value.data(),
+        value.data() + value.size());
+    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
+    ASSERT_EQ(buf.size(), expected_dg_size);
+    TMsg::TPtr msg = BuildMsgFromDg(&buf[0], buf.size(), *cfg.Cfg, *cfg.Pool,
         cfg.AnomalyTracker, cfg.MsgStateTracker);
     ASSERT_TRUE(!!msg);
     SetProcessed(msg);

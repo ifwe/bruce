@@ -36,8 +36,10 @@
 #include <base/no_default_case.h>
 #include <base/time.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
+#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
 #include <bruce/input_dg/partition_key/v0/v0_input_dg_writer.h>
+#include <bruce/input_dg/partition_key/v0/v0_write_dg.h>
 #include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/time_util.h>
@@ -254,16 +256,16 @@ void CreateDgOldFormat(std::vector<uint8_t> &buf, const TConfig &cfg,
   }
 }
 
-void CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
+bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     size_t msg_count) {
   if (cfg.UseOldInputFormat) {
     CreateDgOldOldFormat(buf, cfg, msg_count);
-    return;
+    return true;
   }
 
   if (!cfg.Body.empty()) {
     CreateDgOldFormat(buf, cfg, msg_count);
-    return;
+    return true;
   }
 
   std::string value;
@@ -289,11 +291,41 @@ void CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
   uint64_t ts = GetEpochMilliseconds();
 
   if (cfg.UsePartitionKey) {
-    PartitionKey::V0::TV0InputDgWriter().WriteDg(buf, ts, cfg.PartitionKey,
-        topic_begin, topic_end, key_begin, key_end, value_begin, value_end);
+    using namespace Bruce::InputDg::PartitionKey::V0;
+
+    switch (WriteDg(buf, ts, cfg.PartitionKey, topic_begin, topic_end,
+        key_begin, key_end, value_begin, value_end)) {
+      case TV0InputDgWriter::TDgSizeResult::Ok: {
+        break;
+      }
+      case TV0InputDgWriter::TDgSizeResult::TopicTooLarge: {
+        std::cerr << "Topic is too large." << std::endl;
+        return false;
+      }
+      case TV0InputDgWriter::TDgSizeResult::MsgTooLarge: {
+        std::cerr << "Message is too large." << std::endl;
+        return false;
+      }
+      NO_DEFAULT_CASE;
+    }
   } else {
-    AnyPartition::V0::TV0InputDgWriter().WriteDg(buf, ts, topic_begin,
-        topic_end, key_begin, key_end, value_begin, value_end);
+    using namespace Bruce::InputDg::AnyPartition::V0;
+
+    switch (WriteDg(buf, ts, topic_begin, topic_end, key_begin, key_end,
+        value_begin, value_end)) {
+      case TV0InputDgWriter::TDgSizeResult::Ok: {
+        break;
+      }
+      case TV0InputDgWriter::TDgSizeResult::TopicTooLarge: {
+        std::cerr << "Topic is too large." << std::endl;
+        return false;
+      }
+      case TV0InputDgWriter::TDgSizeResult::MsgTooLarge: {
+        std::cerr << "Message is too large." << std::endl;
+        return false;
+      }
+      NO_DEFAULT_CASE;
+    }
   }
 
   if (cfg.Bad) {
@@ -302,6 +334,8 @@ void CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     assert(buf.size() >= sizeof(int32_t));
     WriteInt32ToHeader(&buf[0], buf.size() - 1);
   }
+
+  return true;
 }
 
 int simple_bruce_client_main(int argc, char **argv) {
@@ -382,7 +416,10 @@ int simple_bruce_client_main(int argc, char **argv) {
   TTime deadline;
 
   for (size_t i = 1; i <= cfg->Count; ++i) {
-    CreateDg(dg_buf, *cfg, i);
+    if (!CreateDg(dg_buf, *cfg, i)) {
+      return EXIT_FAILURE;
+    }
+
     SleepMicroseconds(deadline.RemainingMicroseconds(CLOCK_TYPE));
     deadline.Now(CLOCK_TYPE);
     writer.WriteMsg(&dg_buf[0], dg_buf.size());

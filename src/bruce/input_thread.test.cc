@@ -36,7 +36,7 @@
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
 #include <bruce/discard_file_logger.h>
-#include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
+#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_thread.h>
 #include <bruce/metadata_timestamp.h>
 #include <bruce/msg_state_tracker.h>
@@ -155,8 +155,10 @@ namespace {
     const uint8_t *topic_end = topic_begin + topic.size();
     const uint8_t *body_begin = reinterpret_cast<const uint8_t *>(body.data());
     const uint8_t *body_end = body_begin + body.size();
-    TV0InputDgWriter().WriteDg(dg, GetEpochMilliseconds(), topic_begin,
-        topic_end, nullptr, nullptr, body_begin, body_end);
+    TV0InputDgWriter::TDgSizeResult result =
+    WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end, nullptr,
+        nullptr, body_begin, body_end);
+    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
   }
 
   /* The fixture for testing class TInputThread. */

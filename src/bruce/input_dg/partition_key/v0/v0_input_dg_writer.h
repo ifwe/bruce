@@ -68,17 +68,6 @@ namespace Bruce {
                       topic_end, key_begin, key_end, value_begin, value_end);
           }
 
-          /* Write datagram into 'result_buf'.  If 'result_buf' does not have
-             enough space for entire datagram, then resize it to exactly the
-             required amount of space.  If 'result_buf' already has enough
-             space, then leave its size unchanged.  Return the size in bytes of
-             the written datagram. */
-          size_t WriteDg(std::vector<uint8_t> &result_buf, int64_t timestamp,
-              int32_t partition_key, const void *topic_begin,
-              const void *topic_end, const void *key_begin,
-              const void *key_end, const void *value_begin,
-              const void *value_end);
-
           private:
           void DoWriteDg(bool check_size, void *result_buf, int64_t timestamp,
               int32_t partition_key, const void *topic_begin,
