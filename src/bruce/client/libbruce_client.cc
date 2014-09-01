@@ -1,4 +1,4 @@
-/* <bruce/simple_client/simple_bruce_client.cc>
+/* <bruce/client/libbruce_client.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
@@ -19,7 +19,7 @@
    Bruce client library implementation.
  */
 
-#include <bruce_client/bruce_client.h>
+#include <bruce/client/bruce_client.h>
 
 #include <cassert>
 #include <cerrno>

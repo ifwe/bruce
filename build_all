@@ -191,8 +191,8 @@ all_apps = ['bruce/bruce',
             'bruce/mock_kafka_server/mock_kafka_server',
             'bruce/mock_kafka_server/inject_error/inject_error',
             'bruce/simple_client/simple_bruce_client']
-client_libs = ['bruce_client/libbruce_client.a',
-               'bruce_client/libbruce_client.so']
+client_libs = ['bruce/client/libbruce_client.a',
+               'bruce/client/libbruce_client.so']
 root = os.getcwd()
 
 for target in target_set:

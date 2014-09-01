@@ -1,4 +1,4 @@
-/* <bruce_client/bruce_client.h>
+/* <bruce/client/bruce_client.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
