@@ -24,15 +24,14 @@
 #include <cassert>
 #include <cstring>
 
+#include <base/field_access.h>
 #include <bruce/input_dg/partition_key/v0/v0_input_dg_constants.h>
 #include <bruce/input_dg/input_dg_common.h>
-#include <bruce/util/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
 using namespace Bruce::InputDg::PartitionKey;
 using namespace Bruce::InputDg::PartitionKey::V0;
-using namespace Bruce::Util;
 
 static inline size_t GetDgOverhead() noexcept {
   return SZ_FIELD_SIZE + API_KEY_FIELD_SIZE + API_VERSION_FIELD_SIZE +

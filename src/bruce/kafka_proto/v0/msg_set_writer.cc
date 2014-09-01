@@ -28,7 +28,6 @@
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 TMsgSetWriter::TMsgSetWriter() {
   Reset();

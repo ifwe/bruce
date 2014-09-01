@@ -23,15 +23,14 @@
 
 #include <algorithm>
 
+#include <base/field_access.h>
 #include <bruce/input_dg/input_dg_common.h>
 #include <bruce/input_dg/old_v0_input_dg_common.h>
 #include <bruce/msg_creator.h>
-#include <bruce/util/field_access.h>
 #include <capped/memory_cap_reached.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
-using namespace Bruce::Util;
 using namespace Capped;
 
 TMsg::TPtr TOldV0InputDgReader::BuildMsg() {

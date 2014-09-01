@@ -26,9 +26,9 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include <base/field_access.h>
 #include <base/thrower.h>
 #include <bruce/kafka_proto/v0/metadata_request_fields.h>
-#include <bruce/util/field_access.h>
 
 namespace Bruce {
 
@@ -89,7 +89,7 @@ namespace Bruce {
            present.  Returns the size of the entire request, based on the size
            field at the start of the header. */
         static size_t RequestSize(const void *request_begin) {
-          int32_t size_field = Bruce::Util::ReadInt32FromHeader(request_begin);
+          int32_t size_field = ReadInt32FromHeader(request_begin);
 
           if (size_field < 0) {
             THROW_ERROR(TBadRequestSize);
@@ -110,8 +110,7 @@ namespace Bruce {
         /* Returns the correlation ID. */
         int32_t GetCorrelationId() const {
           assert(this);
-          return Bruce::Util::ReadInt32FromHeader(
-              Begin + THdr::CORRELATION_ID_OFFSET);
+          return ReadInt32FromHeader(Begin + THdr::CORRELATION_ID_OFFSET);
         }
 
         /* Return true if this is an all topics request.  Else return false. */

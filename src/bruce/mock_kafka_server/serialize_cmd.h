@@ -28,7 +28,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <bruce/util/field_access.h>
+#include <base/field_access.h>
 
 namespace Bruce {
 
@@ -44,7 +44,7 @@ namespace Bruce {
 
     inline size_t GetCmdSize(const std::vector<uint8_t> &buf) {
       assert(buf.size() >= BytesNeededToGetCmdSize());
-      return Bruce::Util::ReadUint16FromHeader(&buf[0]);
+      return ReadUint16FromHeader(&buf[0]);
     }
 
     bool DeserializeCmd(const std::vector<uint8_t> &buf, TCmd &result);

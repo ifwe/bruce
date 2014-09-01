@@ -26,14 +26,13 @@
 #include <syslog.h>
 
 #include <base/debug_log.h>
+#include <base/field_access.h>
 #include <base/no_default_case.h>
 #include <bruce/mock_kafka_server/serialize_cmd.h>
-#include <bruce/util/field_access.h>
 
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::MockKafkaServer;
-using namespace Bruce::Util;
 
 TCmdWorker::~TCmdWorker() noexcept {
   /* This will shut down the thread if something unexpected happens. */

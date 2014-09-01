@@ -28,12 +28,12 @@
 
 #include <syslog.h>
 
+#include <base/field_access.h>
 #include <bruce/input_dg/any_partition/any_partition_util.h>
 #include <bruce/input_dg/input_dg_common.h>
 #include <bruce/input_dg/old_v0_input_dg_reader.h>
 #include <bruce/input_dg/partition_key/partition_key_util.h>
 #include <bruce/msg_creator.h>
-#include <bruce/util/field_access.h>
 #include <bruce/util/time_util.h>
 #include <capped/memory_cap_reached.h>
 #include <server/counter.h>

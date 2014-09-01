@@ -36,9 +36,9 @@
 #include <base/crc.h>
 #include <base/debug_log.h>
 #include <base/error_utils.h>
+#include <base/field_access.h>
 #include <base/io_utils.h>
 #include <base/no_default_case.h>
-#include <bruce/util/field_access.h>
 #include <socket/address.h>
 
 using namespace Base;
@@ -47,7 +47,6 @@ using namespace Bruce;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::KafkaProto::V0;
 using namespace Bruce::MockKafkaServer;
-using namespace Bruce::Util;
 
 TV0ClientHandler::~TV0ClientHandler() noexcept {
   /* This will shut down the thread if something unexpected happens. */

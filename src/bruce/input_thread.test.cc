@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include <base/field_access.h>
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
 #include <bruce/kafka_proto/choose_proto.h>
@@ -42,7 +43,6 @@
 #include <bruce/test_util/misc_util.h>
 #include <bruce/test_util/mock_router_thread.h>
 #include <bruce/test_util/unix_dg_socket_writer.h>
-#include <bruce/util/field_access.h>
 #include <bruce/util/time_util.h>
 #include <capped/blob.h>
 #include <capped/pool.h>

@@ -23,7 +23,6 @@
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 static inline const uint8_t *AssignBuf(const void *buf) {
   assert(buf);

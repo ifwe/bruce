@@ -24,12 +24,11 @@
 #include <cassert>
 
 #include <base/crc.h>
-#include <bruce/util/field_access.h>
+#include <base/field_access.h>
 
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 TMsgSetReader::TMsgSetReader() {
   Clear();

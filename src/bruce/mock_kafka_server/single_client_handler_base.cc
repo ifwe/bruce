@@ -28,13 +28,13 @@
 #include <sys/syscall.h>
 
 #include <base/debug_log.h>
+#include <base/field_access.h>
 #include <base/gettid.h>
 #include <base/no_default_case.h>
 #include <base/opt.h>
 #include <bruce/kafka_proto/msg_set_reader_api.h>
 #include <bruce/mock_kafka_server/cmd.h>
 #include <bruce/mock_kafka_server/cmd_bucket.h>
-#include <bruce/util/field_access.h>
 #include <socket/address.h>
 
 using namespace Base;
@@ -43,7 +43,6 @@ using namespace Bruce::Conf;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::MockKafkaServer;
 using namespace Bruce::MockKafkaServer::ProdReq;
-using namespace Bruce::Util;
 
 void TSingleClientHandlerBase::Run() {
   assert(this);

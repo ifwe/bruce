@@ -32,6 +32,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <base/basename.h>
+#include <base/field_access.h>
 #include <base/no_default_case.h>
 #include <base/time.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
@@ -39,7 +40,6 @@
 #include <bruce/input_dg/partition_key/v0/v0_input_dg_writer.h>
 #include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/arg_parse_error.h>
-#include <bruce/util/field_access.h>
 #include <bruce/util/time_util.h>
 #include <bruce/version.h>
 #include <tclap/CmdLine.h>

@@ -21,15 +21,14 @@
 
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_reader.h>
 
+#include <base/field_access.h>
 #include <bruce/input_dg/input_dg_common.h>
 #include <bruce/msg_creator.h>
-#include <bruce/util/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
 using namespace Bruce::InputDg::AnyPartition;
 using namespace Bruce::InputDg::AnyPartition::V0;
-using namespace Bruce::Util;
 
 TMsg::TPtr TV0InputDgReader::BuildMsg() {
   assert(this);

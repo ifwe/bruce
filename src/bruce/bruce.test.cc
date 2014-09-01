@@ -42,6 +42,7 @@
 #include <base/error_utils.h>
 #include <base/event_semaphore.h>
 #include <base/fd.h>
+#include <base/field_access.h>
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
 #include <base/tmp_file.h>
@@ -59,7 +60,6 @@
 #include <bruce/router_thread.h>
 #include <bruce/test_util/mock_kafka_config.h>
 #include <bruce/test_util/unix_dg_socket_writer.h>
-#include <bruce/util/field_access.h>
 #include <bruce/util/misc_util.h>
 #include <bruce/util/time_util.h>
 #include <bruce/util/worker_thread.h>

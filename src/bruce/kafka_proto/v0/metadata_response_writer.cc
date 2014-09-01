@@ -24,12 +24,11 @@
 #include <cstring>
 #include <limits>
 
+#include <base/field_access.h>
 #include <bruce/kafka_proto/v0/protocol_util.h>
-#include <bruce/util/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 TMetadataResponseWriter::TMetadataResponseWriter()
     : State(TState::Initial),

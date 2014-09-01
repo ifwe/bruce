@@ -23,12 +23,11 @@
 
 #include <cassert>
 
-#include <bruce/util/field_access.h>
+#include <base/field_access.h>
 #include <server/counter.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 SERVER_COUNTER(ProduceResponseBadPartitionCount);
 SERVER_COUNTER(ProduceResponseBadTopicCount);

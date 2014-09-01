@@ -24,11 +24,10 @@
 #include <cassert>
 #include <limits>
 
-#include <bruce/util/field_access.h>
+#include <base/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 void TMetadataRequestWriter::WriteSingleTopicRequest(struct iovec &header_iov,
     struct iovec &body_iov, void *header_buf, const char *topic_begin,

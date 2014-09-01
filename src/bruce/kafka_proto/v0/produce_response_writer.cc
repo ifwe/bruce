@@ -22,13 +22,13 @@
 #include <bruce/kafka_proto/v0/produce_response_writer.h>
 
 #include <cassert>
+#include <cstring>
 #include <limits>
 
-#include <bruce/util/field_access.h>
+#include <base/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 TProduceResponseWriter::TProduceResponseWriter() {
   Reset();

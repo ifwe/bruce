@@ -21,13 +21,12 @@
 
 #include <bruce/kafka_proto/v0/protocol_util.h>
 
+#include <base/field_access.h>
 #include <bruce/kafka_proto/wire_protocol.h>
-#include <bruce/util/field_access.h>
 #include <server/counter.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 SERVER_COUNTER(BadKafkaResponseSize);
 

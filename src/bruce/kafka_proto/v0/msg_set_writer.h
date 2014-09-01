@@ -28,10 +28,10 @@
 #include <cstring>
 #include <vector>
 
+#include <base/field_access.h>
 #include <base/no_copy_semantics.h>
 #include <bruce/kafka_proto/msg_set_writer_api.h>
 #include <bruce/kafka_proto/v0/produce_request_constants.h>
-#include <bruce/util/field_access.h>
 
 namespace Bruce {
 
@@ -106,7 +106,7 @@ namespace Bruce {
           assert(this);
           assert(Buf);
           assert(Buf->size() > (offset + 1));
-          Bruce::Util::WriteInt16ToHeader(&(*Buf)[offset], value);
+          WriteInt16ToHeader(&(*Buf)[offset], value);
         }
 
         void WriteInt16AtOffset(int16_t value) {
@@ -119,7 +119,7 @@ namespace Bruce {
           assert(this);
           assert(Buf);
           assert(Buf->size() > (offset + 3));
-          Bruce::Util::WriteInt32ToHeader(&(*Buf)[offset], value);
+          WriteInt32ToHeader(&(*Buf)[offset], value);
         }
 
         void WriteInt32AtOffset(int32_t value) {
@@ -132,7 +132,7 @@ namespace Bruce {
           assert(this);
           assert(Buf);
           assert(Buf->size() > (offset + 7));
-          Bruce::Util::WriteInt64ToHeader(&(*Buf)[offset], value);
+          WriteInt64ToHeader(&(*Buf)[offset], value);
         }
 
         void WriteInt64AtOffset(int64_t value) {

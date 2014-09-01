@@ -24,13 +24,12 @@
 #include <cassert>
 #include <cstring>
 
+#include <base/field_access.h>
 #include <bruce/input_dg/input_dg_common.h>
 #include <bruce/input_dg/old_v0_input_dg_common.h>
-#include <bruce/util/field_access.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
-using namespace Bruce::Util;
 
 size_t TOldV0InputDgWriter::ComputeDgSize(size_t topic_size,
     size_t body_size) {

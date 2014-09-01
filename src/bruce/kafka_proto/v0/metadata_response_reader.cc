@@ -23,13 +23,12 @@
 
 #include <limits>
 
+#include <base/field_access.h>
 #include <base/no_default_case.h>
-#include <bruce/util/field_access.h>
 #include <server/counter.h>
 
 using namespace Bruce;
 using namespace Bruce::KafkaProto::V0;
-using namespace Bruce::Util;
 
 SERVER_COUNTER(MetadataResponseBadBrokerHostLen);
 SERVER_COUNTER(MetadataResponseBadBrokerPort);

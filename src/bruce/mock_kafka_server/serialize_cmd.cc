@@ -25,7 +25,6 @@
 
 using namespace Bruce;
 using namespace Bruce::MockKafkaServer;
-using namespace Bruce::Util;
 
 /* The wire format for a command looks like this:
 
