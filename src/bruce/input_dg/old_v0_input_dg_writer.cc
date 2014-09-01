@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include <base/field_access.h>
-#include <bruce/input_dg/input_dg_common.h>
+#include <bruce/input_dg/input_dg_constants.h>
 #include <bruce/input_dg/old_v0_input_dg_common.h>
 
 using namespace Bruce;
@@ -43,9 +43,9 @@ size_t TOldV0InputDgWriter::ComputeDgSize(size_t topic_size,
     body_size = MAX_BODY_SIZE;
   }
 
-  return SZ_FIELD_SIZE + OLD_VER_FIELD_SIZE + OLD_V0_TS_FIELD_SIZE +
-      OLD_V0_TOPIC_SZ_FIELD_SIZE + topic_size + OLD_V0_BODY_SZ_FIELD_SIZE +
-      body_size;
+  return INPUT_DG_SZ_FIELD_SIZE + INPUT_DG_OLD_VER_FIELD_SIZE +
+      OLD_V0_TS_FIELD_SIZE + OLD_V0_TOPIC_SZ_FIELD_SIZE + topic_size +
+      OLD_V0_BODY_SZ_FIELD_SIZE + body_size;
 }
 
 void TOldV0InputDgWriter::WriteDg(void *result_buf, int64_t timestamp, 
@@ -80,7 +80,7 @@ void TOldV0InputDgWriter::WriteDg(void *result_buf, int64_t timestamp,
 
   WriteInt32ToHeader(pos,
       TOldV0InputDgWriter::ComputeDgSize(topic_size, body_size));
-  pos += SZ_FIELD_SIZE;
+  pos += INPUT_DG_SZ_FIELD_SIZE;
   *pos = 0;
   ++pos;
   WriteInt64ToHeader(pos, timestamp);

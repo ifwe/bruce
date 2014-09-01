@@ -34,15 +34,6 @@ namespace Bruce {
 
   namespace InputDg {
 
-    enum { SZ_FIELD_SIZE = 4 };
-
-    enum { API_KEY_FIELD_SIZE = 2 };
-
-    enum { API_VERSION_FIELD_SIZE = 2 };
-
-    /* TODO: remove this */
-    enum { OLD_VER_FIELD_SIZE = 1 };
-
     void DiscardMalformedMsg(const uint8_t *msg_begin, size_t msg_size,
         TAnomalyTracker &anomaly_tracker);
 

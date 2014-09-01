@@ -1,4 +1,4 @@
-/* <bruce/input_dg/any_partition/v0/v0_input_dg_constants.h>
+/* <bruce/input_dg/input_dg_constants.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Constants related to version 0 of AnyPartition input datagram format.
+   Common constants for input datagram format.
  */
 
 #pragma once
@@ -24,12 +24,11 @@
 /* It should be possible to compile everything in here with a C compiler.
    That's why there are no namespaces below. */
 
-enum { INPUT_DG_ANY_P_V0_FLAGS_FIELD_SIZE = 2 };
+enum { INPUT_DG_SZ_FIELD_SIZE = 4 };
 
-enum { INPUT_DG_ANY_P_V0_TOPIC_SZ_FIELD_SIZE = 1 };
+enum { INPUT_DG_API_KEY_FIELD_SIZE = 2 };
 
-enum { INPUT_DG_ANY_P_V0_TS_FIELD_SIZE = 8 };
+enum { INPUT_DG_API_VERSION_FIELD_SIZE = 2 };
 
-enum { INPUT_DG_ANY_P_V0_KEY_SZ_FIELD_SIZE = 4 };
-
-enum { INPUT_DG_ANY_P_V0_VALUE_SZ_FIELD_SIZE = 4 };
+/* TODO: remove this */
+enum { INPUT_DG_OLD_VER_FIELD_SIZE = 1 };

@@ -34,7 +34,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
   assert(this);
   const uint8_t *pos = DataBegin;
 
-  if ((DataEnd - pos) < FLAGS_FIELD_SIZE) {
+  if ((DataEnd - pos) < INPUT_DG_ANY_P_V0_FLAGS_FIELD_SIZE) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
     return TMsg::TPtr();
   }
@@ -46,9 +46,9 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
     return TMsg::TPtr();
   }
 
-  pos += FLAGS_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_FLAGS_FIELD_SIZE;
 
-  if ((DataEnd - pos) < TOPIC_SZ_FIELD_SIZE) {
+  if ((DataEnd - pos) < INPUT_DG_ANY_P_V0_TOPIC_SZ_FIELD_SIZE) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
     return TMsg::TPtr();
   }
@@ -60,7 +60,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
     return TMsg::TPtr();
   }
 
-  pos += TOPIC_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_TOPIC_SZ_FIELD_SIZE;
 
   if ((DataEnd - pos) < topic_sz) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
@@ -71,15 +71,15 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
   const char *topic_end = topic_begin + topic_sz;
   pos = reinterpret_cast<const uint8_t *>(topic_end);
 
-  if ((DataEnd - pos) < TS_FIELD_SIZE) {
+  if ((DataEnd - pos) < INPUT_DG_ANY_P_V0_TS_FIELD_SIZE) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
     return TMsg::TPtr();
   }
 
   int64_t ts = ReadInt64FromHeader(pos);
-  pos += TS_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_TS_FIELD_SIZE;
 
-  if ((DataEnd - pos) < KEY_SZ_FIELD_SIZE) {
+  if ((DataEnd - pos) < INPUT_DG_ANY_P_V0_KEY_SZ_FIELD_SIZE) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
     return TMsg::TPtr();
   }
@@ -91,7 +91,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
     return TMsg::TPtr();
   }
 
-  pos += KEY_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_KEY_SZ_FIELD_SIZE;
 
   if ((DataEnd - pos) < key_sz) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
@@ -102,7 +102,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
 
   pos += key_sz;
 
-  if ((DataEnd - pos) < VALUE_SZ_FIELD_SIZE) {
+  if ((DataEnd - pos) < INPUT_DG_ANY_P_V0_VALUE_SZ_FIELD_SIZE) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
     return TMsg::TPtr();
   }
@@ -114,7 +114,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
     return TMsg::TPtr();
   }
 
-  pos += VALUE_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_VALUE_SZ_FIELD_SIZE;
 
   if ((DataEnd - pos) != value_sz) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);

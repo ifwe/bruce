@@ -31,6 +31,7 @@
 #include <base/field_access.h>
 #include <bruce/input_dg/any_partition/any_partition_util.h>
 #include <bruce/input_dg/input_dg_common.h>
+#include <bruce/input_dg/input_dg_constants.h>
 #include <bruce/input_dg/old_v0_input_dg_reader.h>
 #include <bruce/input_dg/partition_key/partition_key_util.h>
 #include <bruce/msg_creator.h>
@@ -145,8 +146,9 @@ static TMsg::TPtr BuildMsgFromOldFormatDg(const void *dg, size_t dg_size,
   assert(dg);
   InputThreadProcessOldFormatMsg.Increment();
   const uint8_t *dg_bytes = reinterpret_cast<const uint8_t *>(dg);
-  size_t fixed_part_size = SZ_FIELD_SIZE + OLD_VER_FIELD_SIZE;
-  int8_t ver = dg_bytes[SZ_FIELD_SIZE];
+  size_t fixed_part_size = INPUT_DG_SZ_FIELD_SIZE +
+      INPUT_DG_OLD_VER_FIELD_SIZE;
+  int8_t ver = dg_bytes[INPUT_DG_SZ_FIELD_SIZE];
   const uint8_t *versioned_part_begin = &dg_bytes[fixed_part_size];
   const uint8_t *versioned_part_end = versioned_part_begin +
       (dg_size - fixed_part_size);
@@ -186,8 +188,8 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
   }
 
   const uint8_t *dg_bytes = reinterpret_cast<const uint8_t *>(dg);
-  size_t fixed_part_size = SZ_FIELD_SIZE + API_KEY_FIELD_SIZE +
-      API_VERSION_FIELD_SIZE;
+  size_t fixed_part_size = INPUT_DG_SZ_FIELD_SIZE +
+      INPUT_DG_API_KEY_FIELD_SIZE + INPUT_DG_API_VERSION_FIELD_SIZE;
 
   if (dg_size < fixed_part_size) {
     DiscardMalformedMsg(dg_bytes, dg_size, anomaly_tracker);
@@ -201,7 +203,7 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
     return TMsg::TPtr();
   }
 
-  int16_t api_key = ReadInt16FromHeader(dg_bytes + SZ_FIELD_SIZE);
+  int16_t api_key = ReadInt16FromHeader(dg_bytes + INPUT_DG_SZ_FIELD_SIZE);
 
   /* TODO: remove this temporary hack when it is no longer needed */
   if ((static_cast<uint16_t>(api_key) & 0xff00) != (1 << 8)) {
@@ -209,7 +211,7 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
         msg_state_tracker);
   }
 
-  size_t key_part_size = SZ_FIELD_SIZE + API_KEY_FIELD_SIZE;
+  size_t key_part_size = INPUT_DG_SZ_FIELD_SIZE + INPUT_DG_API_KEY_FIELD_SIZE;
   int16_t api_version = ReadInt16FromHeader(dg_bytes + key_part_size);
   const uint8_t *versioned_part_begin = &dg_bytes[fixed_part_size];
   const uint8_t *versioned_part_end = versioned_part_begin +

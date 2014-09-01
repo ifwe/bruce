@@ -21,30 +21,17 @@
 
 #pragma once
 
-namespace Bruce {
+/* It should be possible to compile everything in here with a C compiler.
+   That's why there are no namespaces below. */
 
-  namespace InputDg {
+enum { INPUT_DG_P_KEY_V0_FLAGS_FIELD_SIZE = 2 };
 
-    namespace PartitionKey {
+enum { INPUT_DG_P_KEY_V0_PARTITION_KEY_FIELD_SIZE = 4 };
 
-      namespace V0 {
+enum { INPUT_DG_P_KEY_V0_TOPIC_SZ_FIELD_SIZE = 1 };
 
-        enum { FLAGS_FIELD_SIZE = 2 };
+enum { INPUT_DG_P_KEY_V0_TS_FIELD_SIZE = 8 };
 
-        enum { PARTITION_KEY_FIELD_SIZE = 4 };
+enum { INPUT_DG_P_KEY_V0_KEY_SZ_FIELD_SIZE = 4 };
 
-        enum { TOPIC_SZ_FIELD_SIZE = 1 };
-
-        enum { TS_FIELD_SIZE = 8 };
-
-        enum { KEY_SZ_FIELD_SIZE = 4 };
-
-        enum { VALUE_SZ_FIELD_SIZE = 4 };
-
-      }  // V0
-
-    }  // PartitionKey
-
-  }  // InputDg
-
-}  // Bruce
+enum { INPUT_DG_P_KEY_V0_VALUE_SZ_FIELD_SIZE = 4 };

@@ -26,7 +26,7 @@
 
 #include <base/field_access.h>
 #include <bruce/input_dg/any_partition/v0/v0_input_dg_constants.h>
-#include <bruce/input_dg/input_dg_common.h>
+#include <bruce/input_dg/input_dg_constants.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
@@ -34,9 +34,11 @@ using namespace Bruce::InputDg::AnyPartition;
 using namespace Bruce::InputDg::AnyPartition::V0;
 
 static inline size_t GetDgOverhead() noexcept {
-  return SZ_FIELD_SIZE + API_KEY_FIELD_SIZE + API_VERSION_FIELD_SIZE +
-      FLAGS_FIELD_SIZE + TOPIC_SZ_FIELD_SIZE + TS_FIELD_SIZE +
-      KEY_SZ_FIELD_SIZE + VALUE_SZ_FIELD_SIZE;
+  return INPUT_DG_SZ_FIELD_SIZE + INPUT_DG_API_KEY_FIELD_SIZE +
+      INPUT_DG_API_VERSION_FIELD_SIZE + INPUT_DG_ANY_P_V0_FLAGS_FIELD_SIZE +
+      INPUT_DG_ANY_P_V0_TOPIC_SZ_FIELD_SIZE + INPUT_DG_ANY_P_V0_TS_FIELD_SIZE +
+      INPUT_DG_ANY_P_V0_KEY_SZ_FIELD_SIZE +
+      INPUT_DG_ANY_P_V0_VALUE_SZ_FIELD_SIZE;
 }
 
 TV0InputDgWriter::TDgSizeResult
@@ -145,23 +147,23 @@ void TV0InputDgWriter::DoWriteDg(bool check_size, void *result_buf,
   key_finish = key_start + key_size;
   value_finish = value_start + value_size;
   WriteInt32ToHeader(pos, dg_size);
-  pos += SZ_FIELD_SIZE;
+  pos += INPUT_DG_SZ_FIELD_SIZE;
 
   WriteInt16ToHeader(pos, 256);
 
-  pos += API_KEY_FIELD_SIZE;
+  pos += INPUT_DG_API_KEY_FIELD_SIZE;
   WriteInt16ToHeader(pos, 0);  // API version
-  pos += API_VERSION_FIELD_SIZE;
+  pos += INPUT_DG_API_VERSION_FIELD_SIZE;
   WriteInt16ToHeader(pos, 0);  // flags
-  pos += FLAGS_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_FLAGS_FIELD_SIZE;
   *pos = static_cast<uint8_t>(topic_size);
-  pos += TOPIC_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_TOPIC_SZ_FIELD_SIZE;
   std::memcpy(pos, topic_start, topic_size);
   pos += topic_size;
   WriteInt64ToHeader(pos, timestamp);
-  pos += TS_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_TS_FIELD_SIZE;
   WriteInt32ToHeader(pos, key_size);
-  pos += KEY_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_KEY_SZ_FIELD_SIZE;
 
   if (key_start) {
     std::memcpy(pos, key_start, key_size);
@@ -169,7 +171,7 @@ void TV0InputDgWriter::DoWriteDg(bool check_size, void *result_buf,
 
   pos += key_size;
   WriteInt32ToHeader(pos, value_size);
-  pos += VALUE_SZ_FIELD_SIZE;
+  pos += INPUT_DG_ANY_P_V0_VALUE_SZ_FIELD_SIZE;
 
   if (value_start) {
     std::memcpy(pos, value_start, value_size);
