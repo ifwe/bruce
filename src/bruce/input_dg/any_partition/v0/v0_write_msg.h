@@ -30,6 +30,10 @@
 /* This is a pure C implementation.  Avoiding C++ here allows C programs to use
    the client library without having to link to the standard C++ library. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* See <bruce/client/status_codes.h> for definitions of returned status codes.
  */
 
@@ -50,3 +54,7 @@ enough space for entire datagram (see input_dg_any_p_v0_compute_msg_size()). */
 void input_dg_any_p_v0_write_msg(void *result_buf, int64_t timestamp,
     const void *topic_begin, const void *topic_end, const void *key_begin,
     const void *key_end, const void *value_begin, const void *value_end);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif

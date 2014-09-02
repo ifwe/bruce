@@ -49,6 +49,7 @@
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
 #include <bruce/bruce_server.h>
+#include <bruce/client/status_codes.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
 #include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
@@ -319,10 +320,9 @@ namespace {
     const uint8_t *topic_end = topic_begin + topic.size();
     const uint8_t *body_begin = reinterpret_cast<const uint8_t *>(body.data());
     const uint8_t *body_end = body_begin + body.size();
-    TV0InputDgWriter::TDgSizeResult result =
-    WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end, nullptr,
-        nullptr, body_begin, body_end);
-    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
+    int result = WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end,
+        nullptr, nullptr, body_begin, body_end);
+    ASSERT_EQ(result, BRUCE_OK);
   }
 
   void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
@@ -336,10 +336,9 @@ namespace {
     const uint8_t *value_begin =
         reinterpret_cast<const uint8_t *>(value.data());
     const uint8_t *value_end = value_begin + value.size();
-    TV0InputDgWriter::TDgSizeResult result =
-    WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end, key_begin,
-        key_end, value_begin, value_end);
-    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
+    int result = WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end,
+        key_begin, key_end, value_begin, value_end);
+    ASSERT_EQ(result, BRUCE_OK);
   }
 
   void GetKeyAndValue(TBruceServer &bruce,

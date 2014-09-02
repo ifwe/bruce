@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <bruce/input_dg/any_partition/v0/v0_input_dg_writer.h>
+#include <bruce/client/status_codes.h>
 
 namespace Bruce {
 
@@ -36,9 +36,11 @@ namespace Bruce {
       namespace V0 {
 
         /* Write datagram into 'result_buf'.  'result buf' will be resized to
-           the exact size of the written datagram. */
-        TV0InputDgWriter::TDgSizeResult
-        WriteDg(std::vector<uint8_t> &result_buf, int64_t timestamp,
+           the exact size of the written datagram.  Return BRUCE_OK on success.
+           Return one of { BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE } on
+           error.  See <bruce/client/status_codes.h> for status code
+           definitions. */
+        int WriteDg(std::vector<uint8_t> &result_buf, int64_t timestamp,
             const void *topic_begin, const void *topic_end,
             const void *key_begin, const void *key_end,
             const void *value_begin, const void *value_end);

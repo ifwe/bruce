@@ -104,7 +104,7 @@ void input_dg_any_p_v0_write_msg(void *result_buf, int64_t timestamp,
   WriteInt32ToHeader(pos, msg_size);
   pos += INPUT_DG_SZ_FIELD_SIZE;
 
-  WriteInt16ToHeader(pos, 257);
+  WriteInt16ToHeader(pos, 256);
 
   pos += INPUT_DG_API_KEY_FIELD_SIZE;
   WriteInt16ToHeader(pos, 0);  // API version

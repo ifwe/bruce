@@ -100,7 +100,7 @@ extern "C" {
    reported by strlen()) 'topic_size', key size 'key_size', and value size
    'value_size'.  All sizes are in bytes.  On success, write total message size
    to *out_size and return BRUCE_OK.  Possible returned error codes are
-   { BRUCE_INVALID_INPUT, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   { BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_find_any_partition_msg_size(size_t topic_size, size_t key_size,
     size_t value_size, size_t *out_size);
 
@@ -108,7 +108,7 @@ int bruce_find_any_partition_msg_size(size_t topic_size, size_t key_size,
    reported by strlen()) 'topic_size', key size 'key_size', and value size
    'value_size'.  All sizes are in bytes.  On success, write total message size
    to *out_size and return BRUCE_OK.  Possible returned error codes are
-   { BRUCE_INVALID_INPUT, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   { BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
     size_t value_size, size_t *out_size);
 
@@ -118,8 +118,8 @@ int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
    'key_size' specify message key.  'value' and 'value_size' specify message
    value.  All sizes are in bytes.  'out_buf_size' must be at least as large as
    the size reported by bruce_find_any_partition_msg_size().  Return BRUCE_OK
-   on success.  Possible returned error codes are { BRUCE_INVALID_INPUT,
-   BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   on success.  Possible returned error codes are { BRUCE_BUF_TOO_SMALL,
+   BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
     const char *topic, int64_t timestamp, const void *key, size_t key_size,
     const void *value, size_t value_size);
@@ -131,8 +131,8 @@ int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
    'key_size' specify message key.  'value' and 'value_size' specify message
    value.  All sizes are in bytes.  'out_buf_size' must be at least as large as
    the size reported by bruce_find_partition_key_msg_size().  Return BRUCE_OK
-   on success.  Possible returned error codes are { BRUCE_INVALID_INPUT,
-   BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   on success.  Possible returned error codes are { BRUCE_BUF_TOO_SMALL,
+   BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
     int32_t partition_key, const char *topic, int64_t timestamp,
     const void *key, size_t key_size, const void *value, size_t value_size);
@@ -145,8 +145,8 @@ int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
    it by calling bruce_destroy_dg_socket_writer() when finished with it.
    There are two types of error codes this function may return:
 
-       1.  If returned error code is negative, then its value will be one of
-           { BRUCE_INTERNAL_ERROR, BRUCE_INVALID_INPUT }.
+       1.  If returned error code is negative, then its value will be
+           BRUCE_INTERNAL_ERROR.
 
        2.  If returned error code is > 0, then its value will be an errno value
            giving the reason why the operation failed.
@@ -165,8 +165,8 @@ void bruce_destroy_dg_socket_writer(struct bruce_dg_socket_writer *sw);
    BRUCE_OK on success.  There are two types of error codes this function may
    return:
 
-       1.  If returned error code is negative, then its value will be one of
-           { BRUCE_INTERNAL_ERROR, BRUCE_INVALID_INPUT }.
+       1.  If returned error code is negative, then its value will be
+           BRUCE_INTERNAL_ERROR.
 
        2.  If returned error code is > 0, then its value will be an errno value
            giving the reason why the operation failed.

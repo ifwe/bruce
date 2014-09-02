@@ -29,15 +29,12 @@ enum {
   /* Internal error (should never occur). */
   BRUCE_INTERNAL_ERROR = -1,
 
-  /* One or more input parameters is invalid. */
-  BRUCE_INVALID_INPUT = -2,
-
   /* Supplied output buffer does not have enough space for result. */
-  BRUCE_BUF_TOO_SMALL = -3,
+  BRUCE_BUF_TOO_SMALL = -2,
 
   /* Kafka topic is too large. */
-  BRUCE_TOPIC_TOO_LARGE = -4,
+  BRUCE_TOPIC_TOO_LARGE = -3,
 
   /* Result message would exceed maximum possible size. */
-  BRUCE_MSG_TOO_LARGE = -5
+  BRUCE_MSG_TOO_LARGE = -4
 };

@@ -16,14 +16,14 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Unit test for <bruce/input_dg/partition_key/v0/v0_input_dg_writer.h>,
-   <bruce/input_dg/partition_key/v0/v0_input_dg_reader.h>, and
-   <bruce/input_dg/input_dg_util.h>.
+   Unit test for <bruce/input_dg/input_dg_util.h>,
+   <bruce/input_dg/partition_key/v0/v0_write_dg.h>, and
+   <bruce/input_dg/partition_key/v0/v0_write_msg.h>.
  */
 
 #include <bruce/input_dg/input_dg_util.h>
-#include <bruce/input_dg/partition_key/v0/v0_input_dg_writer.h>
 #include <bruce/input_dg/partition_key/v0/v0_write_dg.h>
+#include <bruce/input_dg/partition_key/v0/v0_write_msg.h>
 
 #include <cstdint>
 #include <limits>
@@ -32,6 +32,7 @@
 #include <vector>
 
 #include <bruce/anomaly_tracker.h>
+#include <bruce/client/status_codes.h>
 #include <bruce/config.h>
 #include <bruce/msg.h>
 #include <bruce/msg_state_tracker.h>
@@ -108,13 +109,13 @@ namespace {
     std::string value("Because he got bored writing unit tests.");
     std::vector<uint8_t> buf;
     size_t expected_dg_size = 0;
-    TV0InputDgWriter::TDgSizeResult result = TV0InputDgWriter::ComputeDgSize(
-        expected_dg_size, topic.size(), key.size(), value.size());
-    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
+    int result = input_dg_p_key_v0_compute_msg_size(&expected_dg_size,
+        topic.size(), key.size(), value.size());
+    ASSERT_EQ(result, BRUCE_OK);
     result = WriteDg(buf, timestamp, partition_key, topic.data(),
         topic.data() + topic.size(), key.data(), key.data() + key.size(),
         value.data(), value.data() + value.size());
-    ASSERT_EQ(result, TV0InputDgWriter::TDgSizeResult::Ok);
+    ASSERT_EQ(result, BRUCE_OK);
     ASSERT_EQ(buf.size(), expected_dg_size);
     TMsg::TPtr msg = BuildMsgFromDg(&buf[0], buf.size(), *cfg.Cfg, *cfg.Pool,
         cfg.AnomalyTracker, cfg.MsgStateTracker);
@@ -128,3 +129,8 @@ namespace {
   }
 
 }  // namespace
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

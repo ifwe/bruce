@@ -22,19 +22,15 @@
 #include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 
 #include <cassert>
-#include <cstring>
 
-#include <base/field_access.h>
-#include <bruce/input_dg/any_partition/v0/v0_input_dg_constants.h>
-#include <bruce/input_dg/input_dg_constants.h>
+#include <bruce/input_dg/any_partition/v0/v0_write_msg.h>
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
 using namespace Bruce::InputDg::AnyPartition;
 using namespace Bruce::InputDg::AnyPartition::V0;
 
-TV0InputDgWriter::TDgSizeResult
-Bruce::InputDg::AnyPartition::V0::WriteDg(
+int Bruce::InputDg::AnyPartition::V0::WriteDg(
     std::vector<uint8_t> &result_buf, int64_t timestamp,
     const void *topic_begin, const void *topic_end, const void *key_begin,
     const void *key_end, const void *value_begin, const void *value_end) {
@@ -51,15 +47,15 @@ Bruce::InputDg::AnyPartition::V0::WriteDg(
   size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
                     reinterpret_cast<const uint8_t *>(value_begin);
   size_t size = 0;
-  TV0InputDgWriter::TDgSizeResult ret = TV0InputDgWriter::ComputeDgSize(size,
-      topic_size, key_size, value_size);
+  int ret = input_dg_any_p_v0_compute_msg_size(&size, topic_size, key_size,
+      value_size);
 
-  if (ret != TV0InputDgWriter::TDgSizeResult::Ok) {
+  if (ret != BRUCE_OK) {
     return ret;
   }
 
   result_buf.resize(size);
-  TV0InputDgWriter().WriteDg(&result_buf[0], timestamp, topic_begin, topic_end,
-      key_begin, key_end, value_begin, value_end);
-  return TV0InputDgWriter::TDgSizeResult::Ok;
+  input_dg_any_p_v0_write_msg(&result_buf[0], timestamp, topic_begin,
+      topic_end, key_begin, key_end, value_begin, value_end);
+  return BRUCE_OK;
 }
