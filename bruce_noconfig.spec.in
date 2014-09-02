@@ -62,6 +62,8 @@ cp src/bruce/client/bruce_client.h %{buildroot}/%{_includedir}/bruce/client
 
 %postun
 /sbin/ldconfig
+rmdir %{_includedir}/bruce/client
+rmdir %{_includedir}/bruce
 
 
 %files
