@@ -39,7 +39,7 @@ static inline size_t get_msg_overhead() {
 
 int input_dg_p_key_v0_check_msg_size(size_t topic_size, size_t key_size,
     size_t value_size) {
-  if (topic_size > INT8_MAX) {
+  if (topic_size > INT16_MAX) {
     return BRUCE_TOPIC_TOO_LARGE;
   }
 
@@ -115,7 +115,7 @@ void input_dg_p_key_v0_write_msg(void *result_buf, int64_t timestamp,
   pos += INPUT_DG_P_KEY_V0_FLAGS_FIELD_SIZE;
   WriteInt32ToHeader(pos, partition_key);
   pos += INPUT_DG_P_KEY_V0_PARTITION_KEY_FIELD_SIZE;
-  *pos = (uint8_t) topic_size;
+  WriteInt16ToHeader(pos, topic_size);
   pos += INPUT_DG_P_KEY_V0_TOPIC_SZ_FIELD_SIZE;
   memcpy(pos, topic_start, topic_size);
   pos += topic_size;

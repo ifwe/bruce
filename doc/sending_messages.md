@@ -99,7 +99,7 @@ AnyPartitionMessage => Flags TopicSize Topic Timestamp KeySize Key ValueSize
         Value
 
 Flags => int16
-TopicSize => int8
+TopicSize => int16
 Topic => array of TopicSize bytes
 Timestamp => int64
 KeySize => int32
@@ -132,7 +132,7 @@ PartitionKeyMessage => Flags PartitionKey TopicSize Topic Timestamp KeySize Key
 
 Flags => int16
 PartitionKey => int32
-TopicSize => int8
+TopicSize => int16
 Topic => array of TopicSize bytes
 Timestamp => int64
 KeySize => int32

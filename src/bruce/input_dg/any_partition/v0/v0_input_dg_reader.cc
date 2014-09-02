@@ -53,7 +53,7 @@ TMsg::TPtr TV0InputDgReader::BuildMsg() {
     return TMsg::TPtr();
   }
 
-  int8_t topic_sz = *pos;
+  int16_t topic_sz = ReadInt16FromHeader(pos);
 
   if (topic_sz <= 0) {
     DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
