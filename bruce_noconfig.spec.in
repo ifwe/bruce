@@ -54,6 +54,7 @@ cp out/release/bruce/client/libbruce_client.a %{buildroot}/%{_libdir}
 cp out/release/bruce/client/libbruce_client.so %{buildroot}/%{_libdir}/libbruce_client.so.0
 mkdir -p %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client.h %{buildroot}/%{_includedir}/bruce/client
+cp src/bruce/client/status_codes.h %{buildroot}/%{_includedir}/bruce/client
 
 
 %post
@@ -73,6 +74,7 @@ rmdir %{_includedir}/bruce
 %{_libdir}/libbruce_client.a
 %{_libdir}/libbruce_client.so.0
 %{_includedir}/bruce/client/bruce_client.h
+%{_includedir}/bruce/client/status_codes.h
 
 
 %changelog
