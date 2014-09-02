@@ -107,9 +107,6 @@ static int init_client_addr(struct sockaddr_un *client_addr) {
     return BRUCE_CLIENT_SOCK_PATH_TOO_LONG;
   }
 
-  /* Subtract 1 to adjust for C string terminator. */
-  static const size_t path_len = sizeof(client_path_template) - 1;
-
   int tmp_fd = -1;
 
   /* Create temporary filename that client will bind() its socket to.  This is
