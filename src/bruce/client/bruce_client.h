@@ -85,9 +85,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <sys/un.h>
+
 #include <bruce/client/status_codes.h>
 
-struct bruce_dg_socket_writer;
+typedef struct bruce_client_socket {
+  /* Client socket file descriptor.  Negative when not opened. */
+  int sock_fd;
+
+  /* Address info for Bruce socket. */
+  struct sockaddr_un server_addr;
+} bruce_client_socket_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -137,42 +145,35 @@ int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
     int32_t partition_key, const char *topic, int64_t timestamp,
     const void *key, size_t key_size, const void *value, size_t value_size);
 
-/* Create a bruce_dg_socket_writer struct for use with
-   bruce_write_to_dg_socket().  'socket_path' specifies the pathname of Bruce's
-   input UNIX domain datagram socket.  On success, set *out_sw to the newly
-   created bruce_dg_socket_writer struct and return BRUCE_OK.  Caller takes
-   ownership of newly created bruce_dg_socket_writer struct, and must destroy
-   it by calling bruce_destroy_dg_socket_writer() when finished with it.
-   There are two types of error codes this function may return:
+/* Initialize a bruce_client_socket_t structure.  This only needs to be called
+   once, before its first use. */
+void bruce_client_socket_init(bruce_client_socket_t *client_socket);
 
-       1.  If returned error code is negative, then its value will be
-           BRUCE_INTERNAL_ERROR.
+/* Prepare 'client_socket' to send messages to Bruce.  Return BRUCE_OK on
+   success.  On error, return one of two types of error codes:
 
-       2.  If returned error code is > 0, then its value will be an errno value
-           giving the reason why the operation failed.
-*/
-int bruce_create_dg_socket_writer(const char *socket_path,
-    struct bruce_dg_socket_writer **out_sw);
+       1.  If return value is negative, then it is an error code defined in
+           <bruce/client/status_codes.h>.  In this case, it will be one of
+           { BRUCE_CLIENT_SOCK_IS_OPENED, BRUCE_SERVER_SOCK_PATH_TOO_LONG }.
 
-/* Destroy a bruce_dg_socket_writer struct previously created by calling
-   bruce_create_dg_socket_writer(). */
-void bruce_destroy_dg_socket_writer(struct bruce_dg_socket_writer *sw);
+       2.  If return value is > 0, then it is an errno value indicating the
+           cause of failure.
 
-/* Write a message to Bruce's input socket, where 'sw' was created by calling
-   bruce_create_dg_socket_writer(), and the message is specified by 'msg' and
-   'msg_size'.  The message is expected to have been created by calling
-   bruce_write_any_partition_msg() or bruce_write_partition_key_msg().  Return
-   BRUCE_OK on success.  There are two types of error codes this function may
-   return:
+   On successful return, you must call bruce_client_socket_close() when done
+   sending messages. */
+int bruce_client_socket_bind(bruce_client_socket_t *client_socket,
+    const char *server_path);
 
-       1.  If returned error code is negative, then its value will be
-           BRUCE_INTERNAL_ERROR.
-
-       2.  If returned error code is > 0, then its value will be an errno value
-           giving the reason why the operation failed.
-*/
-int bruce_write_to_dg_socket(struct bruce_dg_socket_writer *sw,
+/* Send a message to Bruce.  'client_socket' is a bruce_client_socket_t for
+   which bruce_client_socket_bind() has successfully been called.  'msg' points
+   to the message to send, and 'msg_size' gives the message size in bytes.
+   Return BRUCE_OK on success.  On error, a value > 0 will be returned, which
+   is interpreted as an errno value indicating what went wrong. */
+int bruce_client_socket_send(const bruce_client_socket_t *client_socket,
     const void *msg, size_t msg_size);
+
+/* Call this function when finished sending messages. */
+void bruce_client_socket_close(bruce_client_socket_t *client_socket);
 
 #ifdef __cplusplus
 }  // extern "C"

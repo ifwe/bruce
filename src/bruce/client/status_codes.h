@@ -26,15 +26,21 @@ enum {
   /* Success. */
   BRUCE_OK = 0,
 
-  /* Internal error (should never occur). */
-  BRUCE_INTERNAL_ERROR = -1,
-
   /* Supplied output buffer does not have enough space for result. */
-  BRUCE_BUF_TOO_SMALL = -2,
+  BRUCE_BUF_TOO_SMALL = -1,
 
   /* Kafka topic is too large. */
-  BRUCE_TOPIC_TOO_LARGE = -3,
+  BRUCE_TOPIC_TOO_LARGE = -2,
 
   /* Result message would exceed maximum possible size. */
-  BRUCE_MSG_TOO_LARGE = -4
+  BRUCE_MSG_TOO_LARGE = -3,
+
+  /* Client socket is already opened. */
+  BRUCE_CLIENT_SOCK_IS_OPENED = -4,
+
+  /* Pathname of Bruce client socket is too long. */
+  BRUCE_CLIENT_SOCK_PATH_TOO_LONG = -5,
+
+  /* Pathname of Bruce server socket is too long. */
+  BRUCE_SERVER_SOCK_PATH_TOO_LONG = -6
 };

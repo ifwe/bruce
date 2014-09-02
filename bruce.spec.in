@@ -69,9 +69,12 @@ cp config/bruce.init %{buildroot}/%{_sysconfdir}/init.d/bruce
 
 %postun
 /sbin/ldconfig
-rmdir %{_includedir}/bruce/client
-rmdir %{_includedir}/bruce
-rmdir %{_sysconfdir}/bruce
+
+if [ "$1" -eq 0 ]; then
+    rmdir %{_includedir}/bruce/client
+    rmdir %{_includedir}/bruce
+    rmdir %{_sysconfdir}/bruce
+fi
 
 
 %files

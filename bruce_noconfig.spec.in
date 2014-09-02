@@ -63,8 +63,11 @@ cp src/bruce/client/status_codes.h %{buildroot}/%{_includedir}/bruce/client
 
 %postun
 /sbin/ldconfig
-rmdir %{_includedir}/bruce/client
-rmdir %{_includedir}/bruce
+
+if [ "$1" -eq 0 ]; then
+    rmdir %{_includedir}/bruce/client
+    rmdir %{_includedir}/bruce
+fi
 
 
 %files
