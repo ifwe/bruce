@@ -71,6 +71,7 @@ cp config/bruce.init %{buildroot}/%{_sysconfdir}/init.d/bruce
 /sbin/ldconfig
 
 if [ "$1" -eq 0 ]; then
+    # Stuff in here executes when package is being removed, not upgraded.
     rmdir %{_includedir}/bruce/client
     rmdir %{_includedir}/bruce
     rmdir %{_sysconfdir}/bruce

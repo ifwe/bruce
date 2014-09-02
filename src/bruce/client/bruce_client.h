@@ -19,17 +19,7 @@
    Header file for Bruce client library.
    Here is example C code for sending an AnyPartition message to Bruce:
 
-       // Create a UNIX domain datagram socket and bind() it to Bruce's input
-       // socket.  You must destroy 'sw' by calling
-       // bruce_destroy_dg_socket_writer() when you are done sending messages.
-       struct bruce_dg_socket_writer *sw = NULL;
-       int ret = bruce_create_dg_socket_writer("/path/to/bruce/socket", &sw);
-
-       if (ret != BRUCE_OK) {
-         // handle error
-       }
-
-       const char topic[] = "some_topic";  // Kafka topic
+       const char topic[] = "some topic";  // Kafka topic
        const char key[] = "";  // message key
        const char value[] = "hello world";  // message value
 
@@ -41,7 +31,7 @@
        size_t key_size = strlen(key);
        size_t value_size = strlen(value);
        size_t msg_size = 0;
-       ret = bruce_find_any_partition_msg_size(topic_size, key_size,
+       int ret = bruce_find_any_partition_msg_size(topic_size, key_size,
            value_size, &msg_size);
 
        if (ret != BRUCE_OK) {
@@ -52,7 +42,7 @@
        void *msg_buf = malloc(msg_size);
 
        if (msg_buf == NULL) {
-         // handle out of memory condition
+         // handle error
        }
 
        // Write datagram into buffer.
@@ -63,8 +53,20 @@
          // handle error
        }
 
-       // Send datagram to Bruce.
-       ret = bruce_write_to_dg_socket(sw, msg_buf, msg_size);
+       bruce_client_socket_t sock;
+
+       // Initialize 'sock' (only needs to be done once).
+       bruce_client_socket_init(&sock);
+
+       // bind() socket and store server path.
+       ret = bruce_client_socket_bind(&sock, "/path/to/bruce/socket");
+
+       if (ret != BRUCE_OK) {
+         // handle error
+       }
+
+       // Send message to Bruce.
+       ret = bruce_client_socket_send(&sock, msg_buf, msg_size);
 
        if (ret != BRUCE_OK) {
          // handle error
@@ -72,12 +74,12 @@
 
        // Clean up.
        free(msg_buf);
-       bruce_destroy_dg_socket_writer(sw);
+       bruce_client_socket_close(&sock);
 
    The code for sending a PartitionKey message is identical except that you
    call bruce_find_partition_key_msg_size() instead of
-   bruce_find_any_partition_msg_size(), and bruce_write_partition_key_msg()
-   instead of bruce_write_any_partition_msg().
+   bruce_find_any_partition_msg_size(), and call
+   bruce_write_partition_key_msg() instead of bruce_write_any_partition_msg().
  */
 
 #pragma once
