@@ -373,7 +373,7 @@ void Socket::Bind(TNamedUnixSocket &socket, const TAddress &address) {
   /* Make sure socket file doesn't already exist. */
   int ret = unlink(path.c_str());
 
-  if (errno != ENOENT) {
+  if ((ret < 0) && (errno != ENOENT)) {
     IfLt0(ret);
   }
 
