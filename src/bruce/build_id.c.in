@@ -24,4 +24,4 @@
 
 /* This string constant gets replaced with the actual version, which is
    obtained from Git. */
-char bruce_build_id[] = "VERSION_GOES_HERE";
+const char bruce_build_id[] = "VERSION_GOES_HERE";

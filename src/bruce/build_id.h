@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-extern char bruce_build_id[];
+extern const char bruce_build_id[];
 
 #ifdef __cplusplus
 }  // extern "C"

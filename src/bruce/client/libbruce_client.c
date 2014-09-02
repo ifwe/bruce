@@ -31,8 +31,13 @@
 #include <unistd.h>
 
 #include <base/export_sym.h>
+#include <bruce/build_id.h>
 #include <bruce/input_dg/any_partition/v0/v0_write_msg.h>
 #include <bruce/input_dg/partition_key/v0/v0_write_msg.h>
+
+const char EXPORT_SYM *bruce_get_build_id() {
+  return bruce_build_id;
+}
 
 int EXPORT_SYM bruce_find_any_partition_msg_size(size_t topic_size,
     size_t key_size, size_t value_size, size_t *out_size) {

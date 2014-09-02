@@ -193,8 +193,9 @@ def check_generated_file(path):
         # loop termination, a True value for <ok> indicates that the file
         # contains a version string that matches the version obtained from Git.
         for line in infile:
-            (v, n) = re.subn(r'\s*char\s+.*build_id\[\]\s*=\s*\"(.*)\";',
-                             r'\1', line.rstrip())
+            (v, n) = re.subn(
+                    r'\s*const\s+char\s+.*build_id\[\]\s*=\s*\"(.*)\";', r'\1',
+                    line.rstrip())
             # At this point, if the line matched then <n> is 1 and <v> contains
             # the version.
 
