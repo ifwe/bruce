@@ -30,8 +30,8 @@
 
 #include <base/basename.h>
 #include <base/no_default_case.h>
+#include <bruce/build_id.h>
 #include <bruce/util/arg_parse_error.h>
-#include <bruce/version.h>
 #include <tclap/CmdLine.h>
 
 using namespace Base;
@@ -91,7 +91,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
   arg_vec[0] = prog_name.c_str();
 
   try {
-    CmdLine cmd("Producer daemon for Apache Kafka", ' ', GetVersion());
+    CmdLine cmd("Producer daemon for Apache Kafka", ' ', bruce_build_id);
     ValueArg<decltype(config.ConfigPath)> arg_config_path("", "config_path",
         "Pathname of config file.", true, config.ConfigPath, "PATH");
     cmd.add(arg_config_path);
@@ -346,7 +346,7 @@ TConfig::TConfig(int argc, char *argv[])
 }
 
 void Bruce::LogConfig(const TConfig &config) {
-  syslog(LOG_NOTICE, "Version: [%s]", GetVersion());
+  syslog(LOG_NOTICE, "Version: [%s]", bruce_build_id);
   syslog(LOG_NOTICE, "Config file: [%s]", config.ConfigPath.c_str());
   syslog(LOG_NOTICE, "UNIX domain datagram input socket [%s]",
          config.ReceiveSocketName.c_str());

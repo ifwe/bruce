@@ -107,20 +107,20 @@ if not BUILD_TARGETS:
 # Look for Bruce's generated version file.  If the file exists and its version
 # string is incorrect, delete it.  Deleting the file will cause the build to
 # regenerate it with the correct version string.
-def check_version_file():
+def check_version_file(ver_file):
     check_ver = src.Dir('bruce').Dir('scripts').File('gen_version') \
             .get_abspath()
-    ver_file = out.Dir('bruce').File('version.cc').get_abspath()
 
     try:
         subprocess.check_call([check_ver, '-c', ver_file]);
     except subprocess.CalledProcessError:
         sys.stderr.write(
-            'Failed to execute script that checks generated version file\n')
+            'Failed to execute script that checks generated version file ' + \
+            ver_file +'\n')
         sys.exit(1)
 
 
-check_version_file()
+check_version_file(out.Dir('bruce').File('build_id.c').get_abspath())
 
 # Environment.
 prog_libs = {'pthread', 'dl', 'rt'}

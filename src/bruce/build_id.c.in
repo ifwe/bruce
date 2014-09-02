@@ -1,4 +1,4 @@
-/* <bruce/version.cc.in>
+/* <bruce/build_id.c.in>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
@@ -16,16 +16,12 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   <bruce/version.cc> is generated from this file during the build (see
+   <bruce/build_id.c> is generated from this file during the build (see
    scripts/gen_version).
  */
 
-#include <bruce/version.h>
+#include <bruce/build_id.h>
 
-using namespace Bruce;
-
-const char *Bruce::GetVersion() {
-  /* This string constant gets replaced with the actual version, which is
-     obtained from Git. */
-  return "VERSION_GOES_HERE";
-}
+/* This string constant gets replaced with the actual version, which is
+   obtained from Git. */
+char bruce_build_id[] = "VERSION_GOES_HERE";

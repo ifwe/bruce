@@ -44,9 +44,9 @@
 #include <base/io_utils.h>
 #include <base/no_copy_semantics.h>
 #include <base/thrower.h>
+#include <bruce/build_id.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/connect_to_host.h>
-#include <bruce/version.h>
 #include <rpc/transceiver.h>
 #include <tclap/CmdLine.h>
 
@@ -77,7 +77,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
 
   try {
     CmdLine cmd("Utility for sending a metadata request to a Kafka broker and "
-        "writing the response to standard output", ' ', GetVersion());
+        "writing the response to standard output", ' ', bruce_build_id);
     ValueArg<decltype(config.BrokerHost)> arg_broker_host("", "broker_host",
         "Kafka broker to connect to.", true, config.BrokerHost, "HOST");
     cmd.add(arg_broker_host);

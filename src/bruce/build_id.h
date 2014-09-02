@@ -1,4 +1,4 @@
-/* <bruce/version.h>
+/* <bruce/build_id.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
@@ -21,14 +21,12 @@
 
 #pragma once
 
-#include <cstdint>
-#include <mutex>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <base/no_copy_semantics.h>
+extern char bruce_build_id[];
 
-namespace Bruce {
-
-  /* Return the version, represented as a C-style string. */
-  const char *GetVersion();
-
-}  // Bruce
+#ifdef __cplusplus
+}  // extern "C"
+#endif

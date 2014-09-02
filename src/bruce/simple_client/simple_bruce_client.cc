@@ -35,6 +35,7 @@
 #include <base/field_access.h>
 #include <base/no_default_case.h>
 #include <base/time.h>
+#include <bruce/build_id.h>
 #include <bruce/client/status_codes.h>
 #include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
@@ -42,7 +43,6 @@
 #include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/time_util.h>
-#include <bruce/version.h>
 #include <tclap/CmdLine.h>
 
 using namespace Base;
@@ -92,7 +92,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
   arg_vec[0] = prog_name.c_str();
 
   try {
-    CmdLine cmd("Utility for sending messages to Bruce.", ' ', GetVersion());
+    CmdLine cmd("Utility for sending messages to Bruce.", ' ', bruce_build_id);
     ValueArg<decltype(config.SocketPath)> arg_socket_path("", "socket_path",
         "Pathname of UNIX domain datagram socket for sending messages to "
         "Bruce.", true, config.SocketPath, "PATH");

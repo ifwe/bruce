@@ -18,11 +18,11 @@
 #
 # This script is invoked during the build.  It has three modes of operation:
 #
-#     Mode 1: Generate 'bruce/version.cc'.  In this case, the script receives
-#         no command-line arguments.  It reads the contents of
-#         'bruce/version.cc.in' from standard input and writes the contents of
-#         'bruce/version.cc' to standard output.  The output has the string
-#         "VERSION_GOES_HERE" replaced with the actual version.
+#     Mode 1: Generate 'version.c'.  In this case, the script receives no
+#         command-line arguments.  It reads the contents of 'version.c.in' from
+#         standard input and writes the contents of 'version.c' to standard
+#         output.  The output has the string "VERSION_GOES_HERE" replaced with
+#         the actual version.
 #
 #     Mode 2: Verify that generated file is up to date.  In this case, the
 #         script receives a single command-line argument specifying the
@@ -59,11 +59,11 @@ def parse_args():
     parser.add_argument('-q', '--query',
             help='Write the version to standard output.', action='store_true')
     parser.add_argument('-g', '--generate',
-            help='Read "bruce/version.cc.in" from standard input and ' + \
-            'write "bruce/version.cc" to standard output.',
+            help='Read "version.c.in" from standard input and write ' + \
+            '"version.c" to standard output.',
             action='store_true')
     parser.add_argument('-c', '--check', help='Check for generated file ' + \
-            '"bruce/version.cc", and delete it if the version is not correct.',
+            '"version.c", and delete it if the version is not correct.',
             action='store', dest='check')
     args = parser.parse_args()
 
@@ -155,12 +155,11 @@ def get_version():
 
 
 # This implements Mode 1 of operation (see above).
-def generate_version_dot_cc():
+def generate_version_dot_c():
     version = get_version()
 
-    # Read 'bruce/version.cc.in' from standard input, substitute the version
-    # into its proper place, and write the contents of 'bruce/version.cc' to
-    # standard output.
+    # Read 'version.c.in' from standard input, substitute the version into its
+    # proper place, and write the contents of 'version.c' to standard output.
     for line in sys.stdin:
         line = re.sub('VERSION_GOES_HERE', version, line)
         sys.stdout.write(line)
@@ -189,29 +188,22 @@ def check_generated_file(path):
         version = get_version()
 
         # Search the file for a line of code that looks something like
-        # '  return "1.0.0";'.  If we find such a line, analyze it and stop
-        # iterating.  On loop termination, a True value for <ok> indicates that
-        # the file contains a version string that matches the version obtained
-        # from Git.
+        # 'char build_id[] = "1.0.0";' or 'char bruce_build_id[] = "1.0.0";'.
+        # If we find such a line, check the version and stop iterating.  On
+        # loop termination, a True value for <ok> indicates that the file
+        # contains a version string that matches the version obtained from Git.
         for line in infile:
-            (t, n) = re.subn(r'\s*return\s+\"', r'', line.rstrip())
-            # At this point, if the line is '  return "1.0.0";' then <t> is
-            # '1.0.0";'
+            (v, n) = re.subn(r'\s*char\s+.*build_id\[\]\s*=\s*\"(.*)\";',
+                             r'\1', line.rstrip())
+            # At this point, if the line matched then <n> is 1 and <v> contains
+            # the version.
 
             if n == 1:
-                # Found regex match.  Look for double quote immediately
-                # following version.
-                quote_pos = t.find('"')
-
-                if quote_pos >= 0:
-                    # To isolate the version, remove everything from the double
-                    # quote onward.
-                    ver = t[:quote_pos]
-
-                    if ver == version:
-                        ok = True
+                if v == version:
+                    ok = True
 
                 break
+
     finally:
         infile.close()
 
@@ -238,7 +230,7 @@ if not os.path.isfile('SConstruct') or not os.path.isdir('src'):
 if args.query:
     print get_version()
 elif args.generate:
-    generate_version_dot_cc()
+    generate_version_dot_c()
 elif args.check is not None:
     check_generated_file(args.check)
 else:

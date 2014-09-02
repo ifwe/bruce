@@ -30,10 +30,10 @@
 
 #include <base/opt.h>
 #include <bruce/bruce_server.h>
+#include <bruce/build_id.h>
 #include <bruce/config.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/misc_util.h>
-#include <bruce/version.h>
 #include <server/daemonize.h>
 #include <signal/handler_installer.h>
 

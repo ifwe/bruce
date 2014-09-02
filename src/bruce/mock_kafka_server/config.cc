@@ -22,8 +22,8 @@
 #include <bruce/mock_kafka_server/config.h>
 
 #include <base/basename.h>
+#include <bruce/build_id.h>
 #include <bruce/util/arg_parse_error.h>
-#include <bruce/version.h>
 #include <tclap/CmdLine.h>
 
 using namespace Base;
@@ -38,7 +38,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
   arg_vec[0] = prog_name.c_str();
 
   try {
-    CmdLine cmd("Mock Kafka server for testing Bruce.", ' ', GetVersion());
+    CmdLine cmd("Mock Kafka server for testing Bruce.", ' ', bruce_build_id);
     SwitchArg arg_log_echo("", "log_echo", "Echo syslog messages to standard "
         "error.", cmd, config.LogEcho);
     ValueArg<decltype(config.ProtocolVersion)> arg_protocol_version("",

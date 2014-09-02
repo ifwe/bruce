@@ -39,11 +39,11 @@
 #include <base/basename.h>
 #include <base/fd.h>
 #include <base/io_utils.h>
+#include <bruce/build_id.h>
 #include <bruce/mock_kafka_server/cmd.h>
 #include <bruce/mock_kafka_server/error_injector.h>
 #include <bruce/mock_kafka_server/serialize_cmd.h>
 #include <bruce/util/arg_parse_error.h>
-#include <bruce/version.h>
 #include <socket/address.h>
 #include <tclap/CmdLine.h>
 
@@ -92,7 +92,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
 
   try {
     CmdLine cmd("Utility for sending error injection command to mock Kafka "
-        "server.", ' ', GetVersion());
+        "server.", ' ', bruce_build_id);
     ValueArg<decltype(config.Host)> arg_host("", "host", "Host to connect to.",
         true, config.Host, "HOST");
     cmd.add(arg_host);

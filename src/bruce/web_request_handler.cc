@@ -31,8 +31,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <bruce/build_id.h>
 #include <bruce/util/time_util.h>
-#include <bruce/version.h>
 #include <server/counter.h>
 #include <third_party/base64/base64.h>
 
@@ -76,7 +76,7 @@ void TWebRequestHandler::HandleGetServerInfoRequestCompact(std::ostream &os) {
   FillTimeBuf(now, time_buf);
   os << "pid: " << getpid() << std::endl
       << "now: " << now << " " << time_buf << std::endl
-      << "version: " << GetVersion() << std::endl;
+      << "version: " << bruce_build_id << std::endl;
 }
 
 void TWebRequestHandler::HandleGetServerInfoRequestJson(std::ostream &os) {
@@ -90,7 +90,7 @@ void TWebRequestHandler::HandleGetServerInfoRequestJson(std::ostream &os) {
     TIndent ind1(ind0);
     os << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"now\": " << now << "," << std::endl
-        << ind1 << "\"version\": \"" << GetVersion() << "\"" << std::endl;
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"" << std::endl;
   }
 
   os << ind0 << "}" << std::endl;
@@ -107,7 +107,7 @@ void TWebRequestHandler::HandleGetCountersRequestCompact(std::ostream &os) {
   os << "now=" << sample_time << " " << sample_time_buf << std::endl
       << "since=" << reset_time << " " << reset_time_buf << std::endl
       << "pid=" << getpid() << std::endl
-      << "version=" << GetVersion() << std::endl
+      << "version=" << bruce_build_id << std::endl
       << std::endl;
 
   for (const TCounter *counter = TCounter::GetFirstCounter();
@@ -132,7 +132,7 @@ void TWebRequestHandler::HandleGetCountersRequestJson(std::ostream &os) {
     os << ind1 << "\"now\": " << sample_time << "," << std::endl
         << ind1 << "\"since\": " << reset_time << "," << std::endl
         << ind1 << "\"pid\": " << getpid() << "," << std::endl
-        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
         << ind1 << "\"counters\": [" << std::endl;
 
     {
@@ -175,7 +175,7 @@ void TWebRequestHandler::HandleGetDiscardsRequestCompact(std::ostream &os,
       tracker.GetInfo(current_unfinished);
   os << "pid: " << getpid() << std::endl
       << "now: " << now << " " << time_buf << std::endl
-      << "version: " << GetVersion() << std::endl
+      << "version: " << bruce_build_id << std::endl
       << "report interval in seconds: " << tracker.GetReportInterval()
       << std::endl << std::endl
       << "current (unfinished) reporting period:" << std::endl;
@@ -202,7 +202,7 @@ void TWebRequestHandler::HandleGetDiscardsRequestJson(std::ostream &os,
     TIndent ind1(ind0);
     os << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"pid\": " << getpid() << "," << std::endl
-        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
         << ind1 << "\"interval\": " << tracker.GetReportInterval() << ","
         << std::endl
         << ind1 << "\"unfinished_report\": {" << std::endl;
@@ -244,7 +244,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestCompact(
   FillTimeBuf(last_modified_time / 1000, last_modified_time_buf);
   FillTimeBuf(now / 1000, now_time_buf);
   os << "pid: " << getpid() << std::endl
-      << "version: " << GetVersion() << std::endl
+      << "version: " << bruce_build_id << std::endl
       << "now (milliseconds since epoch): " << now << " " << now_time_buf
       << std::endl
       << "metadata last updated at (milliseconds since epoch): "
@@ -266,7 +266,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestJson(std::ostream &os,
   {
     TIndent ind1(ind0);
     os << ind1 << "\"pid\": " << getpid() << "," << std::endl
-        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
         << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"last_updated\": " << last_update_time << "," << std::endl
         << ind1 << "\"last_modified\": " << last_modified_time << ","
@@ -287,7 +287,7 @@ void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
   FillTimeBuf(now, time_buf);
   os << "pid: " << getpid() << std::endl
       << "now: " << now << " " << time_buf << std::endl
-      << "version: " << GetVersion() << std::endl << std::endl;
+      << "version: " << bruce_build_id << std::endl << std::endl;
   long total_send_wait = 0;
   long total_ack_wait = 0;
 
@@ -330,7 +330,7 @@ void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
     TIndent ind1(ind0);
     os << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"pid\": " << getpid() << "," << std::endl
-        << ind1 << "\"version\": \"" << GetVersion() << "\"," << std::endl
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
         << ind1 << "\"sending\": [";
 
     {

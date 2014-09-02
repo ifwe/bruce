@@ -83,6 +83,7 @@ def get_one_dep_source(target_path, dep_suffixes, cwd_rel):
     gen_map = env['GENERATED_SOURCE_MAP']
 
     if gen_map.has_key(target_path):
+        # Handle case where corresponding non-header is a generated file.
         result = gen_map[target_path]
     else:
         result = None
@@ -153,21 +154,26 @@ def run_test(target, source, env):
             sys.exit(1)
 
 
-# Tell SCons how to generate bruce/version.cc from bruce/version.cc.in.
-ver_out_node = Dir('bruce').File('version.cc')
-ver_out = ver_out_node.get_path()
-ver_in = Dir('bruce').File('version.cc.in').get_path()
-ver_script = Dir('bruce').Dir('scripts').File('gen_version').get_path()
-version_script_abs_path = src.Dir('bruce').Dir('scripts').File('gen_version') \
-        .get_path()
-env.Command(ver_out, [ver_in, ver_script],
-        version_script_abs_path + " -g < $SOURCE > $TARGET")
+def specify_generated_file(in_node, out_node, header_node, script_node,
+        script_abs_node):
+    # Tell SCons how to generate file.
+    out_path = out_node.get_path()
+    in_path = in_node.get_path()
+    script_path = script_node.get_path()
+    script_abs_path = script_abs_node.get_path()
+    env.Command(out_path, [in_path, script_path],
+            script_abs_path + " -g < $SOURCE > $TARGET")
 
-# Specify that bruce/version.h depends on bruce/version.cc, which is generated
-# during the build.  This information is taken into account when dependencies
-# are computed.
-env['GENERATED_SOURCE_MAP'][Dir('bruce').File('version.h').get_path()] = \
-        ver_out_node
+    # Specify that header depends on file generated during the build.  For
+    # instance, 'bruce/build_id.h' depends on 'bruce/build_id.c'.  This
+    # information is taken into account when dependencies are computed.
+    env['GENERATED_SOURCE_MAP'][header_node.get_path()] = out_node
+
+
+specify_generated_file(Dir('bruce').File('build_id.c.in'),
+        Dir('bruce').File('build_id.c'), Dir('bruce').File('build_id.h'),
+        Dir('bruce').Dir('scripts').File('gen_version'),
+        src.Dir('bruce').Dir('scripts').File('gen_version'))
 
 # For each given target path, try to build it.
 for target_path in BUILD_TARGETS:
