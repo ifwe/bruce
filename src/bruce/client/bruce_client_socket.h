@@ -63,7 +63,7 @@ namespace Bruce {
       TBruceClientSocket &operator=(TBruceClientSocket &&that) {
         if (this != &that) {
           Close();
-          MoveState();
+          MoveState(that);
         }
 
         return *this;
@@ -94,7 +94,7 @@ namespace Bruce {
       /* Send a message to Bruce.  You must call Bind() above with a successful
          return value before calling this method. */
       int Send(const void *msg, size_t msg_size) const {
-        return bruce_client_socket_send(&sock, msg, msg_size);
+        return bruce_client_socket_send(&Sock, msg, msg_size);
       }
 
       /* Call this method when you are done sending messages to Bruce.  It is
@@ -110,8 +110,8 @@ namespace Bruce {
       void MoveState(TBruceClientSocket &that) {
         std::memcpy(&Sock.server_addr, &that.Sock.server_addr,
             sizeof(Sock.server_addr));
-        Sock.sock_fd = that.sock_fd;
-        that.sock_fd = -1;
+        Sock.sock_fd = that.Sock.sock_fd;
+        that.Sock.sock_fd = -1;
       }
 
       bruce_client_socket_t Sock;
