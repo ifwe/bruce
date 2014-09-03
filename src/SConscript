@@ -201,8 +201,7 @@ def specify_lib_headers(lib, headers):
 
 
 specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.so'),
-    [Dir('bruce').Dir('client').File('bruce_client.h'),
-     Dir('bruce').Dir('client').File('status_codes.h')])
+    [Dir('bruce').Dir('client').File('bruce_client_socket.h')])
 
 
 def remove_self_dependency(target, source):
@@ -267,12 +266,14 @@ for target_path in BUILD_TARGETS:
             BUILD_TARGETS.append(dep_path)
 
     # Choose the correct builder based on the target_path's extension.
-    {env['PROGSUFFIX'] : functools.partial(env.Program, LIBS=env['PROG_LIBS']),
+    {env['PROGSUFFIX'] : functools.partial(env.Program,
+             LIBS=env['PROG_LIBS'] + [lib for lib in dep_libs]),
      env['LIBSUFFIX']  : env.Library,
      env['SHLIBSUFFIX']: env.SharedLibrary,
      env['OBJSUFFIX']  : env.Object,
      env['SHOBJSUFFIX']: env.SharedObject,
-     env['TESTSUFFIX'] : functools.partial(env.Program, LIBS=env['TEST_LIBS'])
+     env['TESTSUFFIX'] : functools.partial(env.Program,
+             LIBS=env['TEST_LIBS'] + [lib for lib in dep_libs])
     }[ext](target, source)
 
     # If target is a unit test, execute it.
