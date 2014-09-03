@@ -201,7 +201,7 @@ def specify_lib_headers(lib, headers):
 
 
 specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.so'),
-    [Dir('bruce').Dir('client').File('bruce_client_socket.h')])
+    [Dir('bruce').Dir('client').File('bruce_client.h')])
 
 
 def remove_self_dependency(target, source):
