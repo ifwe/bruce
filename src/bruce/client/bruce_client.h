@@ -16,8 +16,9 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Header file for Bruce client library.
-   Here is example C code for sending an AnyPartition message to Bruce:
+   Header file for Bruce client library.  This is a pure C implementation, so
+   both C and C++ programmers can use the library.  Here is example C code for
+   sending an AnyPartition message to Bruce:
 
        const char topic[] = "some topic";  // Kafka topic
        const char key[] = "";  // message key
@@ -150,8 +151,9 @@ int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
     int32_t partition_key, const char *topic, int64_t timestamp,
     const void *key, size_t key_size, const void *value, size_t value_size);
 
-/* Initialize a bruce_client_socket_t structure.  This only needs to be called
-   once, before its first use. */
+/* Initialize a bruce_client_socket_t structure.  This must be called before
+   its first use, but should not be called again on the object after that.  It
+   serves the same purpose as a constructor in C++. */
 void bruce_client_socket_init(bruce_client_socket_t *client_socket);
 
 /* Prepare 'client_socket' to send messages to Bruce.  Return BRUCE_OK on
@@ -177,7 +179,8 @@ int bruce_client_socket_bind(bruce_client_socket_t *client_socket,
 int bruce_client_socket_send(const bruce_client_socket_t *client_socket,
     const void *msg, size_t msg_size);
 
-/* Call this function when finished sending messages. */
+/* Call this function when finished sending messages.  Calling this function
+   again on an already closed bruce_client_socket_t object is harmless. */
 void bruce_client_socket_close(bruce_client_socket_t *client_socket);
 
 #ifdef __cplusplus

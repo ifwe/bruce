@@ -149,13 +149,13 @@ def set_debug_options():
                               '-fvisibility=hidden'])
     env.AppendUnique(CXXFLAGS=['-D_GLIBCXX_DEBUG',
                                '-D_GLIBCXX_DEBUG_PEDANTIC'])
-    env.AppendUnique(LINKFLAGS=['-fsanitize=address'])
+    env.AppendUnique(LINKFLAGS=['-fsanitize=address', '-rdynamic'])
 
 
 def set_release_options():
     env.AppendUnique(CCFLAGS=['-O2', '-DNDEBUG', '-Wno-unused',
                               '-Wno-unused-parameter', '-flto'])
-    env.AppendUnique(LINKFLAGS=['-flto'])
+    env.AppendUnique(LINKFLAGS=['-flto', '-rdynamic'])
 
 
 # Append 'mode' specific environment variables.
