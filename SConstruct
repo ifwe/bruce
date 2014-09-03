@@ -133,7 +133,8 @@ env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
                   PROG_LIBS=[lib for lib in prog_libs],
                   TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
-                  GENERATED_SOURCE_MAP={})
+                  GENERATED_SOURCE_MAP={},
+                  LIB_HEADER_MAP={})
 
 if GetOption('import_path'):
     env['ENV']['PATH'] = os.environ['PATH']

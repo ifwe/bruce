@@ -64,9 +64,12 @@ exts = {env[suffix] for suffix in {'PROGSUFFIX',
 #     'foo/bar.a'
 #     'foo/bar.so'
 #
-# Look for a corresponding non-header C or C++ source file, where the possible
-# file suffixes are defined by input list 'dep_suffixes'.  For instance, if
-# dep_suffixes is [ '.cc', '.cpp', '.c' ] then the possibilities are:
+# If 'target_path' is a header file for a library that we must build (as
+# specified by a call to specify_lib_headers() below), then return a File
+# object representing the library to build.  Otherwise look for a corresponding
+# non-header C or C++ source file, where the possible file suffixes are defined
+# by input list 'dep_suffixes'.  For instance, if dep_suffixes is
+# [ '.cc', '.cpp', '.c' ] then the possibilities are:
 #
 #     'foo/bar.cc'
 #     'foo/bar.cpp'
@@ -78,8 +81,17 @@ exts = {env[suffix] for suffix in {'PROGSUFFIX',
 # 'foo/bar.c'), halt with an error message.  If parameter 'cwd_rel' is True,
 # then 'target_path' is interpreted as relative to the current working
 # directory.  Otherwise 'target_path' is interpreted as relative to 'src'.
-def get_one_dep_source(target_path, dep_suffixes, cwd_rel):
+def get_one_dep_source(target_path, dep_suffixes, cwd_rel, dep_libs):
     (prefix, suffix) = os.path.splitext(target_path)
+    lib_header_map = env['LIB_HEADER_MAP']
+
+    if lib_header_map.has_key(target_path):
+        # Handle case where 'target_path' is a header for a library that we
+        # must build.  Here, the library gets added to a set of libraries that
+        # will become additional targets to build.
+        dep_libs.add(lib_header_map[target_path])
+        return None
+
     gen_map = env['GENERATED_SOURCE_MAP']
 
     if gen_map.has_key(target_path):
@@ -109,9 +121,11 @@ def get_one_dep_source(target_path, dep_suffixes, cwd_rel):
 
 # If parameter 'main' is None, return None.  Otherwise, recursively find all of
 # the object files that main depends on, and return the result as a list of
-# File objects.
-def get_dep_sources(main):
-    def impl(source_set, result):
+# File objects.  'dep_libs' is an initially empty set of libraries.  On return,
+# it contains all libraries that the current target depends on, and that we
+# must build.  These libraries will become additional targets to build.
+def get_dep_sources(main, dep_libs):
+    def impl(source_set, result, dep_libs):
         if not source_set:
             return result
 
@@ -124,17 +138,18 @@ def get_dep_sources(main):
 
             for dep_header in source.get_implicit_deps(env, scanner, (src,)):
                 dep_source = get_one_dep_source(dep_header.get_path(src),
-                                                env['DEP_SUFFIXES'], False)
+                                                env['DEP_SUFFIXES'], False,
+                                                dep_libs)
 
                 if dep_source is not None and dep_source not in result:
                     dep_source_set.add(dep_source)
 
-        return impl(dep_source_set, result)
+        return impl(dep_source_set, result, dep_libs)
 
     if main is None:
         return None
 
-    dep_source_set = impl({main}, set())
+    dep_source_set = impl({main}, set(), dep_libs)
 
     # Sort the dependencies so their order is consistent.  If the order changes
     # from one build to the next, SCons will rebuild the target unnecessarily
@@ -175,6 +190,31 @@ specify_generated_file(Dir('bruce').File('build_id.c.in'),
         Dir('bruce').Dir('scripts').File('gen_version'),
         src.Dir('bruce').Dir('scripts').File('gen_version'))
 
+
+# Input parameter 'headers' is a list of header files for a library 'lib' that
+# is built by our build system.  The effect we want to achieve here is as
+# follows.  If source file foo.cc #includes one of the headers for 'lib', then
+# 'lib' will be added as a dependency of foo.cc.
+def specify_lib_headers(lib, headers):
+    for h in headers:
+        env['LIB_HEADER_MAP'][h.get_path()] = lib
+
+
+specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.so'),
+    [Dir('bruce').Dir('client').File('bruce_client.h'),
+     Dir('bruce').Dir('client').File('status_codes.h')])
+
+
+def remove_self_dependency(target, source):
+    new_source = []
+
+    for s in source:
+        if s.get_abspath() != target.get_abspath():
+            new_source.append(s)
+
+    return new_source
+
+
 # For each given target path, try to build it.
 for target_path in BUILD_TARGETS:
     target = cwd.File(target_path)
@@ -189,27 +229,42 @@ for target_path in BUILD_TARGETS:
                 '\n')
         sys.exit(1)
 
+    dep_libs = set([])
+
     source = {env['PROGSUFFIX'] : lambda:
                   get_dep_sources(get_one_dep_source(target_path,
-                          env['DEP_SUFFIXES'], True)),
+                          env['DEP_SUFFIXES'], True, dep_libs), dep_libs),
               env['LIBSUFFIX']  : lambda:
                   get_dep_sources(get_one_dep_source(target_path,
-                          env['DEP_SUFFIXES'], True)),
+                          env['DEP_SUFFIXES'], True, dep_libs), dep_libs),
               env['SHLIBSUFFIX']: lambda:
                   get_dep_sources(get_one_dep_source(target_path,
-                          env['DEP_SUFFIXES'], True)),
+                          env['DEP_SUFFIXES'], True, dep_libs), dep_libs),
               env['OBJSUFFIX']  : lambda: get_one_dep_source(
-                          target_path, env['DEP_SUFFIXES'], True),
+                          target_path, env['DEP_SUFFIXES'], True, dep_libs),
               env['SHOBJSUFFIX']: lambda: get_one_dep_source(
-                          target_path, env['DEP_SUFFIXES'], True),
+                          target_path, env['DEP_SUFFIXES'], True, dep_libs),
               env['TESTSUFFIX'] : lambda:
                   get_dep_sources(get_one_dep_source(target_path, ['.test.cc'],
-                          True))
+                          True, dep_libs), dep_libs)
               }[ext]()
 
     if source is None:
         sys.stderr.write('Source for target ' + target_path + ' not found\n')
         sys.exit(1)
+
+    # When computing dependencies for a library to be built such as libfoo.so,
+    # if libfoo.c #includes a header for the library being built (as specified
+    # by specify_lib_headers() above) then this will cause libfoo.so to be
+    # mistakenly listed as a dependency of itself.  Here we fix that problem.
+    source = remove_self_dependency(target, source)
+
+    # Add to BUILD_TARGETS all libraries that the current target depends on.
+    for d in dep_libs:
+        dep_path = d.get_path(cwd)
+
+        if dep_path not in BUILD_TARGETS:
+            BUILD_TARGETS.append(dep_path)
 
     # Choose the correct builder based on the target_path's extension.
     {env['PROGSUFFIX'] : functools.partial(env.Program, LIBS=env['PROG_LIBS']),
