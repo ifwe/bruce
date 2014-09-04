@@ -22,7 +22,6 @@
  */
 
 #include <bruce/input_dg/input_dg_util.h>
-#include <bruce/input_dg/partition_key/v0/v0_write_dg.h>
 #include <bruce/input_dg/partition_key/v0/v0_write_msg.h>
 
 #include <cstdint>
@@ -44,8 +43,6 @@
 
 using namespace Bruce;
 using namespace Bruce::InputDg;
-using namespace Bruce::InputDg::PartitionKey;
-using namespace Bruce::InputDg::PartitionKey::V0;
 using namespace Bruce::TestUtil;
 using namespace Capped;
 
@@ -108,15 +105,14 @@ namespace {
     std::string key("Why did the chicken cross the road?");
     std::string value("Because he got bored writing unit tests.");
     std::vector<uint8_t> buf;
-    size_t expected_dg_size = 0;
-    int result = input_dg_p_key_v0_compute_msg_size(&expected_dg_size,
-        topic.size(), key.size(), value.size());
+    size_t dg_size = 0;
+    int result = input_dg_p_key_v0_compute_msg_size(&dg_size, topic.size(),
+        key.size(), value.size());
     ASSERT_EQ(result, BRUCE_OK);
-    result = WriteDg(buf, timestamp, partition_key, topic.data(),
+    buf.resize(dg_size);
+    input_dg_p_key_v0_write_msg(&buf[0], timestamp, partition_key, topic.data(),
         topic.data() + topic.size(), key.data(), key.data() + key.size(),
         value.data(), value.data() + value.size());
-    ASSERT_EQ(result, BRUCE_OK);
-    ASSERT_EQ(buf.size(), expected_dg_size);
     TMsg::TPtr msg = BuildMsgFromDg(&buf[0], buf.size(), *cfg.Cfg, *cfg.Pool,
         cfg.AnomalyTracker, cfg.MsgStateTracker);
     ASSERT_TRUE(!!msg);

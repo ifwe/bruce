@@ -39,9 +39,7 @@
 #include <bruce/client/bruce_client.h>
 #include <bruce/client/bruce_client_socket.h>
 #include <bruce/client/status_codes.h>
-#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
-#include <bruce/input_dg/partition_key/v0/v0_write_dg.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/time_util.h>
 #include <tclap/CmdLine.h>
