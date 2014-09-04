@@ -31,11 +31,12 @@
 #include <base/field_access.h>
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
+#include <bruce/client/bruce_client.h>
+#include <bruce/client/bruce_client_socket.h>
 #include <bruce/client/status_codes.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
 #include <bruce/discard_file_logger.h>
-#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_thread.h>
 #include <bruce/kafka_proto/choose_proto.h>
 #include <bruce/kafka_proto/wire_protocol.h>
@@ -43,7 +44,6 @@
 #include <bruce/msg_state_tracker.h>
 #include <bruce/test_util/misc_util.h>
 #include <bruce/test_util/mock_router_thread.h>
-#include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/time_util.h>
 #include <capped/blob.h>
 #include <capped/pool.h>
@@ -53,10 +53,8 @@
 
 using namespace Base;
 using namespace Bruce;
+using namespace Bruce::Client;
 using namespace Bruce::Debug;
-using namespace Bruce::InputDg;
-using namespace Bruce::InputDg::AnyPartition;
-using namespace Bruce::InputDg::AnyPartition::V0;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::TestUtil;
 using namespace Bruce::Util;
@@ -150,15 +148,14 @@ namespace {
 
   static void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
       const std::string &body) {
-    dg.clear();
-    const uint8_t *topic_begin =
-        reinterpret_cast<const uint8_t *>(topic.data());
-    const uint8_t *topic_end = topic_begin + topic.size();
-    const uint8_t *body_begin = reinterpret_cast<const uint8_t *>(body.data());
-    const uint8_t *body_end = body_begin + body.size();
-    int result = WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end,
-        nullptr, nullptr, body_begin, body_end);
-    ASSERT_EQ(result, BRUCE_OK);
+    size_t dg_size = 0;
+    int ret = bruce_find_any_partition_msg_size(topic.size(), 0,
+            body.size(), &dg_size);
+    ASSERT_EQ(ret, BRUCE_OK);
+    dg.resize(dg_size);
+    ret = bruce_write_any_partition_msg(&dg[0], dg.size(), topic.c_str(),
+            GetEpochMilliseconds(), nullptr, 0, body.data(), body.size());
+    ASSERT_EQ(ret, BRUCE_OK);
   }
 
   /* The fixture for testing class TInputThread. */
@@ -185,7 +182,9 @@ namespace {
     TBruceConfig conf(pool_block_size);
     TMockRouterThread &mock_router_thread = *conf.MockRouterThread;
     conf.StartBruce();
-    TUnixDgSocketWriter writer(conf.UnixSocketName);
+    TBruceClientSocket sock;
+    int ret = sock.Bind(conf.UnixSocketName);
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<std::string> topics;
     std::vector<std::string> bodies;
     topics.push_back("topic1");
@@ -200,7 +199,8 @@ namespace {
 
     for (size_t i = 0; i < topics.size(); ++i) {
       MakeDg(dg_buf, topics[i], bodies[i]);
-      writer.WriteMsg(&dg_buf[0], dg_buf.size());
+      ret = sock.Send(&dg_buf[0], dg_buf.size());
+      ASSERT_EQ(ret, BRUCE_OK);
     }
 
     TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
@@ -251,7 +251,9 @@ namespace {
     TInputThread &input_thread = *conf.InputThread;
     TMockRouterThread &mock_router_thread = *conf.MockRouterThread;
     conf.StartBruce();
-    TUnixDgSocketWriter writer(conf.UnixSocketName);
+    TBruceClientSocket sock;
+    int ret = sock.Bind(conf.UnixSocketName);
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<std::string> topics;
     std::vector<std::string> bodies;
     topics.push_back("topic1");
@@ -271,7 +273,8 @@ namespace {
 
     for (size_t i = 0; i < topics.size(); ++i) {
       MakeDg(dg_buf, topics[i], bodies[i]);
-      writer.WriteMsg(&dg_buf[0], dg_buf.size());
+      ret = sock.Send(&dg_buf[0], dg_buf.size());
+      ASSERT_EQ(ret, BRUCE_OK);
     }
 
     TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
@@ -336,7 +339,9 @@ namespace {
     /* This message will get discarded because it's malformed. */
     std::string topic("scooby_doo");
     std::string msg_body("I like scooby snacks");
-    TUnixDgSocketWriter writer(conf.UnixSocketName);
+    TBruceClientSocket sock;
+    int ret = sock.Bind(conf.UnixSocketName);
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<uint8_t> dg_buf;
     MakeDg(dg_buf, topic, msg_body);
 
@@ -344,7 +349,8 @@ namespace {
     ASSERT_GE(dg_buf.size(), sizeof(int32_t));
     WriteInt32ToHeader(&dg_buf[0], dg_buf.size() - 1);
 
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
 
     for (size_t i = 0;

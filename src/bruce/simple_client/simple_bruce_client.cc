@@ -36,21 +36,21 @@
 #include <base/no_default_case.h>
 #include <base/time.h>
 #include <bruce/build_id.h>
+#include <bruce/client/bruce_client.h>
+#include <bruce/client/bruce_client_socket.h>
 #include <bruce/client/status_codes.h>
 #include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
 #include <bruce/input_dg/partition_key/v0/v0_write_dg.h>
-#include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/arg_parse_error.h>
 #include <bruce/util/time_util.h>
 #include <tclap/CmdLine.h>
 
 using namespace Base;
 using namespace Bruce;
+using namespace Bruce::Client;
 using namespace Bruce::InputDg;
-using namespace Bruce::TestUtil;
 using namespace Bruce::Util;
-using namespace Socket;
 
 struct TConfig {
   /* Throws TArgParseError on error parsing args. */
@@ -281,49 +281,57 @@ bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
   }
 
   value += cfg.Value;
-  const char *topic_begin = cfg.Topic.data();
-  const char *topic_end = topic_begin + cfg.Topic.size();
-  const char *key_begin = cfg.Key.data();
-  const char *key_end = key_begin + cfg.Key.size();
-  const char *value_begin = value.data();
-  const char *value_end = value_begin + value.size();
   uint64_t ts = GetEpochMilliseconds();
 
   if (cfg.UsePartitionKey) {
-    using namespace Bruce::InputDg::PartitionKey::V0;
+    size_t msg_size = 0;
 
-    switch (WriteDg(buf, ts, cfg.PartitionKey, topic_begin, topic_end,
-        key_begin, key_end, value_begin, value_end)) {
-      case BRUCE_OK: {
+    switch (bruce_find_partition_key_msg_size(cfg.Topic.size(),
+        cfg.Key.size(), value.size(), &msg_size)) {
+      case BRUCE_OK:
         break;
-      }
-      case BRUCE_TOPIC_TOO_LARGE: {
+      case BRUCE_TOPIC_TOO_LARGE:
         std::cerr << "Topic is too large." << std::endl;
         return false;
-      }
-      case BRUCE_MSG_TOO_LARGE: {
+      case BRUCE_MSG_TOO_LARGE:
         std::cerr << "Message is too large." << std::endl;
         return false;
-      }
       NO_DEFAULT_CASE;
     }
-  } else {
-    using namespace Bruce::InputDg::AnyPartition::V0;
 
-    switch (WriteDg(buf, ts, topic_begin, topic_end, key_begin, key_end,
-        value_begin, value_end)) {
-      case BRUCE_OK: {
+    buf.resize(msg_size);
+
+    if (bruce_write_partition_key_msg(&buf[0], buf.size(), cfg.PartitionKey,
+        cfg.Topic.c_str(), ts, cfg.Key.data(), cfg.Key.size(), value.data(),
+        value.size()) != BRUCE_OK) {
+      std::cerr << "Unexpected error serializing PartitionKey message"
+          << std::endl;
+      return false;
+    }
+  } else {
+    size_t msg_size = 0;
+
+    switch (bruce_find_any_partition_msg_size(cfg.Topic.size(),
+        cfg.Key.size(), value.size(), &msg_size)) {
+      case BRUCE_OK:
         break;
-      }
-      case BRUCE_TOPIC_TOO_LARGE: {
+      case BRUCE_TOPIC_TOO_LARGE:
         std::cerr << "Topic is too large." << std::endl;
         return false;
-      }
-      case BRUCE_MSG_TOO_LARGE: {
+      case BRUCE_MSG_TOO_LARGE:
         std::cerr << "Message is too large." << std::endl;
         return false;
-      }
       NO_DEFAULT_CASE;
+    }
+
+    buf.resize(msg_size);
+
+    if (bruce_write_any_partition_msg(&buf[0], buf.size(), cfg.Topic.c_str(),
+        ts, cfg.Key.data(), cfg.Key.size(), value.data(), value.size()) !=
+        BRUCE_OK) {
+      std::cerr << "Unexpected error serializing PartitionKey message"
+          << std::endl;
+      return false;
     }
   }
 
@@ -368,7 +376,21 @@ int simple_bruce_client_main(int argc, char **argv) {
     }
   }
 
-  TUnixDgSocketWriter writer(cfg->SocketPath.c_str());
+  TBruceClientSocket sock;
+  int ret = sock.Bind(cfg->SocketPath.c_str());
+
+  switch (ret) {
+    case BRUCE_OK:
+      break;
+    case BRUCE_SERVER_SOCK_PATH_TOO_LONG:
+      std::cerr << "Server socket path is too long" << std::endl;
+      return EXIT_FAILURE;
+    default:
+      std::cerr << "Unexpected result from Bruce socket initialization: "
+          << ret << std::endl;
+      return EXIT_FAILURE;
+  }
+
   std::vector<uint8_t> dg_buf;
   const clockid_t CLOCK_TYPE = CLOCK_MONOTONIC_RAW;
 
@@ -383,7 +405,14 @@ int simple_bruce_client_main(int argc, char **argv) {
 
     SleepMicroseconds(deadline.RemainingMicroseconds(CLOCK_TYPE));
     deadline.Now(CLOCK_TYPE);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+
+    if (ret) {
+      std::cerr << "Error sending to Bruce: " << std::strerror(ret)
+          << std::endl;
+      return EXIT_FAILURE;
+    }
+
     deadline.AddMicroseconds(cfg->Interval);
 
     if (cfg->Print && ((i % cfg->Print) == 0)) {

@@ -49,10 +49,11 @@
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
 #include <bruce/bruce_server.h>
+#include <bruce/client/bruce_client.h>
+#include <bruce/client/bruce_client_socket.h>
 #include <bruce/client/status_codes.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
-#include <bruce/input_dg/any_partition/v0/v0_write_dg.h>
 #include <bruce/input_thread.h>
 #include <bruce/kafka_proto/choose_proto.h>
 #include <bruce/kafka_proto/v0/wire_proto.h>
@@ -60,7 +61,6 @@
 #include <bruce/msg_state_tracker.h>
 #include <bruce/router_thread.h>
 #include <bruce/test_util/mock_kafka_config.h>
-#include <bruce/test_util/unix_dg_socket_writer.h>
 #include <bruce/util/misc_util.h>
 #include <bruce/util/time_util.h>
 #include <bruce/util/worker_thread.h>
@@ -70,11 +70,9 @@
 
 using namespace Base;
 using namespace Bruce;
+using namespace Bruce::Client;
 using namespace Bruce::Conf;
 using namespace Bruce::Debug;
-using namespace Bruce::InputDg;
-using namespace Bruce::InputDg::AnyPartition;
-using namespace Bruce::InputDg::AnyPartition::V0;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::KafkaProto::V0;
 using namespace Bruce::MockKafkaServer;
@@ -314,31 +312,27 @@ namespace {
 
   void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
       const std::string &body) {
-    dg.clear();
-    const uint8_t *topic_begin =
-        reinterpret_cast<const uint8_t *>(topic.data());
-    const uint8_t *topic_end = topic_begin + topic.size();
-    const uint8_t *body_begin = reinterpret_cast<const uint8_t *>(body.data());
-    const uint8_t *body_end = body_begin + body.size();
-    int result = WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end,
-        nullptr, nullptr, body_begin, body_end);
-    ASSERT_EQ(result, BRUCE_OK);
+    size_t dg_size = 0;
+    int ret = bruce_find_any_partition_msg_size(topic.size(), 0,
+            body.size(), &dg_size);
+    ASSERT_EQ(ret, BRUCE_OK);
+    dg.resize(dg_size);
+    ret = bruce_write_any_partition_msg(&dg[0], dg.size(), topic.c_str(),
+            GetEpochMilliseconds(), nullptr, 0, body.data(), body.size());
+    ASSERT_EQ(ret, BRUCE_OK);
   }
 
   void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
       const std::string &key, const std::string &value) {
-    dg.clear();
-    const uint8_t *topic_begin =
-        reinterpret_cast<const uint8_t *>(topic.data());
-    const uint8_t *topic_end = topic_begin + topic.size();
-    const uint8_t *key_begin = reinterpret_cast<const uint8_t *>(key.data());
-    const uint8_t *key_end = key_begin + key.size();
-    const uint8_t *value_begin =
-        reinterpret_cast<const uint8_t *>(value.data());
-    const uint8_t *value_end = value_begin + value.size();
-    int result = WriteDg(dg, GetEpochMilliseconds(), topic_begin, topic_end,
-        key_begin, key_end, value_begin, value_end);
-    ASSERT_EQ(result, BRUCE_OK);
+    size_t dg_size = 0;
+    int ret = bruce_find_any_partition_msg_size(topic.size(), key.size(),
+            value.size(), &dg_size);
+    ASSERT_EQ(ret, BRUCE_OK);
+    dg.resize(dg_size);
+    ret = bruce_write_any_partition_msg(&dg[0], dg.size(), topic.c_str(),
+            GetEpochMilliseconds(), key.data(), key.size(), value.data(),
+            value.size());
+    ASSERT_EQ(ret, BRUCE_OK);
   }
 
   void GetKeyAndValue(TBruceServer &bruce,
@@ -429,7 +423,9 @@ namespace {
       return;
     }
 
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<std::string> topics;
     std::vector<std::string> bodies;
     topics.push_back(topic);
@@ -444,7 +440,8 @@ namespace {
 
     for (size_t i = 0; i < topics.size(); ++i) {
       MakeDg(dg_buf, topics[i], bodies[i]);
-      writer.WriteMsg(&dg_buf[0], dg_buf.size());
+      ret = sock.Send(&dg_buf[0], dg_buf.size());
+      ASSERT_EQ(ret, BRUCE_OK);
     }
 
     for (size_t i = 0; (bruce->GetAckCount() < 4) && (i < 3000); ++i) {
@@ -531,17 +528,21 @@ namespace {
       return;
     }
 
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::string key, value;
     std::vector<uint8_t> dg_buf;
     size_t expected_ack_count = 0;
 
     /* empty key and value */
     MakeDg(dg_buf, topic, key, value);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
 
@@ -549,10 +550,12 @@ namespace {
     key = "Scooby";
     value = "";
     MakeDg(dg_buf, topic, key, value);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
 
@@ -560,10 +563,12 @@ namespace {
     key = "";
     value = "Shaggy";
     MakeDg(dg_buf, topic, key, value);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
 
@@ -571,10 +576,12 @@ namespace {
     key = "Velma";
     value = "Daphne";
     MakeDg(dg_buf, topic, key, value);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
     GetKeyAndValue(*bruce, mock_kafka, topic, key, value, ++expected_ack_count,
                    1);
 
@@ -637,10 +644,13 @@ namespace {
         kafka.Inj.InjectDisconnectBeforeAllTopicsMetadataResponse(nullptr);
     ASSERT_TRUE(success);
 
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<uint8_t> dg_buf;
     MakeDg(dg_buf, topic, msg_body);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     std::cout << "This part of the test is expected to take a while ..."
         << std::endl;
@@ -711,7 +721,8 @@ namespace {
        bruce is still healthy. */
     msg_body = "another message";
     MakeDg(dg_buf, topic, msg_body);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     /* The ACK count should be incremented from its previous value of 2. */
     for (size_t i = 0; (bruce->GetAckCount() < 3) && (i < 3000); ++i) {
@@ -789,10 +800,13 @@ namespace {
                                                        nullptr);
     ASSERT_TRUE(success);
 
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<uint8_t> dg_buf;
     MakeDg(dg_buf, topic, msg_body);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     /* We should get a single ACK when the message is successfully redelivered
        after the simulated broker crash. */
@@ -839,7 +853,8 @@ namespace {
        bruce is still healthy. */
     msg_body = "another message";
     MakeDg(dg_buf, topic, msg_body);
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     /* The ACK count should be incremented from its previous value of 1. */
     for (size_t i = 0; (bruce->GetAckCount() < 2) && (i < 3000); ++i) {
@@ -910,7 +925,9 @@ namespace {
 
     /* This message will get discarded because it's malformed. */
     std::string msg_body("I like scooby snacks");
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<uint8_t> dg_buf;
     MakeDg(dg_buf, topic, msg_body);
 
@@ -918,7 +935,8 @@ namespace {
     ASSERT_GE(dg_buf.size(), sizeof(int32_t));
     WriteInt32ToHeader(&dg_buf[0], dg_buf.size() - 1);
 
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     for (size_t num_tries = 0; ; ++num_tries) {
       if (num_tries > 30) {
@@ -974,7 +992,9 @@ namespace {
 
     /* This message will get discarded because it's malformed. */
     std::string msg_body("I like scooby snacks");
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<uint8_t> dg_buf;
     MakeDg(dg_buf, topic, msg_body);
 
@@ -982,7 +1002,8 @@ namespace {
     ASSERT_GE(dg_buf.size(), sizeof(int32_t) + sizeof(int8_t));
     dg_buf[4] = -1;
 
-    writer.WriteMsg(&dg_buf[0], dg_buf.size());
+    ret = sock.Send(&dg_buf[0], dg_buf.size());
+    ASSERT_EQ(ret, BRUCE_OK);
 
     for (size_t num_tries = 0; ; ++num_tries) {
       if (num_tries > 30) {
@@ -1079,7 +1100,9 @@ namespace {
       return;
     }
 
-    TUnixDgSocketWriter writer(server.GetUnixSocketName());
+    TBruceClientSocket sock;
+    int ret = sock.Bind(server.GetUnixSocketName());
+    ASSERT_EQ(ret, BRUCE_OK);
     std::vector<std::string> topics;
     std::vector<std::string> bodies;
 
@@ -1094,7 +1117,8 @@ namespace {
 
     for (size_t i = 0; i < topics.size(); ++i) {
       MakeDg(dg_buf, topics[i], bodies[i]);
-      writer.WriteMsg(&dg_buf[0], dg_buf.size());
+      ret = sock.Send(&dg_buf[0], dg_buf.size());
+      ASSERT_EQ(ret, BRUCE_OK);
     }
 
     GetKeyAndValue(*bruce, mock_kafka, topic, "", msg_body_1, 1, 10,
@@ -1105,7 +1129,8 @@ namespace {
 
     for (size_t i = 0; i < topics.size(); ++i) {
       MakeDg(dg_buf, topics[i], bodies[i]);
-      writer.WriteMsg(&dg_buf[0], dg_buf.size());
+      ret = sock.Send(&dg_buf[0], dg_buf.size());
+      ASSERT_EQ(ret, BRUCE_OK);
     }
 
     GetKeyAndValue(*bruce, mock_kafka, topic, "", msg_body_1, 1, 10,

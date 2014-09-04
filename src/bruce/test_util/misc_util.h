@@ -59,10 +59,14 @@ namespace Bruce {
       return ValueEquals(msg, value.c_str());
     }
 
+    /* Prevent unnecessary log messages about destroying unprocessed
+       messages. */
     inline void SetProcessed(TMsg &msg) {
       msg.SetState(TMsg::TState::Processed);
     }
 
+    /* Prevent unnecessary log messages about destroying unprocessed
+       messages. */
     inline void SetProcessed(const TMsg::TPtr &msg_ptr) {
       SetProcessed(*msg_ptr);
     }
