@@ -3,6 +3,7 @@
 import io
 import socket
 import struct
+import sys
 
 
 class BruceMsgCreator(object):
@@ -96,10 +97,14 @@ partition_key_msg = mc.create_partition_key_msg(partition_key, topic,
 # Create socket for sending to Bruce.
 bruce_sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
-# Send AnyPartition message to Bruce.
-bruce_sock.sendto(any_partition_msg, bruce_path)
+try:
+    # Send AnyPartition message to Bruce.
+    bruce_sock.sendto(any_partition_msg, bruce_path)
 
-# Send PartitionKey message to Bruce.
-bruce_sock.sendto(partition_key_msg, bruce_path)
-
-bruce_sock.close()
+    # Send PartitionKey message to Bruce.
+    bruce_sock.sendto(partition_key_msg, bruce_path)
+except socket.error as x:
+    sys.stderr.write('Error sending to Bruce: ' + x.strerror + '\n')
+    sys.exit(1)
+finally:
+    bruce_sock.close()
