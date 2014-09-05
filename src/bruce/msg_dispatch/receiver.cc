@@ -574,8 +574,6 @@ void TReceiver::ProcessPauseAndResendMsgSet(std::list<TMsg::TPtr> &msg_set,
 
     if (msg->CountFailedDeliveryAttempt() >
         Ds.Config.MaxFailedDeliveryAttempts) {
-      Ds.Discard(std::move(msg),
-          TAnomalyTracker::TDiscardReason::FailedDeliveryAttemptLimit);
       DiscardOnFailedDeliveryAttemptLimit.Increment();
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
@@ -584,6 +582,8 @@ void TReceiver::ProcessPauseAndResendMsgSet(std::list<TMsg::TPtr> &msg_set,
                "limit reached (topic: [%s])", msg->GetTopic().c_str());
       }
 
+      Ds.Discard(std::move(msg),
+          TAnomalyTracker::TDiscardReason::FailedDeliveryAttemptLimit);
       msg_set.erase(iter);
     } else {
       /* When the router thread reroutes this message after restarting the
