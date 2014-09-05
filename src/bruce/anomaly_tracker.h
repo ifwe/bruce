@@ -131,10 +131,9 @@ namespace Bruce {
       /* Info for possibly duplicated messages. */
       TMap DuplicateTopicMap;
 
-      /* List of most recent messages that were discarded because a topic
-         delimiting space character was not found.  The most recently seen
-         message is at the front of the list.  For messages exceeding a certain
-         length, only a prefix of the message is stored. */
+      /* List of most recently discarded malformed messages.  The most recently
+         seen message is at the front of the list.  For messages exceeding a
+         certain length, only a prefix of the message is stored. */
       std::list<std::string> MalformedMsgs;
 
       /* Messages received with an unsupported protocol version.  The keys are
