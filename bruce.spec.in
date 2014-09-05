@@ -40,7 +40,7 @@ Bruce is a producer daemon for Apache Kafka.
 %endif
 
 ./build_all -m release -f bruce/bruce $IMPORT_PATH apps
-./build_all -m release -f bruce/simple_client/simple_bruce_client $IMPORT_PATH apps
+./build_all -m release -f bruce/client/simple_bruce_client $IMPORT_PATH apps
 ./build_all -m release -f bruce/client/libbruce_client.a $IMPORT_PATH client_libs
 ./build_all -m release -f bruce/client/libbruce_client.so $IMPORT_PATH client_libs
 
@@ -48,7 +48,7 @@ Bruce is a producer daemon for Apache Kafka.
 %install
 mkdir -p %{buildroot}/%{_bindir}
 cp out/release/bruce/bruce %{buildroot}/%{_bindir}
-cp out/release/bruce/simple_client/simple_bruce_client %{buildroot}/%{_bindir}
+cp out/release/bruce/client/simple_bruce_client %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{_libdir}
 cp out/release/bruce/client/libbruce_client.a %{buildroot}/%{_libdir}
 cp out/release/bruce/client/libbruce_client.so %{buildroot}/%{_libdir}/libbruce_client.so.0

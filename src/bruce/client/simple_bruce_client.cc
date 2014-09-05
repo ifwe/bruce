@@ -1,4 +1,4 @@
-/* <bruce/simple_client/simple_bruce_client.cc>
+/* <bruce/client/simple_bruce_client.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 Tagged
@@ -58,8 +58,6 @@ struct TConfig {
 
   std::string Topic;
 
-  std::string Body;
-
   uint32_t PartitionKey;
 
   bool UsePartitionKey;
@@ -79,8 +77,6 @@ struct TConfig {
   bool Bad;
 
   size_t Print;
-
-  bool UseOldInputFormat;
 };  // TConfig
 
 static void ParseArgs(int argc, char *argv[], TConfig &config) {
@@ -98,13 +94,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     ValueArg<decltype(config.Topic)> arg_topic("", "topic", "Kafka topic.",
         true, config.Topic, "TOPIC");
     cmd.add(arg_topic);
-
-    /* TODO: Eventually eliminate this, and only use key and value (see below).
-     */
-    ValueArg<decltype(config.Body)> arg_body("", "body", "Message body for "
-        "old message format.", false, config.Body, "BODY");
-    cmd.add(arg_body);
-
     ValueArg<decltype(config.PartitionKey)> arg_partition_key("",
         "partition_key", "Partition key.", false, config.PartitionKey,
         "PARTITION_KEY");
@@ -132,13 +121,9 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "print message number every nth message.", false, config.Print,
         "PRINT");
     cmd.add(arg_print);
-    SwitchArg arg_use_old_input_format("", "use_old_input_format", "Send "
-        "messages to bruce using legacy input format.", cmd,
-        config.UseOldInputFormat);
     cmd.parse(argc, &arg_vec[0]);
     config.SocketPath = arg_socket_path.getValue();
     config.Topic = arg_topic.getValue();
-    config.Body = arg_body.getValue();
     config.PartitionKey = arg_partition_key.getValue();
     config.UsePartitionKey = arg_partition_key.isSet();
     config.Key = arg_key.getValue();
@@ -149,7 +134,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.Pad = arg_pad.getValue();
     config.Bad = arg_bad.getValue();
     config.Print = arg_print.getValue();
-    config.UseOldInputFormat = arg_use_old_input_format.getValue();
   } catch (const ArgException &x) {
     throw TArgParseError(x.error(), x.argId());
   }
@@ -163,108 +147,12 @@ TConfig::TConfig(int argc, char *argv[])
       Seq(false),
       Pad(0),
       Bad(false),
-      Print(0),
-      UseOldInputFormat(false) {
+      Print(0) {
   ParseArgs(argc, argv, *this);
-}
-
-void CreateDgOldOldFormat(std::vector<uint8_t> &buf, const TConfig &cfg,
-    size_t msg_count) {
-  const uint8_t *topic_begin =
-      reinterpret_cast<const uint8_t *>(cfg.Topic.data());
-  const uint8_t *topic_end = topic_begin + cfg.Topic.size();
-  buf.assign(topic_begin, topic_end);
-
-  if (!cfg.Bad) {
-    buf.push_back(' ');
-  }
-
-  if (cfg.Seq) {
-    std::string seq = boost::lexical_cast<std::string>(msg_count);
-
-    if (seq.size() < cfg.Pad) {
-      std::string pad_str;
-      pad_str.assign(cfg.Pad - seq.size(), '0');
-      const uint8_t *pad_begin =
-          reinterpret_cast<const uint8_t *>(pad_str.data());
-      const uint8_t *pad_end =
-          pad_begin + pad_str.size();
-      buf.insert(buf.end(), pad_begin, pad_end);
-    }
-
-    const uint8_t *seq_begin = reinterpret_cast<const uint8_t *>(seq.data());
-    const uint8_t *seq_end = seq_begin + seq.size();
-    buf.insert(buf.end(), seq_begin, seq_end);
-
-    if (!cfg.Bad) {
-      buf.push_back(' ');
-    }
-  }
-
-  const uint8_t *body_begin =
-      reinterpret_cast<const uint8_t *>(cfg.Body.data());
-  const uint8_t *body_end = body_begin + cfg.Body.size();
-  buf.insert(buf.end(), body_begin, body_end);
-}
-
-void CreateDgOldFormat(std::vector<uint8_t> &buf, const TConfig &cfg,
-    size_t msg_count) {
-  const uint8_t *topic_begin =
-      reinterpret_cast<const uint8_t *>(cfg.Topic.data());
-  const uint8_t *topic_end = topic_begin + cfg.Topic.size();
-  buf.clear();
-
-  if (cfg.Seq) {
-    std::vector<uint8_t> body;
-    std::string seq = boost::lexical_cast<std::string>(msg_count);
-
-    if (seq.size() < cfg.Pad) {
-      std::string pad_str;
-      pad_str.assign(cfg.Pad - seq.size(), '0');
-      const uint8_t *pad_begin =
-          reinterpret_cast<const uint8_t *>(pad_str.data());
-      const uint8_t *pad_end =
-          pad_begin + pad_str.size();
-      body.insert(body.end(), pad_begin, pad_end);
-    }
-
-    const uint8_t *seq_begin = reinterpret_cast<const uint8_t *>(seq.data());
-    const uint8_t *seq_end = seq_begin + seq.size();
-    body.insert(body.end(), seq_begin, seq_end);
-    body.push_back(' ');
-    body.insert(body.end(), cfg.Body.begin(), cfg.Body.end());
-    const uint8_t *body_begin = &body[0];
-    const uint8_t *body_end = body_begin + body.size();
-    TOldV0InputDgWriter().WriteDg(buf, GetEpochMilliseconds(), topic_begin,
-        topic_end, body_begin, body_end);
-  } else {
-    const uint8_t *body_begin =
-        reinterpret_cast<const uint8_t *>(cfg.Body.data());
-    const uint8_t *body_end = body_begin + cfg.Body.size();
-    TOldV0InputDgWriter().WriteDg(buf, GetEpochMilliseconds(), topic_begin,
-        topic_end, body_begin, body_end);
-  }
-
-  if (cfg.Bad) {
-    /* To make the message malformed, we change the size field to an incorrect
-       value. */
-    assert(buf.size() >= sizeof(int32_t));
-    WriteInt32ToHeader(&buf[0], buf.size() - 1);
-  }
 }
 
 bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     size_t msg_count) {
-  if (cfg.UseOldInputFormat) {
-    CreateDgOldOldFormat(buf, cfg, msg_count);
-    return true;
-  }
-
-  if (!cfg.Body.empty()) {
-    CreateDgOldFormat(buf, cfg, msg_count);
-    return true;
-  }
-
   std::string value;
 
   if (cfg.Seq) {
@@ -352,26 +240,6 @@ int simple_bruce_client_main(int argc, char **argv) {
     /* Error parsing command line arguments. */
     std::cerr << x.what() << std::endl;
     return EXIT_FAILURE;
-  }
-
-  if (cfg->UseOldInputFormat) {
-    if (std::find(cfg->Topic.begin(), cfg->Topic.end(), ' ') !=
-        cfg->Topic.end()) {
-      std::cerr << "Topic must not contain space character." << std::endl;
-      return EXIT_FAILURE;
-    }
-  } else {
-    if (cfg->Topic.size() > TOldV0InputDgWriter::MAX_TOPIC_SIZE) {
-      std::cerr << "Topic size can be at most "
-          << TOldV0InputDgWriter::MAX_TOPIC_SIZE << " bytes" << std::endl;
-      return EXIT_FAILURE;
-    }
-
-    if (cfg->Body.size() > TOldV0InputDgWriter::MAX_BODY_SIZE) {
-      std::cerr << "Body size can be at most "
-          << TOldV0InputDgWriter::MAX_BODY_SIZE << " bytes" << std::endl;
-      return EXIT_FAILURE;
-    }
   }
 
   TBruceClientSocket sock;

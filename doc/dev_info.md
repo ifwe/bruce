@@ -18,7 +18,7 @@ command.  For instance:
 source bash_defs
 cd src/bruce
 build bruce  # builds bruce executable
-build simple_client/simple_bruce_client  # builds command line client
+build client/simple_bruce_client  # builds command line client
 build msg.o  # compile source file msg.cc
 build conf/conf.o  # compile source file conf/conf.cc
 ```

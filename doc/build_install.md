@@ -60,13 +60,13 @@ built in the same manner as above:
 ```
 cd bruce
 source bash_defs
-cd src/bruce/simple_client
+cd src/bruce/client
 build --release simple_bruce_client
 cd ../../..
 ```
 
 The path to the client program is now
-`out/release/bruce/simple_client/simple_bruce_client`.  This client is included
+`out/release/bruce/client/simple_bruce_client`.  This client is included
 in Bruce's RPM package.
 
 ### Installing Bruce
