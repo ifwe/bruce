@@ -43,8 +43,8 @@ have the Google Test Framework installed, as documented
 If you type `build -c`, that will remove all build artifacts by deleting the
 `out` directory.  For `make` users, this is the equivalent of `make clean`.
 Alternatively, you can just type `rm -fr out` from the root of the Git
-repository.  If you wish to change any compiler or linker flags, you can edit
-the following part of the SConstruct file:
+repository.  If you wish to change any compiler or linker flags, look for the
+section of code in the SConstruct file that looks roughly like this:
 
 ```Python
 # Environment.
@@ -58,7 +58,8 @@ env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
                   PROG_LIBS=[lib for lib in prog_libs],
                   TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
-                  GENERATED_SOURCE_MAP={})
+                  GENERATED_SOURCE_MAP={},
+                  LIB_HEADER_MAP={})
 
 if GetOption('import_path'):
     env['ENV']['PATH'] = os.environ['PATH']
@@ -67,18 +68,20 @@ if GetOption('import_path'):
 def set_debug_options():
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
-    # libasan on RHEL, Fedora, and CentOS).
+    # libasan on RHEL, Fedora, and CentOS).  The -fvisibility=hidden option
+    # makes library symbols private by default.
     env.AppendUnique(CCFLAGS=['-g', '-fsanitize=address',
-                              '-fno-omit-frame-pointer'])
+                              '-fno-omit-frame-pointer',
+                              '-fvisibility=hidden'])
     env.AppendUnique(CXXFLAGS=['-D_GLIBCXX_DEBUG',
                                '-D_GLIBCXX_DEBUG_PEDANTIC'])
-    env.AppendUnique(LINKFLAGS=['-fsanitize=address'])
+    env.AppendUnique(LINKFLAGS=['-fsanitize=address', '-rdynamic'])
 
 
 def set_release_options():
     env.AppendUnique(CCFLAGS=['-O2', '-DNDEBUG', '-Wno-unused',
                               '-Wno-unused-parameter', '-flto'])
-    env.AppendUnique(LINKFLAGS=['-flto'])
+    env.AppendUnique(LINKFLAGS=['-flto', '-rdynamic'])
 ```
 
 Note that SCons build files are actually Python scripts, so you can add
