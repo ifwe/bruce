@@ -59,7 +59,8 @@
        // Initialize 'sock' (only needs to be done once).
        bruce_client_socket_init(&sock);
 
-       // bind() socket and store server path.
+       // bind() socket to temporary filename and store server path in
+       // sockaddr_un struct for use when sending.
        ret = bruce_client_socket_bind(&sock, "/path/to/bruce/socket");
 
        if (ret != BRUCE_OK) {
@@ -156,8 +157,10 @@ int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
    serves the same purpose as a constructor in C++. */
 void bruce_client_socket_init(bruce_client_socket_t *client_socket);
 
-/* Prepare 'client_socket' to send messages to Bruce.  Return BRUCE_OK on
-   success.  On error, return one of two types of error codes:
+/* Prepare 'client_socket' to send messages to Bruce.  This amounts to doing a
+   bind() operation on a temporary filename and storing 'server_path' in a
+   sockaddr_un struct for later use.  Return BRUCE_OK on success.  On error,
+   return one of two types of error codes:
 
        1.  If return value is negative, then it is an error code defined in
            <bruce/client/status_codes.h>.  In this case, it will be one of
