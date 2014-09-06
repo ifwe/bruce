@@ -1,7 +1,8 @@
 ## Basic Configuration
 
-A simple Bruce configuration can be found in the `config` directory of Bruce's
-Git repository, and instructions for deploying it can be found
+A simple Bruce configuration can be found in the
+[config](https://github.com/tagged/bruce/tree/master/config) directory of
+Bruce's Git repository, and instructions for deploying it can be found
 [here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#installing-bruce).
 Before using it, you need to edit Bruce's config file
 (`/etc/bruce/bruce_conf.xml` in the example configuration) as follows.  Look
