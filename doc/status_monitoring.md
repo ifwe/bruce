@@ -14,10 +14,11 @@ them to parse the output using off-the-shelf JSON libraries.  Although human
 beings can read this output, the plain option is more visually compact and
 oriented toward human viewers.  For example Nagios monitoring scripts that
 report problems indicated by the JSON counter and discard output, see
-`src/bruce/scripts/bruce_counters.py` and
-`src/bruce/scripts/bruce_discards.py`.  The discards script also contains
-example code for writing discard reports to an Oracle database, providing a
-queryable history of data quality information.
+[src/bruce/scripts/bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/bruce_counters.py)
+and
+[src/bruce/scripts/bruce_discards.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/bruce_discards.py).
+The discards script also contains example code for writing discard reports to
+an Oracle database, providing a queryable history of data quality information.
 
 ### Counter Reporting
 
@@ -56,8 +57,9 @@ and troubleshooting.  Details on the meanings of some of the more interesting
 counters are provided
 [here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
 Also, you can look in Bruce's source code to see what a counter indicates.  For
-instance, near the top of `src/bruce/msg.cc` you will see the following
-definitions:
+instance, near the top of
+[src/bruce/msg.cc](https://github.com/tagged/bruce/blob/master/src/bruce/msg.cc)
+you will see the following definitions:
 
 ```C++
 SERVER_COUNTER(MsgCreate);
