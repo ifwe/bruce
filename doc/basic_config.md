@@ -48,11 +48,11 @@ empty.
 * `--required_acks N` specifies the *required ACKs* value to be sent in produce
 requests, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest).
-If unspecified, the default value is -1.
+If unspecified, a default value of -1 is used.
 * `--replication_timeout N` specifies the time in milliseconds the broker will
 wait for successful replication to occur, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest),
-before returning an error.
+before returning an error.  If unspecified, a default value of 10000 is used.
 
 Bruce's config file (`/etc/bruce/bruce_conf.xml` in the above example) is an
 XML document that specifies batching and configuration options, as well as the
