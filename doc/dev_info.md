@@ -80,7 +80,8 @@ def set_debug_options():
 
 def set_release_options():
     env.AppendUnique(CCFLAGS=['-O2', '-DNDEBUG', '-Wno-unused',
-                              '-Wno-unused-parameter', '-flto'])
+                              '-Wno-unused-parameter', '-flto',
+                              '-fvisibility=hidden'])
     env.AppendUnique(LINKFLAGS=['-flto', '-rdynamic'])
 ```
 
