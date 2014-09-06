@@ -86,7 +86,8 @@ field.
 * `ApiKey`: This identifies a particular message type.  Currently, the only
 message types are AnyPartition and PartitionKey.  A value of 256 identifies an
 AnyPartition message and a value of 257 identifies a PartitionKey message.
-* `ApiVersion`: This identifies the version of a given message type.
+* `ApiVersion`: This identifies the version of a given message type.  The
+current version is 0 for both AnyPartition and PartitionKey messages.
 * `Message`: This is the data for the message format identified by `ApiKey` and
 `ApiVersion`.
 
