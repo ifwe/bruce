@@ -5,7 +5,7 @@
 The quickest way to get started sending messages to Bruce is by using the
 simple command line client.  This client is included in Bruce's RPM package,
 and can be built separately as described
-[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#building-bruce-directly).
+[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#building-bruces-client-library).
 Sending a message to Bruce can then be done as follows:
 
 ```
