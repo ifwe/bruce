@@ -54,7 +54,7 @@ cd ../..
 ```
 
 The path to the newly built Bruce executable is now `out/release/bruce/bruce`.
-Additionally, there is a C library for clients that send messages to bruce.
+Additionally, there is a C library for clients that send messages to Bruce.
 There is also a simple command line client program that uses the library.
 These may be built in the same manner as above:
 
