@@ -253,7 +253,16 @@ sizes are below a certain limit, since compression of small amounts of data may
 not be worthwhile.  Bruce may also be configured to compute the ratio of
 compressed to uncompressed message set size, and send an individual message set
 uncompressed if this ratio is above a certain limit.  This prevents the brokers
-from wasting CPU cycles dealing with message sets that compress poorly.
+from wasting CPU cycles dealing with message sets that compress poorly.  The
+intended use case for this behavior is situations where most messages compress
+well enough for compression to be worthwhile, but there are occasional message
+sets that compress poorly.  It is best to disable compression for topics that
+consistently compress poorly, so Bruce avoids wasting CPU cycles on useless
+compression attempts.  Future work is to add compression statistics reporting
+to Bruce's web interface, so topics that compress poorly can easily be
+identified.  An additional possibility is to make Bruce smart enough to learn
+through experience which topics compress well, although this may be more effort
+than it is worth.
 
 Kafka places an upper bound on the size of a single message.  To prevent this
 limit from being exceeded by a message that encapsulates a large compressed
