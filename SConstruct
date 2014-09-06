@@ -5,7 +5,7 @@
 # software, which were initially developed by Michael Park
 # (see https://github.com/mpark/bob) and customized at Tagged.  Many thanks to
 # Michael for this useful contribution.
-# _____________________________________________________________________________
+# -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # The MIT License (MIT)
