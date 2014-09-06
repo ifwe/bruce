@@ -33,11 +33,12 @@ Kafka.
 
 ## Setting Up a Build Environment
 
-The first step in getting Bruce working is to set up a build environment.  A
-good starting point for this is to
-[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md), which Bruce uses for its unit tests.  The remaining steps differ
-depending on which Linux distribution you are using.  Currently, instructions
-are available for
+To get Bruce working, you need to set up a build environment.  A good first
+step is to
+[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md),
+which Bruce uses for its unit tests.  The remaining steps differ depending on
+which Linux distribution you are using.  Currently, instructions are available
+for
 [CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
 [CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
 and [Ubuntu (14.04.1 LTS and 13.10)](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_and_13_env.md).
@@ -87,8 +88,8 @@ contributing code to Bruce is provided
 
 ## Getting Help
 
-Information on getting help with Bruce is provided
-[here](https://github.com/tagged/bruce/blob/master/doc/getting_help.md).
+If you have questions about Bruce, contact Dave Peterson
+(dspeterson at tagged dot com).
 
 -----
 
