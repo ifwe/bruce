@@ -17,7 +17,7 @@
    ----------------------------------------------------------------------------
 
    Header file for Bruce client library.  This is a pure C implementation, so
-   both C and C++ programmers can use the library.  Here is example C code for
+   both C and C++ clients can use the library.  Here is example C code for
    sending an AnyPartition message to Bruce:
 
        const char topic[] = "some topic";  // Kafka topic
