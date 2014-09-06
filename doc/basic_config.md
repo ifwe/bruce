@@ -60,8 +60,8 @@ above-described list of initial brokers.  The example configuration specifies
 a uniform batching latency of 1000 ms, with a 256 kbyte upper bound on the
 total message data size in a single batch.  The maximum message data size for a
 single produce request is limited to 1024 kbytes.  These values are somewhat
-arbitrary, and will probably require tuning.  Snappy message compression is
-also configured for all topics.
+arbitrary, and may require tuning.  Snappy message compression is also
+configured for all topics.
 
 Full details of Bruce's configuration options are provided
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
