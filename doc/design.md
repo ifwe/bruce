@@ -141,7 +141,7 @@ configured with individual batching thresholds that consist of any combination
 of the following limits:
 
 - Maximum batching delay, specified in milliseconds.  This threshold is
-triggered when age of the oldest message
+triggered when the age of the oldest message
 [timestamp](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats)
 in the batch is at least the specified value.
 - Maximum combined message data size, specified in bytes.
