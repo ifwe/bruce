@@ -1,3 +1,22 @@
+/* ----------------------------------------------------------------------------
+   Copyright 2014 Tagged
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   ----------------------------------------------------------------------------
+
+    This is an example Java class for creating messages to be sent to Bruce.
+ */
+
 package com.tagged.bruce.example_bruce_client;
 
 import java.nio.charset.Charset;
@@ -27,11 +46,16 @@ public class DatagramCreator {
     private static short ANY_PARTITION_API_VERSION = 0;
     private static short PARTITION_KEY_API_VERSION = 0;
 
-    private void serializeShortToByteArray(short value, byte[] out, int offset) {
+    /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
+       is written in network byte oprder (big endian). */
+    private void serializeShortToByteArray(short value, byte[] out,
+            int offset) {
         out[offset] = (byte) ((value & 0xff00) >> 8);
         out[offset + 1] = (byte) (value & 0x00ff);
     }
 
+    /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
+       is written in network byte oprder (big endian). */
     private void serializeIntToByteArray(int value, byte[] out, int offset) {
         out[offset] = (byte) ((value & 0xff000000) >> 24);
         out[offset + 1] = (byte) ((value & 0x00ff0000) >> 16);
@@ -39,6 +63,8 @@ public class DatagramCreator {
         out[offset + 3] = (byte) (value & 0x000000ff);
     }
 
+    /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
+       is written in network byte oprder (big endian). */
     private void serializeLongToByteArray(long value, byte[] out, int offset) {
         out[offset] = (byte) ((value & 0xff00000000000000L) >> 56);
         out[offset + 1] = (byte) ((value & 0x00ff000000000000L) >> 48);
@@ -50,6 +76,9 @@ public class DatagramCreator {
         out[offset + 7] = (byte) (value & 0x00000000000000ffL);
     }
 
+    /* Copy entire contents of 'src' to 'dst', starting at array index 'offset'
+       in array 'dst'.  It is assumed that 'dst' is large enough to complete
+       this operation without indexing past the end of the array. */
     private void copyToByteArray(byte[] dst, byte[] src, int offset) {
         if (src != null) {
             for (int i = 0; i < src.length; ++i) {
@@ -58,6 +87,7 @@ public class DatagramCreator {
         }
     }
 
+    /* Exception base class. */
     public class ErrorBase extends Exception {
         public ErrorBase() {
             super();
@@ -76,6 +106,9 @@ public class DatagramCreator {
         }
     }
 
+    /* Create an AnyPartition message with given topic, timestamp, key, and
+       value.  Return the resulting message as an array of bytes.  The result
+       can then be sent to Bruce's UNIX domain datagram socket. */
     public byte[] createAnyPartitionDatagram(String topic, long timestamp,
             byte[] key, byte[] value) throws ErrorBase {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));
@@ -121,6 +154,10 @@ public class DatagramCreator {
         return result;
     }
 
+    /* Create a PartitionKey message with given partition key, topic,
+       timestamp, key, and value.  Return the resulting message as an array of
+       bytes.  The result can then be sent to Bruce's UNIX domain datagram
+       socket. */
     public byte[] createPartitionKeyDatagram(int partitionKey, String topic,
             long timestamp, byte[] key, byte[] value) throws ErrorBase {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));

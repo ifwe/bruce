@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Kafka producer daemon for forwarding messages from web processes.
+   Kafka producer daemon.
  */
 
 #include <cstdlib>
