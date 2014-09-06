@@ -17,7 +17,7 @@ If you will be running Bruce on an RPM-based distribution such as CentOS or
 RHEL, you will probably want to build an RPM package.  Here you have two
 choices.  You can build either an RPM package that includes bruce's init script
 and config files or an RPM package that omits these files.  You might prefer
-the latter choice if you prefer to manage the config files separately using a
+the latter choice if you want to manage the config files separately using a
 tool such as Puppet.  To choose the first option, do the following:
 
 ```
@@ -54,24 +54,39 @@ cd ../..
 ```
 
 The path to the newly built Bruce executable is now `out/release/bruce/bruce`.
-Additionally, a simple command line client for sending messages to Bruce can be
-built in the same manner as above:
+Additionally, there is a C library for clients that send messages to bruce.
+There is also a simple command line client program that uses the library.
+These may be built in the same manner as above:
 
 ```
 cd bruce
 source bash_defs
 cd src/bruce/client
+build --release libbruce_client.so
+build --release libbruce_client.a
 build --release simple_bruce_client
 cd ../../..
 ```
 
-The path to the client program is now
-`out/release/bruce/client/simple_bruce_client`.  This client is included
-in Bruce's RPM package.
+The newly built library files and client program are now located in
+`out/release/bruce/client`.  If installing them manually, rename
+`libbruce_client.so` to `libbruce_client.so.0` when copying it to your system's
+library directory (`/usr/lib64` on CentOS/RedHat, or `/usr/lib` on Ubuntu), and
+remember to run `/sbin/ldconfig` afterwards.  Also remember to install the
+client library header files as follows:
+
+```
+mkdir -p /usr/include/bruce/client
+cp src/bruce/client/*.h /usr/include/bruce/client
+```
+One of the header files, 'bruce/client/bruce_client_socket.h', provides a
+simple C++ wrapper class for the library functions that deal with Bruce's UNIX
+domain socket.  The client library, header files, and command line program are
+included in Bruce's RPM package.
 
 ### Installing Bruce
 
-If you built an RPM package containing Bruce, they you can install it using an
+If you built an RPM package containing Bruce, then you can install it using an
 RPM command such as:
 
 ```
