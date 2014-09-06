@@ -13,3 +13,13 @@ sudo apt-get install g++
 ```
 
 Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-and-installing-bruce).
+
+-----
+
+ubuntu_14_and_13_env.md: Copyright 2014 Tagged, Inc.
+
+ubuntu_14_and_13_env.md is licensed under a Creative Commons
+Attribution-ShareAlike 4.0 International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

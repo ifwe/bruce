@@ -97,3 +97,13 @@ verbosity.
 If you are interested in making custom modifications or contributing to Bruce,
 information is provided
 [here](https://github.com/tagged/bruce#modifying-bruces-implementation).
+
+-----
+
+troubleshooting.md: Copyright 2014 Tagged, Inc.
+
+troubleshooting.md is licensed under a Creative Commons Attribution-ShareAlike
+4.0 International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

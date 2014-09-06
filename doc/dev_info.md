@@ -167,3 +167,13 @@ to the master branch of the bruce repository.
 
 Information on getting help with Bruce is provided
 [here](https://github.com/tagged/bruce#getting-help).
+
+-----
+
+dev_info.md: Copyright 2014 Tagged, Inc.
+
+dev_info.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
+International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

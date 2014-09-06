@@ -87,3 +87,13 @@ kill -INT PROCESS_ID_OF_BRUCE
 
 Once Bruce has been set up with a basic configuration, you can
 [send messages](https://github.com/tagged/bruce#sending-messages).
+
+-----
+
+basic_config.md: Copyright 2014 Tagged, Inc.
+
+basic_config.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
+International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

@@ -314,3 +314,13 @@ Tagged.
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on
 [troubleshooting](https://github.com/tagged/bruce#troubleshooting) helpful.
+
+-----
+
+detailed_config.md: Copyright 2014 Tagged, Inc.
+
+detailed_config.md is licensed under a Creative Commons Attribution-ShareAlike
+4.0 International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

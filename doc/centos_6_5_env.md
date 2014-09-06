@@ -122,3 +122,13 @@ virtualenv environment, Python 2.7.3 will be used by default.  Before building
 Bruce, you must perform this step in the shell where you are doing the build.
 
 Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-and-installing-bruce).
+
+-----
+
+centos_6_5_env.md: Copyright 2014 Tagged, Inc.
+
+centos_6_5_env.md is licensed under a Creative Commons Attribution-ShareAlike
+4.0 International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

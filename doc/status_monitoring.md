@@ -236,3 +236,13 @@ described [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
 
 At this point it is helpful to have some information on
 [Bruce's design](https://github.com/tagged/bruce#design-overview).
+
+-----
+
+status_monitoring.md: Copyright 2014 Tagged, Inc.
+
+status_monitoring.md is licensed under a Creative Commons
+Attribution-ShareAlike 4.0 International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

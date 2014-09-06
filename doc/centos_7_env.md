@@ -15,3 +15,13 @@ Then download and install the SCons RPM package, which may be obtained from
 [http://sourceforge.net/projects/scons/files/scons/2.3.2/](http://sourceforge.net/projects/scons/files/scons/2.3.2/).
 
 Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-and-installing-bruce).
+
+-----
+
+centos_7_env.md: Copyright 2014 Tagged, Inc.
+
+centos_7_env.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
+International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.

@@ -153,3 +153,13 @@ At the top of every file there should be a large comment which includes:
 * A description of what the class does.
 
 If the file is a .cc, please put this comment into its .h file.
+
+-----
+
+coding.md: Copyright 2014 Tagged, Inc.
+
+coding.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
+International License.
+
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.
