@@ -1,7 +1,7 @@
 ## Coding Conventions
 
 In general, the coding convention for Bruce follows the
-[Google C++ Style guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml)
+[Google C++ Style Guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml)
 
 ### Indentation
 
@@ -99,10 +99,10 @@ explicitly specify how to interact with the class.
 idiom.
 * Throw in constructors to indicate errors.
 * Never throw in a destructor.
-* Use the `no construction` and `no copy` macros whenever necessary
+* Use the `NO_CONSTRUCTION` and `NO_COPY_SEMANTICS` macros whenever necessary
 (or = delete).
 * Base classes must have virtual destructors.
-* Use '= delete' and '= default' when possible to delegate to standard
+* Use '= default' when possible to delegate to standard
 constructors/destructors which would otherwise be deleted.
 
 #### Declaration order
