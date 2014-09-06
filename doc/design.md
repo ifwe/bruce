@@ -144,7 +144,9 @@ of the following limits:
 triggered when the age of the oldest message
 [timestamp](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats)
 in the batch is at least the specified value.
-- Maximum combined message data size, specified in bytes.
+- Maximum combined message data size, specified in bytes.  This includes only
+the sizes of the
+[keys and values](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats).
 - Maximum message count.
 
 Batching may also be configured so that topics without individual batching
