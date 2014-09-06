@@ -143,8 +143,7 @@ if GetOption('import_path'):
 def set_debug_options():
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
-    # libasan on RHEL, Fedora, and CentOS).  The -fvisibility=hidden option
-    # makes library symbols private by default.
+    # libasan on RHEL, Fedora, and CentOS).
     env.AppendUnique(CCFLAGS=['-g', '-fsanitize=address',
                               '-fno-omit-frame-pointer',
                               '-fvisibility=hidden'])
