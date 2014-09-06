@@ -84,13 +84,14 @@ client library header files as follows:
 mkdir -p /usr/include/bruce/client
 cp src/bruce/client/*.h /usr/include/bruce/client
 ```
-One of the header files, `bruce/client/bruce_client_socket.h`, provides a
-simple C++ wrapper class for the library functions that deal with Bruce's UNIX
-domain socket.  Once the library is installed, C and C++ clients can specify
-`-lbruce_client` when building with gcc.  The client library, header files, and
-command line program are included in Bruce's RPM package.  For example C code
-that uses the client library to send a message to Bruce, see the big comment at
-the top of
+One of the header files,
+[bruce/client/bruce_client_socket.h](https://github.com/tagged/bruce/blob/master/src/bruce/client/bruce_client_socket.h),
+provides a simple C++ wrapper class for the library functions that deal with
+Bruce's UNIX domain socket.  Once the library is installed, C and C++ clients
+can specify `-lbruce_client` when building with gcc.  The client library,
+header files, and command line program are included in Bruce's RPM package.
+For example C code that uses the client library to send a message to Bruce, see
+the big comment at the top of
 [bruce/client/bruce_client.h](https://github.com/tagged/bruce/blob/master/src/bruce/client/bruce_client.h).
 For example C++ code, see
 [bruce/client/simple_bruce_client.cc](https://github.com/tagged/bruce/blob/master/src/bruce/client/simple_bruce_client.cc).
@@ -113,7 +114,8 @@ shell that you execute Bruce from.  If you built your RPM package using the
 you will need to install Bruce's init script, sysconfig file, and configuration
 file (which mostly contains settings related to batching and compression)
 separately.  Assuming you are in the root of the Git repository (where Bruce's
-`SConstruct` file is found), you can do this as follows:
+[SConstruct](https://github.com/tagged/bruce/blob/master/SConstruct) file is
+found), you can do this as follows:
 
 ```
 cp config/bruce.init /etc/init.d/bruce
