@@ -132,9 +132,10 @@ int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
    timestamp to assign to message in milliseconds since the epoch.  'key' and
    'key_size' specify message key.  'value' and 'value_size' specify message
    value.  All sizes are in bytes.  'out_buf_size' must be at least as large as
-   the size reported by bruce_find_any_partition_msg_size().  Return BRUCE_OK
-   on success.  Possible returned error codes are { BRUCE_BUF_TOO_SMALL,
-   BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   the size reported by bruce_find_any_partition_msg_size().  'key' can be null
+   only if 'key_size' is 0.  'value' can be null only if 'value_size' is 0.
+   Return BRUCE_OK on success.  Possible returned error codes are
+   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
     const char *topic, int64_t timestamp, const void *key, size_t key_size,
     const void *value, size_t value_size);
@@ -145,9 +146,10 @@ int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
    'partition_key' gives the partition key for message routing.  'key' and
    'key_size' specify message key.  'value' and 'value_size' specify message
    value.  All sizes are in bytes.  'out_buf_size' must be at least as large as
-   the size reported by bruce_find_partition_key_msg_size().  Return BRUCE_OK
-   on success.  Possible returned error codes are { BRUCE_BUF_TOO_SMALL,
-   BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   the size reported by bruce_find_partition_key_msg_size().  'key' can be null
+   only if 'key_size' is 0.  'value' can be null only if 'value_size' is 0.
+   Return BRUCE_OK on success.  Possible returned error codes are
+   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
 int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
     int32_t partition_key, const char *topic, int64_t timestamp,
     const void *key, size_t key_size, const void *value, size_t value_size);
@@ -177,8 +179,9 @@ int bruce_client_socket_bind(bruce_client_socket_t *client_socket,
 /* Send a message to Bruce.  'client_socket' is a bruce_client_socket_t for
    which bruce_client_socket_bind() has successfully been called.  'msg' points
    to the message to send, and 'msg_size' gives the message size in bytes.
-   Return BRUCE_OK on success.  On error, a value > 0 will be returned, which
-   is interpreted as an errno value indicating what went wrong. */
+   'msg' must not be null, and 'msg_size' must be > 0.  Return BRUCE_OK on
+   success.  On error, a value > 0 will be returned, which is interpreted as an
+   errno value indicating what went wrong. */
 int bruce_client_socket_send(const bruce_client_socket_t *client_socket,
     const void *msg, size_t msg_size);
 

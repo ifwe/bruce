@@ -41,12 +41,14 @@ const char EXPORT_SYM *bruce_get_build_id() {
 
 int EXPORT_SYM bruce_find_any_partition_msg_size(size_t topic_size,
     size_t key_size, size_t value_size, size_t *out_size) {
+  assert(out_size);
   return input_dg_any_p_v0_compute_msg_size(out_size, topic_size, key_size,
       value_size);
 }
 
 int EXPORT_SYM bruce_find_partition_key_msg_size(size_t topic_size,
     size_t key_size, size_t value_size, size_t *out_size) {
+  assert(out_size);
   return input_dg_p_key_v0_compute_msg_size(out_size, topic_size, key_size,
       value_size);
 }
@@ -54,6 +56,10 @@ int EXPORT_SYM bruce_find_partition_key_msg_size(size_t topic_size,
 int EXPORT_SYM bruce_write_any_partition_msg(void *out_buf,
     size_t out_buf_size, const char *topic, int64_t timestamp, const void *key,
     size_t key_size, const void *value, size_t value_size) {
+  assert(out_buf);
+  assert(topic);
+  assert(key || (key_size == 0));
+  assert(value || (value_size == 0));
   size_t topic_len = strlen(topic);
   size_t dg_size = 0;
   int ret = bruce_find_any_partition_msg_size(topic_len, key_size, value_size,
@@ -77,6 +83,10 @@ int EXPORT_SYM bruce_write_partition_key_msg(void *out_buf,
     size_t out_buf_size, int32_t partition_key, const char *topic,
     int64_t timestamp, const void *key, size_t key_size, const void *value,
     size_t value_size) {
+  assert(out_buf);
+  assert(topic);
+  assert(key || (key_size == 0));
+  assert(value || (value_size == 0));
   size_t topic_len = strlen(topic);
   size_t dg_size = 0;
   int ret = bruce_find_partition_key_msg_size(topic_len, key_size, value_size,
@@ -98,10 +108,12 @@ int EXPORT_SYM bruce_write_partition_key_msg(void *out_buf,
 
 void EXPORT_SYM bruce_client_socket_init(
     bruce_client_socket_t *client_socket) {
+  assert(client_socket);
   client_socket->sock_fd = -1;
 }
 
 static int init_client_addr(struct sockaddr_un *client_addr) {
+  assert(client_addr);
   memset(client_addr, 0, sizeof(*client_addr));
   static const char client_path_template[] = "/tmp/bruce_client.XXXXXX";
   char client_path[sizeof(client_path_template)];
@@ -144,6 +156,9 @@ static int init_client_addr(struct sockaddr_un *client_addr) {
 
 int EXPORT_SYM bruce_client_socket_bind(bruce_client_socket_t *client_socket,
     const char *server_path) {
+  assert(client_socket);
+  assert(server_path);
+
   if (client_socket->sock_fd >= 0) {
     return BRUCE_CLIENT_SOCK_IS_OPENED;
   }
@@ -190,6 +205,9 @@ fail:
 int EXPORT_SYM bruce_client_socket_send(
     const bruce_client_socket_t *client_socket, const void *msg,
     size_t msg_size) {
+  assert(client_socket);
+  assert(msg);
+  assert(msg_size);
   ssize_t ret = sendto(client_socket->sock_fd, msg, msg_size, 0,
       (const struct sockaddr *) &client_socket->server_addr,
       sizeof(client_socket->server_addr));
@@ -198,6 +216,8 @@ int EXPORT_SYM bruce_client_socket_send(
 
 void EXPORT_SYM bruce_client_socket_close(
     bruce_client_socket_t *client_socket) {
+  assert(client_socket);
+
   if (client_socket->sock_fd >= 0) {
     close(client_socket->sock_fd);
     client_socket->sock_fd = -1;
