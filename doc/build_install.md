@@ -81,8 +81,14 @@ cp src/bruce/client/*.h /usr/include/bruce/client
 ```
 One of the header files, `bruce/client/bruce_client_socket.h`, provides a
 simple C++ wrapper class for the library functions that deal with Bruce's UNIX
-domain socket.  The client library, header files, and command line program are
-included in Bruce's RPM package.
+domain socket.  Once the library is installed, C and C++ clients can specify
+`-lbruce_client` when building with gcc.  The client library, header files, and
+command line program are included in Bruce's RPM package.  For example C code
+that uses the client library to send a message to Bruce, see the big comment at
+the top of
+[bruce/client/bruce_client.h](https://github.com/tagged/bruce/blob/master/src/bruce/client/bruce_client.h).
+For example C++ code, see
+[bruce/client/simple_bruce_client.cc](https://github.com/tagged/bruce/blob/master/src/bruce/client/simple_bruce_client.cc).
 
 ### Installing Bruce
 

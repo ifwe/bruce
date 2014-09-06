@@ -18,12 +18,10 @@ typing `simple_bruce_client --help`.
 
 ### Other Clients
 
-Example client code for writing to Bruce's input socket in Java, Python, PHP,
-and C will soon be available.  For example C++ code, you can examine and borrow
-code from the implementation of `simple_bruce_client`.  A client library that C
-and C++ clients can link to should be available soon.  Client code for other
-programming languages is needed.  Contributions from the community would be
-much appreciated.
+Example client code is currently available for C, C++, Java, and Python.  This
+may be found in the `example_clients` directory of Bruce's Git repository.
+Community contributions for other programming languages are greatly
+appreciated.
 
 ### Message Types
 
