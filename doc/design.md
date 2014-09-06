@@ -81,13 +81,13 @@ The dispatcher opens a TCP connection to each Kafka broker that serves as
 leader for at least one currently available partition.  As described above,
 each connection is serviced by a send thread and a receive thread.  A pause
 event initiated by any dispatcher thread will alert the router thread and cause
-all of the other dispatcher threads to shut down.  As detailed below,
-responsibility for message batching is divided between the dispatcher threads
-and the router thread, according to the type of message being sent and how
-batching is configured.  Compression is handled completely by the dispatcher
-send threads, which are also responsible for assembling message batches into
-produce requests and doing final partition selection as described in the
-section on batching below.
+all of the dispatcher threads to shut down.  As detailed below, responsibility
+for message batching is divided between the dispatcher threads and the router
+thread, according to the type of message being sent and how batching is
+configured.  Compression is handled completely by the dispatcher send threads,
+which are also responsible for assembling message batches into produce requests
+and doing final partition selection as described in the section on batching
+below.
 
 An error ACK received from Kafka will cause the receive thread that got the ACK
 to respond in one of four ways:
