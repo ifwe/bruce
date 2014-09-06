@@ -20,8 +20,7 @@ typing `simple_bruce_client --help`.
 
 Example client code is currently available for C, C++, Java, and Python.  This
 may be found in the `example_clients` directory of Bruce's Git repository.
-Community contributions for other programming languages are greatly
-appreciated.
+Community contributions for other programming languages are much appreciated.
 
 ### Message Types
 

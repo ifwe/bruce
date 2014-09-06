@@ -36,10 +36,12 @@ In the former case, the resulting RPM packages can be found in directory
 `out/pkg/rpm`.  In the latter case, they can be found in
 `out/pkg/rpm_noconfig`.
 
-The init script for bruce (see `config/bruce.init`) is an older System V type
-of script.  Scripts that work with the newer *systemd* included in CentOS 7 and
-*upstart* included in recent Ubuntu distributions are currently not available.
-Contributions from the community would be much appreciated.
+The init script for bruce (see
+[config/bruce.init](https://github.com/tagged/bruce/blob/master/config/bruce.init))
+is an older System V type of script.  Scripts that work with the newer
+*systemd* included in CentOS 7 and *upstart* included in recent Ubuntu
+distributions are currently not available.  Contributions from the community
+would be much appreciated.
 
 ### Building Bruce Directly
 
