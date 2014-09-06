@@ -17,7 +17,7 @@ public class ExampleBruceClient
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
-        String topic = "blah";  // Kafka topic
+        String topic = "some topic";  // Kafka topic
         long timestamp = 12345;  // should be milliseconds since the epoch
         String value = "hello world";
         byte[] valueBytes = value.getBytes(Charset.forName("UTF-8"));
