@@ -79,7 +79,7 @@ client library header files as follows:
 mkdir -p /usr/include/bruce/client
 cp src/bruce/client/*.h /usr/include/bruce/client
 ```
-One of the header files, 'bruce/client/bruce_client_socket.h', provides a
+One of the header files, `bruce/client/bruce_client_socket.h`, provides a
 simple C++ wrapper class for the library functions that deal with Bruce's UNIX
 domain socket.  The client library, header files, and command line program are
 included in Bruce's RPM package.
