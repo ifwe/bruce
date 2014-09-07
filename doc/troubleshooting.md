@@ -32,8 +32,10 @@ discard reports at frequent enough intervals.  To avoid losing discard
 information, it is recommended to query Bruce's discard reporting interface at
 intervals somewhat shorter that Bruce's discard reporting interval.
 
-It is also useful to look in `src/bruce/scripts/bruce_counters.py` to see
-which counters the script monitors and how it responds to incremented values.
+It is also useful to look in
+[src/bruce/scripts/bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/bruce_counters.py)
+to see which counters the script monitors and how it responds to incremented
+values.
 
 ### Discard File Logging
 
