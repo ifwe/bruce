@@ -145,7 +145,7 @@ debugging tool.  This is enabled in debug builds of Bruce.
 ### Contributing Code
 
 Information on contributing to Bruce is provided
-[here](https://github.com/tagged/bruce/blob/master/CONTIBUTING.md).
+[here](https://github.com/tagged/bruce/blob/master/CONTRIBUTING.md).
 
 Information on getting help with Bruce is provided
 [here](https://github.com/tagged/bruce#getting-help).
