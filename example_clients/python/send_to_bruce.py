@@ -22,6 +22,7 @@ import io
 import socket
 import struct
 import sys
+import time
 
 
 class BruceMsgCreator(object):
@@ -95,22 +96,25 @@ class BruceMsgCreator(object):
         return result_bytes
 
 
+def GetEpochMilliseconds():
+    return int(time.time() * 1000)
+
+
 bruce_path = '/path/to/bruce/socket'
 topic = 'some topic'  # Kafka topic
 msg_key = ''
 msg_value = 'hello world'
-timestamp = 0  # should be current time in milliseconds since the epoch
 partition_key = 12345
 
 mc = BruceMsgCreator()
 
 # Create AnyPartition message.
-any_partition_msg = mc.create_any_partition_msg(topic, timestamp,
+any_partition_msg = mc.create_any_partition_msg(topic, GetEpochMilliseconds(),
         bytes(msg_key), bytes(msg_value))
 
 # Create PartitionKey message.
 partition_key_msg = mc.create_partition_key_msg(partition_key, topic,
-        timestamp, bytes(msg_key), bytes(msg_value))
+        GetEpochMilliseconds(), bytes(msg_key), bytes(msg_value))
 
 # Create socket for sending to Bruce.
 bruce_sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
