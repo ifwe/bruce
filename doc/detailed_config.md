@@ -193,7 +193,7 @@ LOG_DEBUG }.  The default value is LOG_NOTICE.
 * `--log_echo`: Echo syslog messages to standard error.
 * `--protocol_version VERSION`: This specifies the protocol version to use when
 communicating with Kafka, as specified
-[here]((https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).
+[here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).
 Currently 0 is the only allowed value.
 * `--status_port PORT`: This specifies the port Bruce uses for its web
 interface.  The default value is 9090.
