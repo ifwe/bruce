@@ -1,10 +1,9 @@
 # Bruce
 
-Bruce is a producer daemon for [Apache Kafka](http://kafka.apache.org), a
-high throughput publish/subscribe messaging system implemented as a distributed
-commit log.  Bruce simplifies clients that send messages to Kafka, freeing them
-from the complexity of direct interaction with the Kafka cluster.
-Specifically, it handles the details of:
+Bruce is a producer daemon for [Apache Kafka](http://kafka.apache.org).  Bruce
+simplifies clients that send messages to Kafka, freeing them from the
+complexity of direct interaction with the Kafka cluster.  Specifically, it
+handles the details of:
 
 * Routing messages to the proper brokers, and spreading the load evenly across
   multiple partitions for a given topic
