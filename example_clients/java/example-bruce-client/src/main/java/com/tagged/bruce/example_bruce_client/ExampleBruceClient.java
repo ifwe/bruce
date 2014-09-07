@@ -31,7 +31,7 @@ import com.etsy.net.UnixDomainSocketClient;
  */
 public class ExampleBruceClient 
 {
-    private static UnixDomainSocketClient unixSocket;
+    private static UnixDomainSocketClient unixSocket = null;
 
     public static void main( String[] args )
     {
@@ -85,6 +85,12 @@ public class ExampleBruceClient
         } catch (IOException x) {
             System.err.println("IOException on attempt to send to Bruce: " +
                 x.getMessage());
+            System.exit(1);
+        } finally {
+            if (unixSocket != null) {
+                unixSocket.close();
+                unixSocket.unlink();
+            }
         }
     }
 }
