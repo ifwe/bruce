@@ -31,8 +31,6 @@ import com.etsy.net.UnixDomainSocketClient;
  */
 public class ExampleBruceClient 
 {
-    private static UnixDomainSocketClient unixSocket = null;
-
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
@@ -63,6 +61,8 @@ public class ExampleBruceClient
                     "Failed to create datagram because topic is too long");
             System.exit(1);
         }
+
+        UnixDomainSocketClient unixSocket = null;
 
         /* Here we use a third party library that uses JNI to write to Bruce's
            UNIX domain datagram socket.  See the following links:
