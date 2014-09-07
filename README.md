@@ -22,8 +22,8 @@ written a message, no further interaction with Bruce is required.  From that
 point onward, Bruce takes full responsibility for reliable message delivery.
 Bruce serves as a single intake point for a Kafka cluster, receiving messages
 from diverse clients regardless of what programming language a client is
-written in.  Client code is currently available in C, C++, Java, and Python.
-Code contributions for clients in other programming languages are much
+written in.  Client code is currently available in C, C++, Java, Python, and
+PHP.  Code contributions for clients in other programming languages are much
 appreciated.  Technical details on how to send messages to Bruce are provided
 [here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md).
 Bruce runs on Linux, and has been tested on CentOS versions 7 and 6.5, and

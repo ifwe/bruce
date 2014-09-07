@@ -18,10 +18,10 @@ typing `simple_bruce_client --help`.
 
 ### Other Clients
 
-Example client code is currently available for C, C++, Java, and Python.  This
-may be found in the
+Example client code for sending messages to Bruce in various programming
+languages may be found in the
 [example_clients](https://github.com/tagged/bruce/tree/master/example_clients)
-directory of Bruce's Git repository.  Community contributions for other
+directory of Bruce's Git repository.  Community contributions for additional
 programming languages are much appreciated.
 
 ### Message Types
