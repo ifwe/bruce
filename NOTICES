@@ -1,0 +1,25 @@
+Bruce
+Copyright 2013-2014 Tagged, Inc.
+
+This product includes software developed at Tagged, Inc. <http://tagged.com>.
+It also includes the following software obtained from sources outside Tagged:
+
+    - SCons build scripts, written by Michael Park and customized at Tagged.
+      The scripts were obtained from <https://github.com/mpark/bob>.
+
+    - Base64 encoding/decoding software, written by Rene Nyffenegger and
+      obtained from
+      <https://github.com/ReneNyffenegger/development_misc/tree/master/base64>.
+
+    - Mongoose web server, version 3.0, implemented by Sergey Lyubka, with
+      minor modifications made at Tagged.  The code is available at
+      <http://mongoose.googlecode.com/files/mongoose-3.0.tgz>.
+
+    - pugixml, version 1.2, an XML processing library written by Arseny
+      Kapoulkine.  See <http://pugixml.org/>.
+
+    - TCLAP, a Templatized C++ Command Line Parser Library originally written
+      by Michael E. Smoot, with contributions from others.  See
+      <http://tclap.sourceforge.net/>.
+
+-----
