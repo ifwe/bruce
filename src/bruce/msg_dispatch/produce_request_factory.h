@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Object responsible for serializing procude requests.  Each send thread owns
+   Object responsible for serializing produce requests.  Each send thread owns
    one of these.
  */
 
