@@ -87,6 +87,20 @@ public class DatagramCreator {
         }
     }
 
+    /* This is the maximum topic size allowed by Kafka. */
+    private static int maxTopicSize() {
+        return Short.MAX_VALUE;
+    }
+
+    /* This is an extremely loose upper bound, based on the maximum value that
+       can be stored in a 32-bit signed integer field.  The actual maximum is a
+       much smaller value: the maximum UNIX domain datagram size supported by
+       the operating system, which has been observed to be 212959 bytes on a
+       CentOS 7 x86_64 system. */
+    private static int maxMsgSize() {
+        return Integer.MAX_VALUE;
+    }
+
     /* Exception base class. */
     public class ErrorBase extends Exception {
         public ErrorBase() {
@@ -113,7 +127,7 @@ public class DatagramCreator {
             byte[] key, byte[] value) throws ErrorBase {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));
 
-        if (topicBytes.length > Short.MAX_VALUE) {
+        if (topicBytes.length > DatagramCreator.maxTopicSize()) {
             throw new TopicTooLong();
         }
 
@@ -123,7 +137,7 @@ public class DatagramCreator {
                 ((long) topicBytes.length) + ((long) keyLength) +
                 ((long) valueLength);
 
-        if (dgSizeLong > Integer.MAX_VALUE) {
+        if (dgSizeLong > DatagramCreator.maxMsgSize()) {
             throw new DatagramTooLarge();
         }
 
@@ -162,7 +176,7 @@ public class DatagramCreator {
             long timestamp, byte[] key, byte[] value) throws ErrorBase {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));
 
-        if (topicBytes.length > Short.MAX_VALUE) {
+        if (topicBytes.length > DatagramCreator.maxTopicSize()) {
             throw new TopicTooLong();
         }
 
@@ -172,7 +186,7 @@ public class DatagramCreator {
                 ((long) topicBytes.length) + ((long) keyLength) +
                 ((long) valueLength);
 
-        if (dgSizeLong > Integer.MAX_VALUE) {
+        if (dgSizeLong > DatagramCreator.maxMsgSize()) {
             throw new DatagramTooLarge();
         }
 

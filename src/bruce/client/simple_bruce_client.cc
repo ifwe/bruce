@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Simple client program that sends messages to bruce daemon.
+   Simple client program that sends messages to Bruce daemon.
  */
 
 #include <algorithm>
@@ -186,14 +186,10 @@ bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     }
 
     buf.resize(msg_size);
-
-    if (bruce_write_partition_key_msg(&buf[0], buf.size(), cfg.PartitionKey,
-        cfg.Topic.c_str(), ts, cfg.Key.data(), cfg.Key.size(), value.data(),
-        value.size()) != BRUCE_OK) {
-      std::cerr << "Unexpected error serializing PartitionKey message"
-          << std::endl;
-      return false;
-    }
+    int ret = bruce_write_partition_key_msg(&buf[0], buf.size(),
+        cfg.PartitionKey, cfg.Topic.c_str(), ts, cfg.Key.data(),
+        cfg.Key.size(), value.data(), value.size());
+    assert(ret == BRUCE_OK);
   } else {
     size_t msg_size = 0;
 
@@ -211,14 +207,10 @@ bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     }
 
     buf.resize(msg_size);
-
-    if (bruce_write_any_partition_msg(&buf[0], buf.size(), cfg.Topic.c_str(),
-        ts, cfg.Key.data(), cfg.Key.size(), value.data(), value.size()) !=
-        BRUCE_OK) {
-      std::cerr << "Unexpected error serializing PartitionKey message"
-          << std::endl;
-      return false;
-    }
+    int ret = bruce_write_any_partition_msg(&buf[0], buf.size(),
+        cfg.Topic.c_str(), ts, cfg.Key.data(), cfg.Key.size(), value.data(),
+        value.size());
+    assert(ret == BRUCE_OK);
   }
 
   if (cfg.Bad) {

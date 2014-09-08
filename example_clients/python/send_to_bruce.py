@@ -25,6 +25,18 @@ import sys
 import time
 
 
+class BruceTopicTooLarge(Exception):
+    'exception thrown when Kafka topic is too large'
+    def __init__(self):
+        Exception.__init__(self, 'Kafka topic is too large')
+
+
+class BruceMsgTooLarge(Exception):
+    'exception thrown when message would exceed max possible size'
+    def __init__(self):
+        Exception.__init__(self, 'Cannot create a message that large')
+
+
 class BruceMsgCreator(object):
     '''Class for creating datagrams to be sent to Bruce.'''
 
@@ -52,14 +64,34 @@ class BruceMsgCreator(object):
     PARTITION_KEY_API_KEY = 257
     PARTITION_KEY_API_VERSION = 0
 
+    # This is the maximum topic size allowed by Kafka.
+    def getMaxTopicSize():
+        return (2 ** 15) - 1
+
+    # This is an extremely loose upper bound, based on the maximum value that
+    # can be stored in a 32-bit signed integer field.  The actual maximum is a
+    # much smaller value: the maximum UNIX domain datagram size supported by
+    # the operating system, which has been observed to be 212959 bytes on a
+    # CentOS 7 x86_64 system.
+    def getMaxMsgSize():
+        return (2 ** 31) - 1
+
     def __init__(self):
         pass
 
     def create_any_partition_msg(self, topic, timestamp, key_bytes,
             value_bytes):
         topic_bytes = bytes(topic)
+
+        if len(topic_bytes) > getMaxTopicSize():
+            raise BruceTopicTooLarge()
+
         msg_size = BruceMsgCreator.ANY_PARTITION_FIXED_BYTES + \
                 len(topic_bytes) + len(key_bytes) + len(value_bytes)
+
+        if msg_size > getMaxMsgSize():
+            raise BruceMsgTooLarge()
+
         buf = io.BytesIO()
         flags = 0
         buf.write(struct.pack('>ihhhh', msg_size,
@@ -78,8 +110,16 @@ class BruceMsgCreator(object):
     def create_partition_key_msg(self, partition_key, topic, timestamp, \
             key_bytes, value_bytes):
         topic_bytes = bytes(topic)
+
+        if len(topic_bytes) > getMaxTopicSize():
+            raise BruceTopicTooLarge()
+
         msg_size = BruceMsgCreator.PARTITION_KEY_FIXED_BYTES + \
                 len(topic_bytes) + len(key_bytes) + len(value_bytes)
+
+        if msg_size > getMaxMsgSize():
+            raise BruceMsgTooLarge()
+
         buf = io.BytesIO()
         flags = 0
         buf.write(struct.pack('>ihhhih', msg_size,
@@ -108,13 +148,20 @@ partition_key = 12345
 
 mc = BruceMsgCreator()
 
-# Create AnyPartition message.
-any_partition_msg = mc.create_any_partition_msg(topic, GetEpochMilliseconds(),
-        bytes(msg_key), bytes(msg_value))
+try:
+    # Create AnyPartition message.
+    any_partition_msg = mc.create_any_partition_msg(topic,
+            GetEpochMilliseconds(), bytes(msg_key), bytes(msg_value))
 
-# Create PartitionKey message.
-partition_key_msg = mc.create_partition_key_msg(partition_key, topic,
-        GetEpochMilliseconds(), bytes(msg_key), bytes(msg_value))
+    # Create PartitionKey message.
+    partition_key_msg = mc.create_partition_key_msg(partition_key, topic,
+            GetEpochMilliseconds(), bytes(msg_key), bytes(msg_value))
+except BruceTopicTooLarge as x:
+    sys.stderr.write(str(x) + '\n')
+    sys.exit(1)
+except BruceMsgTooLarge as x:
+    sys.stderr.write(str(x) + '\n')
+    sys.exit(1)
 
 # Create socket for sending to Bruce.
 bruce_sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)

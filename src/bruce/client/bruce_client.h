@@ -50,9 +50,10 @@
        ret = bruce_write_any_partition_msg(msg_buf, msg_size, topic, timestamp,
            key, key_size, value, value_size);
 
-       if (ret != BRUCE_OK) {
-         // handle error
-       }
+       // Here, the return value is guaranteed to be BRUCE_OK, since the above
+       // call to bruce_find_any_partition_msg_size() already validated the
+       // topic and message sizes.
+       assert(ret == BRUCE_OK);
 
        bruce_client_socket_t sock;
 
@@ -135,7 +136,10 @@ int bruce_find_partition_key_msg_size(size_t topic_size, size_t key_size,
    the size reported by bruce_find_any_partition_msg_size().  'key' can be null
    only if 'key_size' is 0.  'value' can be null only if 'value_size' is 0.
    Return BRUCE_OK on success.  Possible returned error codes are
-   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }.  If
+   'out_buf_size' was calculated by a successful call to
+   bruce_find_any_partition_msg_size() then this function is guaranteed to
+   return BRUCE_OK. */
 int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
     const char *topic, int64_t timestamp, const void *key, size_t key_size,
     const void *value, size_t value_size);
@@ -149,7 +153,10 @@ int bruce_write_any_partition_msg(void *out_buf, size_t out_buf_size,
    the size reported by bruce_find_partition_key_msg_size().  'key' can be null
    only if 'key_size' is 0.  'value' can be null only if 'value_size' is 0.
    Return BRUCE_OK on success.  Possible returned error codes are
-   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }. */
+   { BRUCE_BUF_TOO_SMALL, BRUCE_TOPIC_TOO_LARGE, BRUCE_MSG_TOO_LARGE }.  If
+   'out_buf_size' was calculated by a successful call to
+   bruce_find_partition_key_msg_size() then this function is guaranteed to
+   return BRUCE_OK. */
 int bruce_write_partition_key_msg(void *out_buf, size_t out_buf_size,
     int32_t partition_key, const char *topic, int64_t timestamp,
     const void *key, size_t key_size, const void *value, size_t value_size);
