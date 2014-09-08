@@ -81,6 +81,12 @@ class BruceTimestampGenerator {
     }
 }
 
+class TopicTooLarge extends Exception {
+}
+
+class MsgTooLarge extends Exception {
+}
+
 /* Class for creating datagrams to send to Bruce. */
 class BruceMsgCreator {
     private static $MSG_SIZE_FIELD_SIZE = 4;
@@ -103,6 +109,21 @@ class BruceMsgCreator {
     private static $PARTITION_KEY_API_KEY = 257;
     private static $PARTITION_KEY_API_VERSION = 0;
 
+    /* This is the maximum topic size allowed by Kafka. */
+    private static function maxTopicSize() {
+        return pow(2, 15) - 1;
+    }
+
+    /* This is an extremely loose upper bound, based on the maximum value that
+       can be stored in a 32-bit signed integer field.  The actual maximum is a
+       much smaller value: the maximum UNIX domain datagram size supported by
+       the operating system, which has been observed to be 212959 bytes on a
+       CentOS 7 x86_64 system. */
+    private static function maxMsgSize() {
+        $n = pow(2, 30);
+        return $n + ($n - 1);
+    }
+
     /* Initialize classwide state.  Call this before creating any instances. */
     static function init() {
         self::$ANY_PARTITION_FIXED_BYTES = self::$MSG_SIZE_FIELD_SIZE +
@@ -120,8 +141,17 @@ class BruceMsgCreator {
        BruceTimestampGenerator. */
     public function createAnyPartitionMsg($topic, $timestampHigh,
             $timestampLow, $key, $value) {
+        if (strlen($topic) > self::maxTopicSize()) {
+            throw new TopicTooLarge("Kafka topic too large");
+        }
+
         $msgSize = self::$ANY_PARTITION_FIXED_BYTES + strlen($topic) +
                 strlen($key) + strlen($value);
+
+        if ($msgSize > self::maxMsgSize()) {
+            throw new TopicTooLarge("Message too large");
+        }
+
         $result = pack("Nnnnn", $msgSize, self::$ANY_PARTITION_API_KEY,
                 self::$ANY_PARTITION_API_VERSION, 0, strlen($topic));
         $result = $result . $topic;
@@ -139,8 +169,17 @@ class BruceMsgCreator {
        BruceTimestampGenerator. */
     public function createPartitionKeyMsg($partitionKey, $topic,
             $timestampHigh, $timestampLow, $key, $value) {
+        if (strlen($topic) > self::maxTopicSize()) {
+            throw new TopicTooLarge("Kafka topic too large");
+        }
+
         $msgSize = self::$PARTITION_KEY_FIXED_BYTES + strlen($topic) +
                 strlen($key) + strlen($value);
+
+        if ($msgSize > self::maxMsgSize()) {
+            throw new TopicTooLarge("Message too large");
+        }
+
         $result = pack("NnnnNn", $msgSize, self::$PARTITION_KEY_API_KEY,
                 self::$PARTITION_KEY_API_VERSION, 0, $partitionKey,
                 strlen($topic));
@@ -162,18 +201,29 @@ $topic = "some topic";  // Kafka topic
 $msgKey = "";
 $msgValue = "hello world";
 $partitionKey = 12345;
-$g = new BruceTimestampGenerator;
 $mc = new BruceMsgCreator;
+$g = new BruceTimestampGenerator;
+$g->setEpochTimeNow();
 
 // create AnyPartition message
+try {
+    $msg1 = $mc->createAnyPartitionMsg($topic, $g->getEpochMsHigh(),
+            $g->getEpochMsLow(), $msgKey, $msgValue);
+} catch (Exception $e) {
+    print $e->getMessage() . "\n";
+    exit(1);
+}
+
 $g->setEpochTimeNow();
-$msg1 = $mc->createAnyPartitionMsg($topic, $g->getEpochMsHigh(),
-        $g->getEpochMsLow(), $msgKey, $msgValue);
 
 // create PartitionKey message
-$g->setEpochTimeNow();
-$msg2 = $mc->createPartitionKeyMsg($partitionKey, $topic, $g->getEpochMsHigh(),
-        $g->getEpochMsLow(), $msgKey, $msgValue);
+try {
+    $msg2 = $mc->createPartitionKeyMsg($partitionKey, $topic,
+            $g->getEpochMsHigh(), $g->getEpochMsLow(), $msgKey, $msgValue);
+} catch (Exception $e) {
+    print $e->getMessage() . "\n";
+    exit(1);
+}
 
 // create socket for sending to Bruce
 if (($sock = socket_create(AF_UNIX, SOCK_DGRAM, 0)) === false) {
