@@ -34,7 +34,8 @@ public class ExampleBruceClient
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
-        String topic = "blah";  // Kafka topic
+        String brucePath = "/path/to/bruce/socket";
+        String topic = "some topic";  // Kafka topic
         long timestamp = 12345;  // should be milliseconds since the epoch
         String value = "hello world";
         byte[] valueBytes = value.getBytes(Charset.forName("UTF-8"));
@@ -70,7 +71,7 @@ public class ExampleBruceClient
            client C library. */
         try {
             // create socket for sending to Bruce
-            unixSocket = new UnixDomainSocketClient("/tmp/bruce_socket",
+            unixSocket = new UnixDomainSocketClient(brucePath,
                     JUDS.SOCK_DGRAM);
 
             // send AnyPartition message to Bruce
