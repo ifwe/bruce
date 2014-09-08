@@ -34,7 +34,7 @@ public class ExampleBruceClient
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
-        String topic = "some topic";  // Kafka topic
+        String topic = "blah";  // Kafka topic
         long timestamp = 12345;  // should be milliseconds since the epoch
         String value = "hello world";
         byte[] valueBytes = value.getBytes(Charset.forName("UTF-8"));
@@ -55,10 +55,6 @@ public class ExampleBruceClient
         } catch (DatagramCreator.DatagramTooLarge x) {
             System.err.println("Failed to create datagram because its size " +
                     "would exceed the maximum");
-            System.exit(1);
-        } catch (DatagramCreator.ErrorBase x) {
-            System.err.println(
-                    "Failed to create datagram because topic is too long");
             System.exit(1);
         }
 
@@ -89,7 +85,6 @@ public class ExampleBruceClient
         } finally {
             if (unixSocket != null) {
                 unixSocket.close();
-                unixSocket.unlink();
             }
         }
     }

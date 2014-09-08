@@ -48,7 +48,7 @@ public class DatagramCreator {
 
     /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
        is written in network byte oprder (big endian). */
-    private void serializeShortToByteArray(short value, byte[] out,
+    private static void serializeShortToByteArray(short value, byte[] out,
             int offset) {
         out[offset] = (byte) ((value & 0xff00) >> 8);
         out[offset + 1] = (byte) (value & 0x00ff);
@@ -56,7 +56,8 @@ public class DatagramCreator {
 
     /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
        is written in network byte oprder (big endian). */
-    private void serializeIntToByteArray(int value, byte[] out, int offset) {
+    private static void serializeIntToByteArray(int value, byte[] out,
+            int offset) {
         out[offset] = (byte) ((value & 0xff000000) >> 24);
         out[offset + 1] = (byte) ((value & 0x00ff0000) >> 16);
         out[offset + 2] = (byte) ((value & 0x0000ff00) >> 8);
@@ -65,7 +66,8 @@ public class DatagramCreator {
 
     /* Write 'value' to array 'out' starting at array index 'offset'.  'value'
        is written in network byte oprder (big endian). */
-    private void serializeLongToByteArray(long value, byte[] out, int offset) {
+    private static void serializeLongToByteArray(long value, byte[] out,
+            int offset) {
         out[offset] = (byte) ((value & 0xff00000000000000L) >> 56);
         out[offset + 1] = (byte) ((value & 0x00ff000000000000L) >> 48);
         out[offset + 2] = (byte) ((value & 0x0000ff0000000000L) >> 40);
@@ -79,7 +81,7 @@ public class DatagramCreator {
     /* Copy entire contents of 'src' to 'dst', starting at array index 'offset'
        in array 'dst'.  It is assumed that 'dst' is large enough to complete
        this operation without indexing past the end of the array. */
-    private void copyToByteArray(byte[] dst, byte[] src, int offset) {
+    private static void copyToByteArray(byte[] dst, byte[] src, int offset) {
         if (src != null) {
             for (int i = 0; i < src.length; ++i) {
                 dst[offset + i] = src[i];
@@ -101,20 +103,13 @@ public class DatagramCreator {
         return Integer.MAX_VALUE;
     }
 
-    /* Exception base class. */
-    public class ErrorBase extends Exception {
-        public ErrorBase() {
-            super();
-        }
-    }
-
-    public class TopicTooLong extends ErrorBase {
+    public class TopicTooLong extends Exception {
         public TopicTooLong() {
             super();
         }
     }
 
-    public class DatagramTooLarge extends ErrorBase {
+    public class DatagramTooLarge extends Exception {
         public DatagramTooLarge() {
             super();
         }
@@ -124,10 +119,10 @@ public class DatagramCreator {
        value.  Return the resulting message as an array of bytes.  The result
        can then be sent to Bruce's UNIX domain datagram socket. */
     public byte[] createAnyPartitionDatagram(String topic, long timestamp,
-            byte[] key, byte[] value) throws ErrorBase {
+            byte[] key, byte[] value) throws TopicTooLong, DatagramTooLarge {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));
 
-        if (topicBytes.length > DatagramCreator.maxTopicSize()) {
+        if (topicBytes.length > maxTopicSize()) {
             throw new TopicTooLong();
         }
 
@@ -137,7 +132,7 @@ public class DatagramCreator {
                 ((long) topicBytes.length) + ((long) keyLength) +
                 ((long) valueLength);
 
-        if (dgSizeLong > DatagramCreator.maxMsgSize()) {
+        if (dgSizeLong > maxMsgSize()) {
             throw new DatagramTooLarge();
         }
 
@@ -173,10 +168,11 @@ public class DatagramCreator {
        bytes.  The result can then be sent to Bruce's UNIX domain datagram
        socket. */
     public byte[] createPartitionKeyDatagram(int partitionKey, String topic,
-            long timestamp, byte[] key, byte[] value) throws ErrorBase {
+            long timestamp, byte[] key, byte[] value)
+                    throws TopicTooLong, DatagramTooLarge {
         byte[] topicBytes = topic.getBytes(Charset.forName("UTF-8"));
 
-        if (topicBytes.length > DatagramCreator.maxTopicSize()) {
+        if (topicBytes.length > maxTopicSize()) {
             throw new TopicTooLong();
         }
 
@@ -186,7 +182,7 @@ public class DatagramCreator {
                 ((long) topicBytes.length) + ((long) keyLength) +
                 ((long) valueLength);
 
-        if (dgSizeLong > DatagramCreator.maxMsgSize()) {
+        if (dgSizeLong > maxMsgSize()) {
             throw new DatagramTooLarge();
         }
 
