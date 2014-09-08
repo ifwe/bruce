@@ -194,7 +194,10 @@ LOG_DEBUG }.  The default value is LOG_NOTICE.
 * `--protocol_version VERSION`: This specifies the protocol version to use when
 communicating with Kafka, as specified
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).
-Currently 0 is the only allowed value.
+Currently 0 is the only allowed value.  Note: There should actually be two
+separate options: a metadata protocol version and a producer protocol version,
+since Kafka versions these parts of the protocol separately.  Some minor
+refactoring needs to be done to make Bruce behave in this manner.
 * `--status_port PORT`: This specifies the port Bruce uses for its web
 interface.  The default value is 9090.
 * `--max_input_msg_size N`: This specifies the maximum input message size in
