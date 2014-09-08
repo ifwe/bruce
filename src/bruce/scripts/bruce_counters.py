@@ -31,7 +31,9 @@
 #        mode) reports a problem to Nagios, a human being can later run it in
 #        manual mode to analyze the resulting counter file and determine the
 #        details of the problem(s) found.  When running in manual mode, we
-#        don't delete old counter files.
+#        don't delete old counter files.  The 'N' value gives a number of
+#        seconds since the epoch specifying a counter file to be manually
+#        analyzed.
 #
 #    -d DIR
 #    --work_dir DIR: (required)
