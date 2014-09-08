@@ -185,6 +185,11 @@ int EXPORT_SYM bruce_client_socket_bind(bruce_client_socket_t *client_socket,
     goto fail;
   }
 
+  if ((unlink(client_addr.sun_path) < 0) && (errno != ENOENT)) {
+    status = errno;
+    goto fail;
+  }
+
   client_socket->server_addr.sun_family = AF_LOCAL;
   strncpy(client_socket->server_addr.sun_path, server_path,
           sizeof(client_socket->server_addr.sun_path));
