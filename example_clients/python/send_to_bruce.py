@@ -65,6 +65,7 @@ class BruceMsgCreator(object):
     PARTITION_KEY_API_VERSION = 0
 
     # This is the maximum topic size allowed by Kafka.
+    @staticmethod
     def getMaxTopicSize():
         return (2 ** 15) - 1
 
@@ -73,6 +74,7 @@ class BruceMsgCreator(object):
     # much smaller value: the maximum UNIX domain datagram size supported by
     # the operating system, which has been observed to be 212959 bytes on a
     # CentOS 7 x86_64 system.
+    @staticmethod
     def getMaxMsgSize():
         return (2 ** 31) - 1
 
@@ -83,13 +85,13 @@ class BruceMsgCreator(object):
             value_bytes):
         topic_bytes = bytes(topic)
 
-        if len(topic_bytes) > getMaxTopicSize():
+        if len(topic_bytes) > BruceMsgCreator.getMaxTopicSize():
             raise BruceTopicTooLarge()
 
         msg_size = BruceMsgCreator.ANY_PARTITION_FIXED_BYTES + \
                 len(topic_bytes) + len(key_bytes) + len(value_bytes)
 
-        if msg_size > getMaxMsgSize():
+        if msg_size > BruceMsgCreator.getMaxMsgSize():
             raise BruceMsgTooLarge()
 
         buf = io.BytesIO()
@@ -111,13 +113,13 @@ class BruceMsgCreator(object):
             key_bytes, value_bytes):
         topic_bytes = bytes(topic)
 
-        if len(topic_bytes) > getMaxTopicSize():
+        if len(topic_bytes) > BruceMsgCreator.getMaxTopicSize():
             raise BruceTopicTooLarge()
 
         msg_size = BruceMsgCreator.PARTITION_KEY_FIXED_BYTES + \
                 len(topic_bytes) + len(key_bytes) + len(value_bytes)
 
-        if msg_size > getMaxMsgSize():
+        if msg_size > BruceMsgCreator.getMaxMsgSize():
             raise BruceMsgTooLarge()
 
         buf = io.BytesIO()
