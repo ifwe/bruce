@@ -114,7 +114,7 @@
               -->
             <config name="snappy_config" type="snappy" minSize="128" />
 
-            <!-- "minSize" is ignored (and optional) if type in "none". -->
+            <!-- "minSize" is ignored (and optional) if type is "none". -->
             <config name="no_compression" type="none" />
         </namedConfigs>
 
