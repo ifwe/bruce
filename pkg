@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------------
 
 usage() {
-    echo Usage: `basename $0` '[tar|rpm|rpm_noconfig]' 1>&2
+    echo Usage: `basename $0` '[--debug] [tar|rpm|rpm_noconfig]' 1>&2
     exit 1
 }
 
@@ -25,15 +25,28 @@ make_tar() {
     echo ------------------------------------------------------------
     echo Building tar archive
     echo
+    dbg=$1
+
+    # The contents of the tarball are exactly the same regardless of whether we
+    # call it 'bruce' or 'bruce_debug'.  The only reason for the name
+    # difference is to make building the 'bruce_debug' RPM package a bit
+    # easier.
+    if [ $dbg -eq 0 ]; then
+        pkg_base_name=bruce
+    else
+        pkg_base_name=bruce_debug
+    fi
+
+    pkg_name=${pkg_base_name}-${version}
     rm -fr out/pkg/tar
-    mkdir -p out/pkg/tar/bruce-${version}
+    mkdir -p out/pkg/tar/${pkg_name}
 
     for f in `ls | grep -v out`; do
-        cp -a $f out/pkg/tar/bruce-${version}
+        cp -a $f out/pkg/tar/${pkg_name}
     done
 
-    cp .gitignore out/pkg/tar/bruce-${version}
-    src/bruce/scripts/gen_version -q > out/pkg/tar/bruce-${version}/version.txt
+    cp .gitignore out/pkg/tar/${pkg_name}
+    src/bruce/scripts/gen_version -q > out/pkg/tar/${pkg_name}/version.txt
 
     if [ "$?" -ne 0 ]; then
         echo Failed to generate version.txt 1>&2
@@ -42,9 +55,9 @@ make_tar() {
 
     cwd=`pwd`
     cd out/pkg/tar
-    tar cf bruce-${version}.tar bruce-${version}
-    gzip --best bruce-${version}.tar
-    rm -fr bruce-${version}
+    tar cf ${pkg_name}.tar ${pkg_name}
+    gzip --best ${pkg_name}.tar
+    rm -fr ${pkg_name}
     cd $cwd
     echo ------------------------------------------------------------
 }
@@ -54,13 +67,22 @@ make_rpm() {
     echo Building RPM package
     echo
     cwd=`pwd`
+    dbg=$1
+
+    if [ $dbg -eq 0 ]; then
+        pkg_subdir=release
+        pkg_name=bruce
+    else
+        pkg_subdir=debug
+        pkg_name=bruce_debug
+    fi
 
     if [ "$target" == "rpm_noconfig" ]; then
-        rpm_dir=out/pkg/rpm_noconfig
-        spec_in=bruce_noconfig.spec.in
+        rpm_dir=out/pkg/${pkg_subdir}/rpm_noconfig
+        spec_in=rpm_specs/bruce_noconfig.spec.in
     else
-        rpm_dir=out/pkg/rpm
-        spec_in=bruce.spec.in
+        rpm_dir=out/pkg/${pkg_subdir}/rpm
+        spec_in=rpm_specs/bruce.spec.in
     fi
 
     rm -fr $rpm_dir
@@ -72,9 +94,17 @@ make_rpm() {
     mkdir -p $base/SPECS
     mkdir -p $base/SRPMS
 
-    sed "s/BRUCE_VERSION/${version}/" < $spec_in > \
-            $base/SPECS/bruce.spec
-    cp out/pkg/tar/bruce-${version}.tar.gz $base/SOURCES
+    if [ $dbg -eq 0 ]; then
+        sed "s/BRUCE_VERSION/${version}/" < $spec_in | \
+                sed 's/BUILD_TYPE/release/' | \
+                sed 's/BRUCE_PKG_NAME/bruce/' > $base/SPECS/bruce.spec
+    else
+        sed "s/BRUCE_VERSION/${version}/" < $spec_in | \
+                sed 's/BUILD_TYPE/debug/' | \
+                sed 's/BRUCE_PKG_NAME/bruce_debug/' > $base/SPECS/bruce.spec
+    fi
+
+    cp out/pkg/tar/${pkg_name}-${version}.tar.gz $base/SOURCES
     cd $base
     rpmbuild --define "_topdir `pwd`" -ba SPECS/bruce.spec
 
@@ -96,8 +126,19 @@ make_rpm() {
     echo ------------------------------------------------------------
 }
 
-if [ $# -ne 1 ]; then
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
     usage
+fi
+
+debug=0
+
+if [ "$1" == '--debug' ]; then
+    debug=1
+    shift
+elif [ "$2" == '--debug' ]; then
+    debug=1
+    $2=$1
+    shift
 fi
 
 target=$1
@@ -117,8 +158,8 @@ echo Software version is $version
 echo
 
 # Always make a tarball, since that is required for building an RPM package.
-make_tar
+make_tar $debug
 
 if [ "$target" == "rpm" ] || [ "$target" == "rpm_noconfig" ]; then
-    make_rpm
+    make_rpm $debug
 fi

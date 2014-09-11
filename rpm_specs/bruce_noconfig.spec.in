@@ -5,7 +5,14 @@
 %define debug_package %{nil}
 %endif
 
-Name:		bruce
+# When building a debug version, 'BUILD_TYPE' gets replaced with 'debug' and
+# 'BRUCE_PKG_NAME' gets replaced with 'bruce_debug'.  When building a release
+# version, 'BUILD_TYPE' gets replaced with 'release' and 'BRUCE_PKG_NAME' gets
+# replaced with 'bruce'.
+%define build_type BUILD_TYPE
+%define bruce_pkg_name BRUCE_PKG_NAME
+
+Name:		%{bruce_pkg_name}
 Version:	BRUCE_VERSION
 Release:	1%{?dist}
 Summary:	producer daemon for Apache Kafka
@@ -39,29 +46,23 @@ Bruce is a producer daemon for Apache Kafka.
     IMPORT_PATH=
 %endif
 
-./build_all -m release -f bruce/bruce $IMPORT_PATH apps
-./build_all -m release -f bruce/client/simple_bruce_client $IMPORT_PATH apps
-./build_all -m release -f bruce/client/libbruce_client.a $IMPORT_PATH client_libs
-./build_all -m release -f bruce/client/libbruce_client.so $IMPORT_PATH client_libs
+./build_all -m %{build_type} -f bruce/bruce $IMPORT_PATH apps
+./build_all -m %{build_type} -f bruce/client/simple_bruce_client $IMPORT_PATH apps
+./build_all -m %{build_type} -f bruce/client/libbruce_client.a $IMPORT_PATH client_libs
+./build_all -m %{build_type} -f bruce/client/libbruce_client.so $IMPORT_PATH client_libs
 
 
 %install
 mkdir -p %{buildroot}/%{_bindir}
-cp out/release/bruce/bruce %{buildroot}/%{_bindir}
-cp out/release/bruce/client/simple_bruce_client %{buildroot}/%{_bindir}
+cp out/%{build_type}/bruce/bruce %{buildroot}/%{_bindir}
+cp out/%{build_type}/bruce/client/simple_bruce_client %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{_libdir}
-cp out/release/bruce/client/libbruce_client.a %{buildroot}/%{_libdir}
-cp out/release/bruce/client/libbruce_client.so %{buildroot}/%{_libdir}/libbruce_client.so.0
+cp out/%{build_type}/bruce/client/libbruce_client.a %{buildroot}/%{_libdir}
+cp out/%{build_type}/bruce/client/libbruce_client.so %{buildroot}/%{_libdir}/libbruce_client.so.0
 mkdir -p %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client_socket.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/status_codes.h %{buildroot}/%{_includedir}/bruce/client
-mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig
-cp config/bruce.sysconfig %{buildroot}/%{_sysconfdir}/sysconfig/bruce
-mkdir -p %{buildroot}/%{_sysconfdir}/bruce
-cp config/bruce_conf.xml %{buildroot}/%{_sysconfdir}/bruce
-mkdir -p %{buildroot}/%{_sysconfdir}/init.d
-cp config/bruce.init %{buildroot}/%{_sysconfdir}/init.d/bruce
 
 
 %post
@@ -75,7 +76,6 @@ if [ "$1" -eq 0 ]; then
     # Stuff in here executes when package is being removed, not upgraded.
     rmdir %{_includedir}/bruce/client
     rmdir %{_includedir}/bruce
-    rmdir %{_sysconfdir}/bruce
 fi
 
 
@@ -88,9 +88,6 @@ fi
 %{_includedir}/bruce/client/bruce_client.h
 %{_includedir}/bruce/client/bruce_client_socket.h
 %{_includedir}/bruce/client/status_codes.h
-%{_sysconfdir}/sysconfig/bruce
-%{_sysconfdir}/bruce/bruce_conf.xml
-%{_sysconfdir}/init.d/bruce
 
 
 %changelog
