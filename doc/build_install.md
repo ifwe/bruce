@@ -57,7 +57,7 @@ cd ../..
 ```
 
 For CentOS 6, the steps are identical except that instead of
-`build --release bruce` you should type `build --release bruce --import_path`.
+`build --release bruce` you should type `build --release --import_path bruce`.
 The `--import_path` option tells the SCons build configuration to use the PATH
 environment variable setting from the external environment.  This is needed
 so that your customized PATH setting (as described
