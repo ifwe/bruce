@@ -45,7 +45,8 @@ would be much appreciated.
 
 ### Building Bruce Directly
 
-Bruce may be built directly using SCons as follows:
+For all platforms except CentOS 6, Bruce may be built directly using SCons as
+follows:
 
 ```
 cd bruce
@@ -55,7 +56,15 @@ build --release bruce
 cd ../..
 ```
 
-The path to the newly built Bruce executable is now `out/release/bruce/bruce`.
+For CentOS 6, the steps are identical except that instead of
+`build --release bruce` you should type `build --release bruce --import_path`.
+The `--import_path` option tells the SCons build configuration to use the PATH
+environment variable setting from the external environment.  This is needed
+so that your customized PATH setting (as described
+[here](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md#building-and-installing-gcc-482))
+is seen and the newer version of gcc is used.  After performing the above
+steps, the path to the newly built Bruce executable is now
+`out/release/bruce/bruce`.
 
 ### Building Bruce's Client Library
 
@@ -73,8 +82,9 @@ build --release simple_bruce_client
 cd ../../..
 ```
 
-The newly built library files and client program are now located in
-`out/release/bruce/client`.  If installing them manually, rename
+In the case of CentOS 6, remember to use the `--import_path` option with the
+`build` command.  The newly built library files and client program are now
+located in `out/release/bruce/client`.  If installing them manually, rename
 `libbruce_client.so` to `libbruce_client.so.0` when copying it to your system's
 library directory (`/usr/lib64` on CentOS/RedHat, or `/usr/lib` on Ubuntu), and
 remember to run `/sbin/ldconfig` afterwards.  Also remember to install the
