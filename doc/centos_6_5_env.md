@@ -98,6 +98,7 @@ tar xf distribute-0.6.35.tar.gz
 cd distribute-0.6.35
 python2.7 setup.py install
 easy_install-2.7 virtualenv
+easy_install-2.7 argparse
 ```
 
 ### Using Python 2.7 inside a virtualenv Environment
