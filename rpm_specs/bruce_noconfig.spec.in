@@ -63,6 +63,8 @@ mkdir -p %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client_socket.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/status_codes.h %{buildroot}/%{_includedir}/bruce/client
+cp src/bruce/scripts/bruce_counters.py %{buildroot}/%{_bindir}
+cp src/bruce/scripts/bruce_discards.py %{buildroot}/%{_bindir}
 
 
 %post
@@ -88,6 +90,8 @@ fi
 %{_includedir}/bruce/client/bruce_client.h
 %{_includedir}/bruce/client/bruce_client_socket.h
 %{_includedir}/bruce/client/status_codes.h
+%{_bindir}/bruce_counters.py
+%{_bindir}/bruce_discards.py
 
 
 %changelog
