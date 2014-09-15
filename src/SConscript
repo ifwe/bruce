@@ -200,7 +200,7 @@ def specify_lib_headers(lib, headers):
         env['LIB_HEADER_MAP'][h.get_path()] = lib
 
 
-specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.so'),
+specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.a'),
     [Dir('bruce').Dir('client').File('bruce_client.h')])
 
 
