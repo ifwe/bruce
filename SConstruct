@@ -121,6 +121,8 @@ def check_version_file(ver_file):
 
 
 check_version_file(out.Dir('bruce').File('build_id.c').get_abspath())
+check_version_file(out.Dir('bruce').Dir('client').File('build_id.c').
+        get_abspath())
 
 # Environment.
 prog_libs = {'pthread', 'dl', 'rt'}

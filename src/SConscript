@@ -190,6 +190,11 @@ specify_generated_file(Dir('bruce').File('build_id.c.in'),
         Dir('bruce').Dir('scripts').File('gen_version'),
         src.Dir('bruce').Dir('scripts').File('gen_version'))
 
+specify_generated_file(Dir('bruce').Dir('client').File('build_id.c.in'),
+        Dir('bruce').Dir('client').File('build_id.c'),
+        Dir('bruce').Dir('client').File('build_id.h'),
+        Dir('bruce').Dir('scripts').File('gen_version'),
+        src.Dir('bruce').Dir('scripts').File('gen_version'))
 
 # Input parameter 'headers' is a list of header files for a library 'lib' that
 # is built by our build system.  The effect we want to achieve here is as

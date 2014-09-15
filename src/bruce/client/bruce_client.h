@@ -106,7 +106,7 @@ typedef struct bruce_client_socket {
 extern "C" {
 #endif
 
-/* Return build ID string. */
+/* Return build ID string for client library. */
 const char * bruce_get_build_id();
 
 /* See <bruce/client/status_codes.h> for definitions of status codes returned
