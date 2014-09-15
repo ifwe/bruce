@@ -93,6 +93,10 @@
 #        this:
 #
 #            { "password": "quack", "username": "daffyduck" }
+#
+#    -g
+#    --ignore_bad_topics:
+#        Do not report errors due to bad topic discards.
 ###############################################################################
 
 import cx_Oracle
@@ -558,7 +562,7 @@ def AnalyzeDiscardReport(report):
     if report['malformed_msg_count'] > 0:
         return EC_CRITICAL
 
-    if report['bad_topic_msg_count'] > 0:
+    if (not Opts.IgnoreBadTopics) and report['bad_topic_msg_count'] > 0:
         return EC_CRITICAL
 
     if report['discard_topic']:
@@ -1086,12 +1090,14 @@ def ParseCredentialsFileContents(file_contents):
 #     DatabaseTimeout: Specifies a timeout in seconds for storing a discard
 #         report in the database.
 #     Credentials: Credentials file for database access.
+#     IgnoreBadTopics: Don't report errors for bad topics.
 ###############################################################################
 class TProgramOptions(object):
     'program options class'
     def __init__(self, verbose, work_dir, nagios_server, max_report_age,
                  nagios_user, bruce_host, bruce_status_port, testfile, dbhost,
-                 dbport, database, database_timeout, credentials):
+                 dbport, database, database_timeout, credentials,
+                 ignore_bad_topics):
         self.Verbose = verbose
         self.WorkDir = work_dir
         self.NagiosServer = nagios_server
@@ -1105,6 +1111,7 @@ class TProgramOptions(object):
         self.Database = database
         self.DatabaseTimeout = database_timeout
         self.Credentials = credentials
+        self.IgnoreBadTopics = ignore_bad_topics
 ###############################################################################
 
 ###############################################################################
@@ -1114,11 +1121,11 @@ class TProgramOptions(object):
 ###############################################################################
 def ParseArgs(args):
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'vw:s:a:u:b:p:t:D:P:d:T:c:',
+        opts, args = getopt.getopt(sys.argv[1:], 'vw:s:a:u:b:p:t:D:P:d:T:c:g',
                 ['verbose', 'work_dir=', 'nagios_server=', 'max_report_age=',
                  'nagios_user=', 'bruce_host=', 'bruce_status_port=',
                  'testfile=', 'dbhost=', 'dbport=', 'database=',
-                 'database_timeout=', 'credentials='])
+                 'database_timeout=', 'credentials=', 'ignore_bad_topics'])
     except getopt.GetoptError as e:
         Die(EC_UNKNOWN, str(e))
 
@@ -1135,6 +1142,7 @@ def ParseArgs(args):
     opt_database = ''
     opt_database_timeout = 15
     opt_credentials = ''
+    opt_ignore_bad_topics = False
 
     for o, a in opts:
         if o in ('-v', '--verbose'):
@@ -1193,6 +1201,8 @@ def ParseArgs(args):
                     'The ' + o + ' option requires a positive integer')
         elif o in ('-c', '--credentials'):
             opt_credentials = a
+        elif o in ('-g', '--ignore_bad_topics'):
+            opt_ignore_bad_topics = True
         else:
             Die(EC_UNKNOWN, 'Unhandled command line option')
 
@@ -1216,7 +1226,7 @@ def ParseArgs(args):
                            opt_max_report_age, opt_nagios_user, opt_bruce_host,
                            opt_bruce_status_port, opt_testfile, opt_dbhost,
                            opt_dbport, opt_database, opt_database_timeout,
-                           opt_credentials)
+                           opt_credentials, opt_ignore_bad_topics)
 ###############################################################################
 
 ###############################################################################
