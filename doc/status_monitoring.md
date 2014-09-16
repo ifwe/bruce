@@ -14,9 +14,9 @@ them to parse the output using off-the-shelf JSON libraries.  Although human
 beings can read this output, the plain option is more visually compact and
 oriented toward human viewers.  For example Nagios monitoring scripts that
 report problems indicated by the JSON counter and discard output, see
-[src/bruce/scripts/bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/bruce_counters.py)
+[src/bruce/scripts/check_bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/check_bruce_counters.py)
 and
-[src/bruce/scripts/bruce_discards.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/bruce_discards.py).
+[src/bruce/scripts/check_bruce_discards.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/check_bruce_discards.py).
 The discards script also contains example code for writing discard reports to
 an Oracle database, providing a queryable history of data quality information.
 
