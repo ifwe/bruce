@@ -540,8 +540,8 @@ def ComputeCounterDeltas(old_counters, new_counters):
         return new_counter_dict
 
     old_counter_dict = CounterListToDict(old_counters)
-    old_keys = {k for k in old_counter_dict.keys()}
-    new_keys = {k for k in new_counter_dict.keys()}
+    old_keys = set(k for k in old_counter_dict.keys())
+    new_keys = set(k for k in new_counter_dict.keys())
     s = old_keys - new_keys
 
     if s:
