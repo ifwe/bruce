@@ -648,37 +648,12 @@ def AnalyzeDeltas(deltas):
     # A single instance of any of these is Critical.
     nagios_code = CheckDelta(deltas, 'MsgUnprocessedDestroy', 0, EC_CRITICAL,
                              EC_SUCCESS)
-    nagios_code = CheckDelta(deltas, 'ReceiveThreadGotDiscardAck', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardOnFailedDeliveryAttemptLimit', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'InputThreadDiscardMsgUnsupportedApiKey',
-                             0, EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'InputThreadDiscardMsgUnsupportedVersion',
-                             0, EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas,
-            'InputThreadDiscardAnyPartitionMsgUnsupportedApiVersion', 0,
-            EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas,
-            'InputThreadDiscardPartitionKeyMsgUnsupportedApiVersion', 0,
-            EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'InputThreadDiscardOldOldFormatMsgNoMem',
-                             0, EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'InputThreadDiscardMsgNoMem', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardNoAvailablePartition', 0,
-                             EC_CRITICAL, nagios_code)
     nagios_code = CheckDelta(deltas, 'NoDiscardQuery', 0, EC_CRITICAL,
                              nagios_code)
     nagios_code = CheckDelta(deltas, 'MetadataHasEmptyTopicList', 0,
                              EC_CRITICAL, nagios_code)
     nagios_code = CheckDelta(deltas, 'MetadataHasEmptyBrokerList', 0,
                              EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas,
-                             'InputThreadDiscardOldOldFormatMsgMalformed', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardLongMsg', 0, EC_CRITICAL,
-                             nagios_code)
     nagios_code = CheckDelta(deltas, 'BugDispatchBatchOutOfRangeIndex', 0,
                              EC_CRITICAL, nagios_code)
     nagios_code = CheckDelta(deltas, 'BugDispatchMsgOutOfRangeIndex', 0,
@@ -689,25 +664,8 @@ def AnalyzeDeltas(deltas):
                              nagios_code)
     nagios_code = CheckDelta(deltas, 'GetMetadataFail', 0, EC_CRITICAL,
                              nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardNoLongerAvailableTopicMsg', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardNoAvailablePartitionOnReroute', 0,
-                             EC_CRITICAL, nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardDeletedTopicMsg', 0, EC_CRITICAL,
-                             nagios_code)
-    nagios_code = CheckDelta(deltas, 'DiscardBadTopicOnReroute', 0,
-                             EC_CRITICAL, nagios_code)
-
-    nagios_code = CheckDelta(deltas, 'DiscardBadTopicMsgOnRoute', 0,
-                             EC_CRITICAL, nagios_code)
-
-    nagios_code = CheckDelta(deltas, 'InputThreadDiscardMsgMalformed', 0,
-                             EC_CRITICAL, nagios_code)
 
     # Any number of instances of any of these is Warning.
-    nagios_code = CheckDelta(deltas, 'ReceiveThreadGotDiscardAndPauseAck', 0,
-                             EC_WARNING, nagios_code)
-
     nagios_code = CheckDelta(deltas, 'MetadataResponseBadTopicNameLen', 0,
                              EC_WARNING, nagios_code)
     nagios_code = CheckDelta(deltas, 'MetadataResponseBadBrokerHostLen', 0,
