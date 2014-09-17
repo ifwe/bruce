@@ -261,7 +261,8 @@ for target_path in BUILD_TARGETS:
     # if libfoo.c #includes a header for the library being built (as specified
     # by specify_lib_headers() above) then this will cause libfoo.so to be
     # mistakenly listed as a dependency of itself.  Here we fix that problem.
-    source = remove_self_dependency(target, source)
+    if type(source) is list:
+        source = remove_self_dependency(target, source)
 
     # Add to BUILD_TARGETS all libraries that the current target depends on.
     for d in dep_libs:
