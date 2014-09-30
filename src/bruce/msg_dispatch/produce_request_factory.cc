@@ -50,6 +50,7 @@ SERVER_COUNTER(MsgSetNotCompressible);
 SERVER_COUNTER(SerializeMsg);
 SERVER_COUNTER(SerializeMsgSet);
 SERVER_COUNTER(SerializeProduceRequest);
+SERVER_COUNTER(SerializeTopicGroup);
 
 TProduceRequestFactory::TProduceRequestFactory(const TConfig &config,
     const TGlobalBatchConfig &batch_config,
@@ -136,6 +137,7 @@ TOpt<TProduceRequest> TProduceRequestFactory::BuildRequest(
     }
 
     RequestWriter->CloseTopic();
+    SerializeTopicGroup.Increment();
   }
 
   RequestWriter->CloseRequest();

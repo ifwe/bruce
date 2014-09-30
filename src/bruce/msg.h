@@ -67,11 +67,11 @@ namespace Bruce {
     };  // TState
 
     /* A timestamp for a message.  Clients include timestamps with the messages
-       they write to the input socket.  The units are client-defined and
-       unknown to bruce.  We use a signed type because many clients are likely
-       to be written in Java, Scala, or other JVM-based languages that suffer
-       from the lack of native unsigned types.  bruce uses the timestamps in
-       its discard reports. */
+       they write to the input socket.  The units are milliseconds since the
+       epoch.  We use a signed type because many clients are likely to be
+       written in Java, Scala, or other JVM-based languages that suffer from
+       the lack of native unsigned types.  Bruce uses the timestamps in its
+       discard reports. */
     using TTimestamp = int64_t;
 
     TRoutingType GetRoutingType() const {
@@ -84,7 +84,7 @@ namespace Bruce {
       return PartitionKey;
     }
 
-    /* Return the timestamp assigned to the message when it was constructed. */
+    /* Return the client's timestamp from the input datagram. */
     TTimestamp GetTimestamp() const {
       assert(this);
       return Timestamp;

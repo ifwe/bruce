@@ -161,6 +161,7 @@ TCompressionConf TCompressionConf::TBuilder::Build() {
     throw TMissingDefaultTopic();
   }
 
+  NamedConfigs.clear();
   GotSizeThresholdPercent = false;
   GotDefaultTopic = false;
   TCompressionConf result = std::move(BuildResult);

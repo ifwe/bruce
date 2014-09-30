@@ -210,6 +210,7 @@ namespace Bruce {
 
       std::shared_ptr<TMetadata> Metadata;
 
+      /* Correlation ID counter. */
       int32_t CorrIdCounter;
 
       /* Batches of messages to be combined into produce requests. */
