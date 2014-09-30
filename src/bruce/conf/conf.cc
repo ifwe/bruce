@@ -29,9 +29,11 @@
 #include <boost/lexical_cast.hpp>
 
 #include <base/no_default_case.h>
+#include <base/opt.h>
 #include <bruce/util/misc_util.h>
 #include <third_party/pugixml-1.2/src/pugixml.h>
 
+using namespace Base;
 using namespace Bruce;
 using namespace Bruce::Conf;
 using namespace Bruce::Util;
@@ -160,6 +162,7 @@ void TConf::TBuilder::Reset() {
   CompressionConfBuilder.Reset();
   GotBatchingElem = false;
   GotCompressionElem = false;
+  GotTopicRateElem = false;
   GotInitialBrokersElem = false;
 }
 
@@ -300,13 +303,13 @@ void TConf::TBuilder::ThrowIfNotLeaf(const xml_node &elem) {
 }
 
 bool TConf::TBuilder::GetUnsigned(size_t &result, const xml_node &elem,
-    const xml_attribute &attr, bool allow_k, bool use_disable_syntax) {
+    const xml_attribute &attr, bool allow_k, const char *alternate_keyword) {
   assert(this);
   size_t num = 0;
   std::string value = attr.value();
   TrimWhitespace(value);
 
-  if (use_disable_syntax && StringsMatchNoCase(value, "disable")) {
+  if (alternate_keyword && StringsMatchNoCase(value, alternate_keyword)) {
     return false;
   }
 
@@ -339,7 +342,8 @@ bool TConf::TBuilder::GetUnsigned(size_t &result, const xml_node &elem,
     }
   }
 
-  if (use_disable_syntax && (final_num == 0)) {
+  if (alternate_keyword && !std::strcmp(alternate_keyword, "disable") &&
+      (final_num == 0)) {
     ThrowOnDisableExpected(elem, attr);
   }
 
@@ -366,11 +370,11 @@ bool TConf::TBuilder::GetBool(const xml_node &elem,
 
 bool TConf::TBuilder::ProcessSingleUnsignedValueElem(size_t &result,
     const xml_node &node, const char *attr_name, bool allow_k,
-    bool use_disable_syntax) {
+    const char *alternate_keyword) {
   assert(this);
   ThrowIfNotLeaf(node);
   bool got_value = false;
-  bool enable = true;
+  bool got_alternate_keyword = false;
 
   for (xml_attribute attr = node.first_attribute();
        attr;
@@ -383,8 +387,8 @@ bool TConf::TBuilder::ProcessSingleUnsignedValueElem(size_t &result,
       ThrowOnDuplicateAttr(node, attr);
     }
 
-    if (!GetUnsigned(result, node, attr, allow_k, use_disable_syntax)) {
-      enable = false;
+    if (!GetUnsigned(result, node, attr, allow_k, alternate_keyword)) {
+      got_alternate_keyword = true;
     }
 
     got_value = true;
@@ -394,7 +398,7 @@ bool TConf::TBuilder::ProcessSingleUnsignedValueElem(size_t &result,
     ThrowOnMissingAttr(node, attr_name);
   }
 
-  return enable;
+  return !got_alternate_keyword;
 }
 
 std::string TConf::TBuilder::GetBatchingConfigName(
@@ -449,7 +453,7 @@ void TConf::TBuilder::ProcessSingleBatchingNamedConfig(
       }
 
       time_elem_enable = ProcessSingleUnsignedValueElem(time_value, node,
-          "value", false, true);
+          "value", false, "disable");
       got_time_elem = true;
     } else if (!std::strcmp(node.name(), "messages")) {
       if (got_messages_elem) {
@@ -457,7 +461,7 @@ void TConf::TBuilder::ProcessSingleBatchingNamedConfig(
       }
 
       messages_elem_enable = ProcessSingleUnsignedValueElem(messages_value,
-          node, "value", true, true);
+          node, "value", true, "disable");
       got_messages_elem = true;
     } else if (!std::strcmp(node.name(), "bytes")) {
       if (got_bytes_elem) {
@@ -465,7 +469,7 @@ void TConf::TBuilder::ProcessSingleBatchingNamedConfig(
       }
 
       bytes_elem_enable = ProcessSingleUnsignedValueElem(bytes_value, node,
-          "value", true, true);
+          "value", true, "disable");
       got_bytes_elem = true;
     } else {
       ThrowOnUnexpectedContent(node);
@@ -705,7 +709,8 @@ void TConf::TBuilder::ProcessBatchingElem(const xml_node &batching_elem) {
 
       size_t limit = 0;
 
-      if (!ProcessSingleUnsignedValueElem(limit, node, "value", true, false)) {
+      if (!ProcessSingleUnsignedValueElem(limit, node, "value", true,
+          nullptr)) {
         limit = 0;
       }
 
@@ -719,7 +724,7 @@ void TConf::TBuilder::ProcessBatchingElem(const xml_node &batching_elem) {
       size_t message_max_bytes = 0;
 
       if (!ProcessSingleUnsignedValueElem(message_max_bytes, node, "value",
-                                          true, false)) {
+                                          true, nullptr)) {
         message_max_bytes = 0;
       }
 
@@ -870,7 +875,7 @@ void TConf::TBuilder::ProcessSingleCompressionNamedConfig(
         ThrowOnDuplicateAttr(config_node, attr);
       }
 
-      GetUnsigned(min_size, config_node, attr, true, false);
+      GetUnsigned(min_size, config_node, attr, true, nullptr);
       got_min_size = true;
     } else {
       ThrowOnUnexpectedAttr(config_node, attr);
@@ -948,7 +953,7 @@ void TConf::TBuilder::ProcessCompressionElem(
 
       size_t size_threshold_percent = 0;
       ProcessSingleUnsignedValueElem(size_threshold_percent, node, "value",
-          false, false);
+          false, nullptr);
       CompressionConfBuilder.SetSizeThresholdPercent(size_threshold_percent);
       got_size_threshold_percent = true;
     } else if (!std::strcmp(node.name(), "defaultTopic")) {
@@ -972,6 +977,216 @@ void TConf::TBuilder::ProcessCompressionElem(
   }
 
   BuildResult.CompressionConf = CompressionConfBuilder.Build();
+}
+
+void TConf::TBuilder::ProcessSingleTopicRateNamedConfig(
+    const xml_node &config_node) {
+  assert(this);
+  ThrowIfNotLeaf(config_node);
+  bool got_name = false;
+  bool got_interval = false;
+  bool got_max_count = false;
+  std::string name;
+  size_t interval = 1;
+  TOpt<size_t> opt_max_count;
+
+  for (xml_attribute attr = config_node.first_attribute();
+       attr;
+       attr = attr.next_attribute()) {
+    if (!std::strcmp(attr.name(), "name")) {
+      if (got_name) {
+        ThrowOnDuplicateAttr(config_node, attr);
+      }
+
+      name = attr.value();
+      TrimWhitespace(name);
+
+      if (name.empty()) {
+        ThrowOnBadAttrValue(config_node, attr);
+      }
+
+      got_name = true;
+    } else if (!std::strcmp(attr.name(), "interval")) {
+      if (got_interval) {
+        ThrowOnDuplicateAttr(config_node, attr);
+      }
+
+      GetUnsigned(interval, config_node, attr, false, nullptr);
+      got_interval = true;
+    } else if (!std::strcmp(attr.name(), "maxCount")) {
+      if (got_max_count) {
+        ThrowOnDuplicateAttr(config_node, attr);
+      }
+
+      size_t max_count = 0;
+
+      /* A false return value from GetUnsigned() indicates that "unlimited" was
+         specified. */
+      if (GetUnsigned(max_count, config_node, attr, true, "unlimited")) {
+        opt_max_count.MakeKnown(max_count);
+      }
+
+      got_max_count = true;
+    } else {
+      ThrowOnUnexpectedAttr(config_node, attr);
+    }
+  }
+
+  if (!got_name) {
+    ThrowOnMissingAttr(config_node, "name");
+  }
+
+  if (!got_interval) {
+    ThrowOnMissingAttr(config_node, "interval");
+  }
+
+  if (!got_max_count) {
+    ThrowOnMissingAttr(config_node, "maxCount");
+  }
+
+  if (opt_max_count.IsKnown()) {
+    TopicRateConfBuilder.AddBoundedNamedConfig(name, interval, *opt_max_count);
+  } else {
+    TopicRateConfBuilder.AddUnlimitedNamedConfig(name);
+  }
+}
+
+void TConf::TBuilder::ProcessTopicRateNamedConfigs(
+    const xml_node &topic_rate_elem) {
+  assert(this);
+  bool found = false;
+
+  for (xml_node node = topic_rate_elem.first_child();
+       node;
+       node = node.next_sibling()) {
+    if (!std::strcmp(node.name(), "namedConfigs")) {
+      found = true;
+
+      for (xml_node node2 = node.next_sibling();
+           node2;
+           node2 = node2.next_sibling()) {
+        if (!std::strcmp(node2.name(), "namedConfigs")) {
+          ThrowOnDuplicateElem(node2);
+        }
+      }
+
+      for (xml_node config_node = node.first_child();
+           config_node;
+           config_node = config_node.next_sibling()) {
+        if (std::strcmp(config_node.name(), "config")) {
+          ThrowOnUnexpectedContent(config_node);
+        }
+
+        ProcessSingleTopicRateNamedConfig(config_node);
+      }
+
+      break;
+    }
+  }
+
+  if (!found) {
+    ThrowOnMissingElem(topic_rate_elem, "namedConfigs");
+  }
+}
+
+std::string TConf::TBuilder::ProcessTopicRateTopicConfig(
+    const xml_node &topic_elem, bool is_default) {
+  assert(this);
+  ThrowIfNotLeaf(topic_elem);
+  bool got_config_attr = false;
+  std::string config;
+
+  for (xml_attribute attr = topic_elem.first_attribute();
+       attr;
+       attr = attr.next_attribute()) {
+    if (!std::strcmp(attr.name(), "config")) {
+      if (got_config_attr) {
+        ThrowOnDuplicateAttr(topic_elem, attr);
+      }
+
+      config = attr.value();
+      TrimWhitespace(config);
+      got_config_attr = true;
+    } else if (is_default || std::strcmp(attr.name(), "name")) {
+      ThrowOnUnexpectedAttr(topic_elem, attr);
+    }
+  }
+
+  if (!got_config_attr) {
+    ThrowOnMissingAttr(topic_elem, "config");
+  }
+
+  return std::move(config);
+}
+
+void TConf::TBuilder::ProcessTopicRateSingleTopicConfig(const xml_node &node) {
+  assert(this);
+  std::string topic_name;
+  bool got_name = false;
+
+  for (xml_attribute attr = node.first_attribute();
+       attr;
+       attr = attr.next_attribute()) {
+    if (!std::strcmp(attr.name(), "name")) {
+      if (got_name) {
+        ThrowOnDuplicateAttr(node, attr);
+      }
+
+      topic_name = attr.value();
+      got_name = true;
+    }
+  }
+
+  std::string config_name = ProcessTopicRateTopicConfig(node, false);
+  TopicRateConfBuilder.SetTopicConfig(topic_name, config_name);
+}
+
+void TConf::TBuilder::ProcessTopicRateTopicConfigsElem(
+    const xml_node &topic_configs_elem) {
+  assert(this);
+
+  for (xml_node node = topic_configs_elem.first_child();
+       node;
+       node = node.next_sibling()) {
+    if (std::strcmp(node.name(), "topic")) {
+      ThrowOnUnexpectedContent(node);
+    }
+
+    ThrowIfNotLeaf(node);
+    ProcessTopicRateSingleTopicConfig(node);
+  }
+}
+
+void TConf::TBuilder::ProcessTopicRateElem(const xml_node &topic_rate_elem) {
+  assert(this);
+  ProcessTopicRateNamedConfigs(topic_rate_elem);
+  bool got_default_topic = false;
+  bool got_topic_configs = false;
+
+  for (xml_node node = topic_rate_elem.first_child();
+       node;
+       node = node.next_sibling()) {
+    if (!std::strcmp(node.name(), "defaultTopic")) {
+      if (got_default_topic) {
+        ThrowOnDuplicateElem(node);
+      }
+
+      std::string config_name = ProcessTopicRateTopicConfig(node, true);
+      TopicRateConfBuilder.SetDefaultTopicConfig(config_name);
+      got_default_topic = true;
+    } else if (!std::strcmp(node.name(), "topicConfigs")) {
+      if (got_topic_configs) {
+        ThrowOnDuplicateElem(node);
+      }
+
+      ProcessTopicRateTopicConfigsElem(node);
+      got_topic_configs = true;
+    } else if (std::strcmp(node.name(), "namedConfigs")) {
+      ThrowOnUnexpectedContent(node);
+    }
+  }
+
+  BuildResult.TopicRateConf = TopicRateConfBuilder.Build();
 }
 
 void TConf::TBuilder::ProcessInitialBrokersElem(
@@ -1074,6 +1289,13 @@ void TConf::TBuilder::ProcessRootElem(const xml_node &root_elem) {
 
       ProcessCompressionElem(node);
       GotCompressionElem = true;
+    } else if (!std::strcmp(node.name(), "topicRateLimiting")) {
+      if (GotTopicRateElem) {
+        ThrowOnDuplicateElem(node);
+      }
+
+      ProcessTopicRateElem(node);
+      GotTopicRateElem = true;
     } else if (!std::strcmp(node.name(), "initialBrokers")) {
       if (GotInitialBrokersElem) {
         ThrowOnDuplicateElem(node);
@@ -1092,6 +1314,14 @@ void TConf::TBuilder::ProcessRootElem(const xml_node &root_elem) {
 
   if (!GotCompressionElem) {
     ThrowOnMissingElem(root_elem, "compression");
+  }
+
+  if (!GotTopicRateElem) {
+    /* If the config file has no <topicRateLimiting> element, create a default
+       config that imposes no rate limit on any topic. */
+    TopicRateConfBuilder.AddUnlimitedNamedConfig("unlimited");
+    TopicRateConfBuilder.SetDefaultTopicConfig("unlimited");
+    BuildResult.TopicRateConf = TopicRateConfBuilder.Build();
   }
 
   if (!GotInitialBrokersElem) {

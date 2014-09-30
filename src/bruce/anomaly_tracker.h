@@ -105,6 +105,11 @@ namespace Bruce {
        map if and only if at least one anomaly has occurred for that topic. */
     using TMap = std::map<std::string, TTopicInfo>;
 
+    /* This stores per-topic counts of messages discarded due to the message
+       rate limiting mechanism.  Discards due to rate limiting are tracked both
+       here and using the above TMap mechanism. */
+    using TRateLimitMap = std::map<std::string, size_t>;
+
     /* Contains all info tracked by the anomaly tracker. */
     struct TInfo {
       private:
@@ -130,6 +135,11 @@ namespace Bruce {
 
       /* Info for possibly duplicated messages. */
       TMap DuplicateTopicMap;
+
+      /* Per-topic counts of messages discarded due to the rate limiting
+         mechanism.  Each such discard is tracked both here and in
+         'DiscardTopicMap' above. */
+      TRateLimitMap RateLimitDiscardMap;
 
       /* List of most recently discarded malformed messages.  The most recently
          seen message is at the front of the list.  For messages exceeding a

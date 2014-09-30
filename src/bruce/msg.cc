@@ -90,6 +90,7 @@ TMsg::TMsg(TRoutingType routing_type, int32_t partition_key,
     : RoutingType(routing_type),
       PartitionKey(partition_key),
       Timestamp(timestamp),
+      CreationTimestamp(GetMonotonicRawMilliseconds()),
       State(TState::New),
       FailedDeliveryAttemptCount(0),
       Topic(reinterpret_cast<const char *>(topic_begin),
@@ -97,7 +98,8 @@ TMsg::TMsg(TRoutingType routing_type, int32_t partition_key,
       Partition(0),
       ErrorAckReceived(false),
       KeyAndValue(MakeKeyAndValue(key, key_size, value, value_size, pool)),
-      KeySize(key_size), BodyTruncated(body_truncated) {
+      KeySize(key_size),
+      BodyTruncated(body_truncated) {
   assert(topic_begin);
   assert(topic_end >= topic_end);
   assert(key || (key_size == 0));

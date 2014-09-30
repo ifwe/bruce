@@ -33,6 +33,7 @@
 #include <bruce/conf/compression_conf.h>
 #include <bruce/conf/compression_type.h>
 #include <bruce/conf/conf_error.h>
+#include <bruce/conf/topic_rate_conf.h>
 #include <bruce/util/host_and_port.h>
 
 /* Third party XML parser stuff. */
@@ -78,6 +79,11 @@ namespace Bruce {
         return CompressionConf;
       }
 
+      const TTopicRateConf &GetTopicRateConf() const {
+        assert(this);
+        return TopicRateConf;
+      }
+
       const std::vector<TBroker> &GetInitialBrokers() const {
         assert(this);
         return InitialBrokers;
@@ -87,6 +93,8 @@ namespace Bruce {
       TBatchConf BatchConf;
 
       TCompressionConf CompressionConf;
+
+      TTopicRateConf TopicRateConf;
 
       std::vector<TBroker> InitialBrokers;
     };  // TConf
@@ -191,14 +199,14 @@ namespace Bruce {
 
       bool GetUnsigned(size_t &result, const pugi::xml_node &elem,
           const pugi::xml_attribute &attr, bool allow_k,
-          bool use_disable_syntax);
+          const char *alternate_keyword);
 
       bool GetBool(const pugi::xml_node &elem,
           const pugi::xml_attribute &attr);
 
       bool ProcessSingleUnsignedValueElem(size_t &result,
           const pugi::xml_node &node, const char *attr_name, bool allow_k,
-          bool use_disable_syntax);
+          const char *alternate_keyword);
 
       std::string GetBatchingConfigName(const pugi::xml_node &config_node);
 
@@ -234,6 +242,21 @@ namespace Bruce {
 
       void ProcessCompressionElem(const pugi::xml_node &compression_elem);
 
+      void ProcessSingleTopicRateNamedConfig(
+          const pugi::xml_node &config_node);
+
+      void ProcessTopicRateNamedConfigs(const pugi::xml_node &topic_rate_elem);
+
+      std::string ProcessTopicRateTopicConfig(const pugi::xml_node &topic_elem,
+          bool is_default);
+
+      void ProcessTopicRateSingleTopicConfig(const pugi::xml_node &node);
+
+      void ProcessTopicRateTopicConfigsElem(
+          const pugi::xml_node &topic_configs_elem);
+
+      void ProcessTopicRateElem(const pugi::xml_node &topic_rate_elem);
+
       void ProcessInitialBrokersElem(
           const pugi::xml_node &initial_brokers_elem);
 
@@ -255,9 +278,13 @@ namespace Bruce {
 
       TCompressionConf::TBuilder CompressionConfBuilder;
 
+      TTopicRateConf::TBuilder TopicRateConfBuilder;
+
       bool GotBatchingElem;
 
       bool GotCompressionElem;
+
+      bool GotTopicRateElem;
 
       bool GotInitialBrokersElem;
     };  // TConf::TBuilder

@@ -55,6 +55,7 @@ SERVER_COUNTER(ConnectSuccessOnTryGetMetadata);
 SERVER_COUNTER(DiscardBadTopicMsgOnRoute);
 SERVER_COUNTER(DiscardBadTopicOnReroute);
 SERVER_COUNTER(DiscardDeletedTopicMsg);
+SERVER_COUNTER(DiscardDueToRateLimit);
 SERVER_COUNTER(DiscardLongMsg);
 SERVER_COUNTER(DiscardNoAvailablePartition);
 SERVER_COUNTER(DiscardNoAvailablePartitionOnReroute);
@@ -91,6 +92,8 @@ TRouterThread::TRouterThread(const TConfig &config, const TConf &conf,
     const Debug::TDebugSetup &debug_setup,
     MsgDispatch::TKafkaDispatcherApi &dispatcher)
     : Config(config),
+      TopicRateConf(conf.GetTopicRateConf()),
+      MsgRateLimiter(TopicRateConf),
       SingleMsgOverhead(kafka_protocol.GetSingleMsgOverhead()),
       MessageMaxBytes(batch_config.GetMessageMaxBytes()),
       AnomalyTracker(anomaly_tracker),
@@ -271,10 +274,8 @@ void TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
     assert((topic_index >= 0) &&
            (static_cast<size_t>(topic_index) < topic_vec.size()));
     const TMetadata::TTopic &topic_meta = topic_vec[topic_index];
-    const std::vector<TMetadata::TPartition> &partition_vec =
-        topic_meta.GetOkPartitions();
 
-    if (partition_vec.empty()) {
+    if (topic_meta.GetOkPartitions().empty()) {
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
@@ -285,6 +286,17 @@ void TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
       Discard(std::move(msg),
               TAnomalyTracker::TDiscardReason::NoAvailablePartitions);
       DiscardNoAvailablePartition.Increment();
+    } else if (MsgRateLimiter.WouldExceedLimit(topic,
+        msg->GetCreationTimestamp())) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Discarding message due to rate limit: [%s]",
+            topic.c_str());
+      }
+
+      Discard(std::move(msg), TAnomalyTracker::TDiscardReason::RateLimit);
+      DiscardDueToRateLimit.Increment();
     }
   }
 }
@@ -1013,7 +1025,7 @@ void TRouterThread::DoRun() {
     if ((MainLoopPollArray[TMainLoopPollItem::MdUpdateRequest].revents ||
          MainLoopPollArray[TMainLoopPollItem::MdRefresh].revents) &&
         !HandleMetadataUpdate()) {
-      break;  // shutdown delay expired during matadata update
+      break;  // shutdown delay expired during metadata update
     }
 
     uint64_t now = GetEpochMilliseconds();

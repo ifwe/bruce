@@ -109,6 +109,29 @@ namespace {
         << "        </topicConfigs>" << std::endl
         << "    </compression>" << std::endl
         << std::endl
+        << "    <topicRateLimiting>" << std::endl
+        << "        <namedConfigs>" << std::endl
+        << "            <config name=\"zero\" interval=\"1\" maxCount=\"0\" />"
+        << std::endl
+        << "            <config name=\"infinity\" interval=\"1\" "
+        << "maxCount=\"unlimited\" />" << std::endl
+        << "            <config name=\"config1\" interval=\"10000\" "
+        << "maxCount=\"500\" />" << std::endl
+        << "            <config name=\"config2\" interval=\"20000\" "
+        << "maxCount=\"4k\" />" << std::endl
+        << "        </namedConfigs>" << std::endl
+        << "" << std::endl
+        << "        <defaultTopic config=\"config1\" />" << std::endl
+        << "" << std::endl
+        << "        <topicConfigs>" << std::endl
+        << "            <topic name=\"topic1\" config=\"zero\" />" << std::endl
+        << "            <topic name=\"topic2\" config=\"infinity\" />"
+        << std::endl
+        << "            <topic name=\"topic3\" config=\"config2\" />"
+        << std::endl
+        << "        </topicConfigs>" << std::endl
+        << "    </topicRateLimiting>" << std::endl
+        << std::endl
         << "    <initialBrokers>" << std::endl
         << "        <broker host=\"host1\" port=\"9092\" />" << std::endl
         << "        <broker host=\"host2\" port=\"9093\" />" << std::endl
@@ -184,6 +207,32 @@ namespace {
     ASSERT_TRUE(comp_topic_iter != compression_topic_configs.end());
     ASSERT_TRUE(comp_topic_iter->second.Type == TCompressionType::Snappy);
     ASSERT_TRUE(comp_topic_iter->second.MinSize == 2048U);
+
+    const TTopicRateConf &topic_rate_conf = conf.GetTopicRateConf();
+    const TTopicRateConf::TConf &default_topic_rate_conf =
+        topic_rate_conf.GetDefaultTopicConfig();
+    ASSERT_EQ(default_topic_rate_conf.Interval, 10000U);
+    ASSERT_TRUE(default_topic_rate_conf.MaxCount.IsKnown());
+    ASSERT_EQ(*default_topic_rate_conf.MaxCount, 500U);
+    const TTopicRateConf::TTopicMap &topic_rate_configs =
+        topic_rate_conf.GetTopicConfigs();
+    ASSERT_EQ(topic_rate_configs.size(), 3U);
+    TTopicRateConf::TTopicMap::const_iterator rate_topic_iter =
+        topic_rate_configs.find("topic1");
+    ASSERT_TRUE(rate_topic_iter != topic_rate_configs.end());
+    ASSERT_EQ(rate_topic_iter->second.Interval, 1U);
+    ASSERT_TRUE(rate_topic_iter->second.MaxCount.IsKnown());
+    ASSERT_EQ(*rate_topic_iter->second.MaxCount, 0U);
+    rate_topic_iter = topic_rate_configs.find("topic2");
+    ASSERT_TRUE(rate_topic_iter != topic_rate_configs.end());
+    ASSERT_EQ(rate_topic_iter->second.Interval, 1U);
+    ASSERT_TRUE(rate_topic_iter->second.MaxCount.IsUnknown());
+    rate_topic_iter = topic_rate_configs.find("topic3");
+    ASSERT_TRUE(rate_topic_iter != topic_rate_configs.end());
+    ASSERT_EQ(rate_topic_iter->second.Interval, 20000U);
+    ASSERT_TRUE(rate_topic_iter->second.MaxCount.IsKnown());
+    ASSERT_EQ(*rate_topic_iter->second.MaxCount, 4096U);
+
     const std::vector<TConf::TBroker> &broker_vec = conf.GetInitialBrokers();
     ASSERT_EQ(broker_vec.size(), 2U);
     ASSERT_EQ(broker_vec[0].Host, "host1");

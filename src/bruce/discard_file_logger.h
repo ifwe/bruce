@@ -59,11 +59,12 @@ namespace Bruce {
                  "Invalid discard log path");
 
     enum class TDiscardReason {
+      Bug,
       FailedDeliveryAttemptLimit,
       KafkaErrorAck,
       ServerShutdown,
       NoAvailablePartitions,
-      Bug
+      RateLimit
     };
 
     TDiscardFileLogger();

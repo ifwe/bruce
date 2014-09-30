@@ -52,6 +52,10 @@ namespace Bruce {
        milliseconds are truncated. */
     uint64_t GetEpochMilliseconds();
 
+    /* Return the number of milliseconds since some unspecified point in the
+       past.  Uses clock_gettime() with clock type of CLOCK_MONOTONIC_RAW. */
+    uint64_t GetMonotonicRawMilliseconds();
+
     class TLogRateLimiter final {
       NO_COPY_SEMANTICS(TLogRateLimiter);
 

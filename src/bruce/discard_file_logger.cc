@@ -168,6 +168,8 @@ void TDiscardFileLogger::Shutdown() {
 
 static const char *ReasonToBlurb(TDiscardFileLogger::TDiscardReason reason) {
   switch (reason) {
+    case TDiscardFileLogger::TDiscardReason::Bug:
+      break;
     case TDiscardFileLogger::TDiscardReason::FailedDeliveryAttemptLimit:
       return "DELIVERY_ATTEMPT_LIMIT";
     case TDiscardFileLogger::TDiscardReason::KafkaErrorAck:
@@ -176,8 +178,8 @@ static const char *ReasonToBlurb(TDiscardFileLogger::TDiscardReason reason) {
       return "SERVER_SHUTDOWN";
     case TDiscardFileLogger::TDiscardReason::NoAvailablePartitions:
       return "NO_AVAILABLE_PARTITIONS";
-    case TDiscardFileLogger::TDiscardReason::Bug:
-      break;
+    case TDiscardFileLogger::TDiscardReason::RateLimit:
+      return "RATE_LIMIT";
     NO_DEFAULT_CASE;
   }
 

@@ -44,6 +44,7 @@
 #include <bruce/batch/global_batch_config.h>
 #include <bruce/batch/per_topic_batcher.h>
 #include <bruce/conf/conf.h>
+#include <bruce/conf/topic_rate_conf.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_logger.h>
 #include <bruce/debug/debug_setup.h>
@@ -53,6 +54,7 @@
 #include <bruce/metadata_fetcher.h>
 #include <bruce/msg.h>
 #include <bruce/msg_dispatch/kafka_dispatcher_api.h>
+#include <bruce/msg_rate_limiter.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/router_thread_api.h>
 #include <bruce/util/bruce_rate_limiter.h>
@@ -252,6 +254,12 @@ namespace Bruce {
         bool record_update = true);
 
     const TConfig &Config;
+
+    /* Configuration for per-topic message rate limiting. */
+    Conf::TTopicRateConf TopicRateConf;
+
+    /* Limits message rates according to 'TopicRateConf'. */
+    TMsgRateLimiter MsgRateLimiter;
 
     /* Header overhead for a single message.  For checking message size. */
     const size_t SingleMsgOverhead;

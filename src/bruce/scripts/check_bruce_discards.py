@@ -448,6 +448,32 @@ def ValidateDiscardReport(report):
 
     ValidateUnicodeListItem(report, 'recent_bad_topic')
     ValidateUnicodeListItem(report, 'recent_too_long_msg')
+
+    if type(report['rate_limit_discard']) is not list:
+        Die(EC_UNKNOWN, 'Item "rate_limit_discard" in discard report ' + \
+                'is not a list')
+
+    for item in report['rate_limit_discard']:
+        if type(item) is not dict:
+            Die(EC_UNKNOWN, 'List "rate_limit_discard" in discard report ' + \
+                    'has item that is not a dictionary')
+
+        if 'topic' not in item:
+            Die(EC_UNKNOWN, 'Item of list "rate_limit_discard" in discard ' + \
+                    'report is missing version')
+
+        if type(item['topic']) is not unicode:
+            Die(EC_UNKNOWN, 'Item of list "rate_limit_discard" in discard ' + \
+                    'report has topic that is not unicode string')
+
+        if 'count' not in item:
+            Die(EC_UNKNOWN, 'Item of list "rate_limit_discard" in discard ' + \
+                    'report is missing count')
+
+        if type(item['count']) is not int:
+            Die(EC_UNKNOWN, 'Item of list "rate_limit_discard" in discard ' + \
+                    'report has noninteger count')
+
     ValidateTopicIntervalList(report, 'discard_topic')
     ValidateTopicIntervalList(report, 'possible_duplicate_topic')
 ###############################################################################

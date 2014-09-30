@@ -90,6 +90,13 @@ namespace Bruce {
       return Timestamp;
     }
 
+    /* Return our own monotonic raw timestamp that we use for per-topic message
+       rate limiting. */
+    uint64_t GetCreationTimestamp() const {
+      assert(this);
+      return CreationTimestamp;
+    }
+
     /* Accessor for the Kafka topic string. */
     const std::string &GetTopic() const {
       assert(this);
@@ -199,6 +206,17 @@ namespace Bruce {
 
     /* Message timestamp from input UNIX domain datagram. */
     const TTimestamp Timestamp;
+
+    /* This timestamp is used for per-topic message rate limiting, and is set
+       based on a call to clock_gettime() with a clock type of
+       CLOCK_MONOTONIC_RAW.  We use this clock type specifically because it is
+       unaffected by changes made to the system wall clock.  If we used
+       CLOCK_REALTIME and someone manually set the clock back, this could cause
+       large numbers of discards until the clock catches back up to its
+       previous setting.  We don't use the timestamp value provided by the
+       client's input UNIX domain datagram because we have no idea what kind of
+       clock was used to generate that timestamp. */
+    const uint64_t CreationTimestamp;
 
     /* State of message.  Destructor verifies that value is TState::Processed.
      */

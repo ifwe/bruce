@@ -75,12 +75,25 @@ void TAnomalyTracker::TrackDiscard(TMsg &msg, TDiscardReason reason) {
   assert(this);
   uint64_t now = ClockFn();
   DiscardFileLogger.LogDiscard(msg, reason);
-  std::string topic(msg.GetTopic());
+  const std::string &msg_topic = msg.GetTopic();
+  std::string topic(msg_topic);
 
   std::lock_guard<std::mutex> lock(Mutex);
   AdvanceReportPeriod(now);
   UpdateTopicMap(FillingReport->DiscardTopicMap, std::move(topic),
                  msg.GetTimestamp());
+
+  if (reason == TDiscardReason::RateLimit) {
+    TRateLimitMap &rmap = FillingReport->RateLimitDiscardMap;
+    auto iter = rmap.find(msg_topic);
+
+    if (iter == rmap.end()) {
+      /* First rate limit discard for topic in current reporting period. */
+      rmap[msg_topic] = 1;
+    } else {
+      ++iter->second;
+    }
+  }
 }
 
 void TAnomalyTracker::TrackDuplicate(const TMsg &msg) {
@@ -285,7 +298,6 @@ void TAnomalyTracker::AdvanceReportPeriod(uint64_t now) const {
       /* Still in same reporting period: nothing to do. */
       break;
     }
-
     case 1: {
       /* The reporting period has advanced by 1 since the last time this method
          was called.  FillingReport becomes LastFullReport, and we then
@@ -295,7 +307,6 @@ void TAnomalyTracker::AdvanceReportPeriod(uint64_t now) const {
                                     current_start + ReportInterval));
       break;
     }
-
     default: {
       /* The reporting period has advanced by more than 1 since the last time
          this method was called.  FillingReport gets discarded and replaced
@@ -311,7 +322,6 @@ void TAnomalyTracker::AdvanceReportPeriod(uint64_t now) const {
       FillingReport.reset(new TInfo(prev_id + 1, prev_start + ReportInterval));
       break;
     }
-
   }
 
   assert(FillingReport);

@@ -78,3 +78,9 @@ uint64_t Bruce::Util::GetEpochMilliseconds() {
   IfLt0(clock_gettime(CLOCK_REALTIME, &t));
   return (static_cast<uint64_t>(t.tv_sec) * 1000) + (t.tv_nsec / 1000000);
 }
+
+uint64_t Bruce::Util::GetMonotonicRawMilliseconds() {
+  struct timespec t;
+  IfLt0(clock_gettime(CLOCK_MONOTONIC_RAW, &t));
+  return (static_cast<uint64_t>(t.tv_sec) * 1000) + (t.tv_nsec / 1000000);
+}

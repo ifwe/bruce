@@ -511,6 +511,18 @@ void TWebRequestHandler::WriteDiscardReportCompact(std::ostream &os,
 
   first_time = true;
 
+  for (auto &x : info.RateLimitDiscardMap) {
+    if (first_time) {
+      os << std::endl;
+      first_time = false;
+    }
+
+    os << "    rate limit discard topic: " << x.first.size() << "[" << x.first
+        << "] count " << x.second << std::endl;
+  }
+
+  first_time = true;
+
   for (auto &x : info.DiscardTopicMap) {
     if (first_time) {
       os << std::endl;
@@ -643,6 +655,35 @@ void TWebRequestHandler::WriteDiscardReportJson(std::ostream &os,
       const unsigned char *msg_bytes =
           reinterpret_cast<const unsigned char *>(msg.data());
       os << ind1 << "\"" << base64_encode(msg_bytes, msg.size()) << "\"";
+      first_time = false;
+    }
+
+    if (!first_time) {
+      os << std::endl;
+    }
+  }
+
+  os << ind0 << "]," << std::endl
+      << ind0 << "\"rate_limit_discard\": [" << std::endl;
+
+  {
+    TIndent ind1(ind0);
+    bool first_time = true;
+
+    for (auto &x : info.RateLimitDiscardMap) {
+      if (!first_time) {
+        os << "," << std::endl;
+      }
+
+      os << ind1 << "{" << std::endl;
+
+      {
+        TIndent ind2(ind1);
+        os << ind2 << "\"topic\": \"" << x.first << "\"," << std::endl
+            << ind2 << "\"count\": " << x.second << std::endl;
+      }
+
+      os << ind1 << "}";
       first_time = false;
     }
 
