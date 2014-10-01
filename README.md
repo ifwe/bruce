@@ -14,6 +14,7 @@ handles the details of:
   discard reporting and status monitoring interfaces
 * Batching and compressing messages in a configurable manner for improved
   performance
+* Optional rate limiting of messages on a per-topic basis.
 
 Bruce runs on each individual host that communicates with Kafka, receiving
 messages from local clients over a UNIX domain datagram socket.  Clients write

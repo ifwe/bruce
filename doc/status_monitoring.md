@@ -145,6 +145,8 @@ current (unfinished) reporting period:
     recent bad topic: 11[bad_topic_2]
     recent bad topic: 11[bad_topic_1]
 
+    rate limit discard topic: 6[topic1] count 123
+
     discard topic: 6[topic1] begin [1408661193503] end [1408661202191] count 34176
     discard topic: 6[topic2] begin [1408661210436] end [1408661219378] count 32149
 ```
@@ -153,8 +155,17 @@ In the above example, we see that 34176 messages were discarded for valid topic
 `topic1` and 32149 messages were discarded for valid topic `topic2`.  Of the
 discards for `topic1`, the earliest timestamp was 1408661193503 and the latest
 was 1408661202191.  Likewise, the earliest and latest timestamps of discarded
-messages for `topic2` are 1408661210436 and 1408661219378.  The timestamps are
-the client-provided ones documented
+messages for `topic2` are 1408661210436 and 1408661219378.  In the case of
+`topic1`, 123 messages were discarded due to the rate limit for that topic.
+These discards are included in the 32149 total discards for `topic1`.  Stated
+differently, of the 32149 total discards for topic `topic1`, 123 were due to
+Bruce's rate limiting mechanism and the rest were due to other reasons.  Bruce
+provides an optional per-topic message rate limiting mechanism, as documented
+[here](https://github.com/tagged/bruce/blob/master/doc/design.md).  Detailed
+configuration options for this mechanism are given
+[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+
+The timestamps in the discard reports are the client-provided ones documented
 [here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats),
 and are interpreted as milliseconds since the epoch.  A total of 15 messages
 with invalid topics were received, and recently received invalid topics are

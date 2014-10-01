@@ -156,6 +156,44 @@ information provided in the above-mentioned design section.
         </topicConfigs>
     </compression>
 
+    <topicRateLimiting>
+        <namedConfigs>
+            <!-- This configuration specifies that all messages should be
+                 discarded. -->
+            <config name="zero" interval="1" maxCount="0" />
+
+            <!-- This configuration specifies no rate limit (i.e. don't discard
+                 any messages regardless of their arrival rate). -->
+            <config name="infinity" interval="1" maxCount="unlimited" />
+
+            <!-- This configuration specifies a limit of at most 1000 messages
+                 every 10000 milliseconds.  Messages that would exceed this
+                 limit are discarded. -->
+            <config name="config1" interval="10000" maxCount="1000" />
+
+            <!-- This configuration specifies a limit of at most (4 * 1024)
+                 messages every 15000 milliseconds.  Messages that would exceed
+                 this limit are discarded. -->
+            <config name="config2" interval="15000" maxCount="4k" />
+        </namedConfigs>
+
+        <!-- This specifies a default configuration for topics not listed in
+             <topicConfigs> below.  Each such topic is rate-limited
+             individually.  In other words, with this configuration, topic
+             "topic_a" would be allowed 1000 messages every 10000 milliseconds,
+             and "topic_b" would also be allowed 1000 messages every 10000
+             milliseconds. -->
+        <defaultTopic config="config1" />
+
+        <topicConfigs>
+            <!-- Rate limit configurations for individual topics go here. -->
+            <topic name="topic1" config="zero" />
+            <topic name="topic2" config="infinity" />
+            <topic name="topic3" config="config1" />
+            <topic name="topic4" config="config2" />
+        </topicConfigs>
+    </topicRateLimiting>
+
     <initialBrokers>
         <!-- When Bruce starts, it chooses a broker in this list to contact for
              metadata.  If Bruce cannot get metadata from the host it chooses,
