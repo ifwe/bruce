@@ -161,8 +161,8 @@ These discards are included in the 32149 total discards for `topic1`.  Stated
 differently, of the 32149 total discards for topic `topic1`, 123 were due to
 Bruce's rate limiting mechanism and the rest were due to other reasons.  Bruce
 provides an optional per-topic message rate limiting mechanism, as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md).  Detailed
-configuration options for this mechanism are given
+[here](https://github.com/tagged/bruce/blob/master/doc/design.md#message-rate-limiting).
+Detailed configuration information for this mechanism is given
 [here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
 
 The timestamps in the discard reports are the client-provided ones documented

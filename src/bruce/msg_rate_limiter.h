@@ -36,7 +36,7 @@ namespace Bruce {
      an unreasonably large volume of messages to some topic T.  Without rate
      limiting, this might stress the Kafka cluster to the point where it can no
      longer keep up with the message volume.  The result is likely to be
-     slowness in sending ACKs that affects many topics, causing Bruce to
+     slowness in message processing that affects many topics, causing Bruce to
      discard messages across many topics.  The goal of rate limiting is to
      contain the damage by discarding excess messages for topic T, preventing
      the Kafka cluster from becoming overwhelmed and forcing Bruce to discard

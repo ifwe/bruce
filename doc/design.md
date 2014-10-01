@@ -279,15 +279,15 @@ Bruce provides optional message rate limiting on a per-topic basis.  The
 motivation is to deal with situations in which buggy client code sends an
 unreasonably large volume of messages to some topic T. Without rate limiting,
 this might stress the Kafka cluster to the point where it can no longer keep up
-with the message volume. The result is likely to be slowness in sending ACKs
-that affects many topics, causing Bruce to discard messages across many topics.
-The goal of rate limiting is to contain the damage by discarding excess
-messages for topic T, preventing the Kafka cluster from becoming overwhelmed
-and forcing Bruce to discard messages for other topics.  To specify a rate
-limiting configuration, you provide an interval length in milliseconds and a
-maximum number of messages for a given topic that should be allowed within an
-interval of that length.  Bruce implements rate limiting by assigning its own
-internal timestamps to messages as they are created using a clock that
+with the message volume. The result is likely to be slowness in message
+processing that affects many topics, causing Bruce to discard messages across
+many topics.  The goal of rate limiting is to contain the damage by discarding
+excess messages for topic T, preventing the Kafka cluster from becoming
+overwhelmed and forcing Bruce to discard messages for other topics.  To specify
+a rate limiting configuration, you provide an interval length in milliseconds
+and a maximum number of messages for a given topic that should be allowed
+within an interval of that length.  Bruce implements rate limiting by assigning
+its own internal timestamps to messages as they are created using a clock that
 increases monotonically, and is guaranteed to be unaffected by changes made to
 the system wall clock.  Therefore there is no danger of messages being
 erroneously discarded by the rate limiting mechanism if the system clock is set
