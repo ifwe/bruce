@@ -734,6 +734,31 @@ def InsertStringRows(cur, report_id, table_spec, string_max_size, string_list):
 ###############################################################################
 
 ###############################################################################
+# Insert a set of rows into table BRUCE_RATE_LIMIT_DISCARD.  Input parameter
+# 'cur' provides a database cursor, and 'report_id' provides the discard report
+# ID, which is a foreign key into table BRUCE_DATA_QUALITY_REPORT.
+# 'topic_max_size' provides the maximum length of a topic string, and
+# 'rate_limit_discard_info_list' provides a possibly empty list of information
+# on discards due to Bruce's message rate limiting mechanism.
+###############################################################################
+def InsertRateLimitDiscardRows(cur, report_id, topic_max_size,
+                               rate_limit_discard_info_list):
+    if not rate_limit_discard_info_list:
+        return
+
+    rows = []
+
+    for item in rate_limit_discard_info_list:
+        t = (report_id, ToAscii(item['topic']), item['count'])
+        rows.append(t)
+
+    cur.setinputsizes(int, topic_max_size, int)
+    sql = 'insert into BRUCE_RATE_LIMIT_DISCARD(ID, TOPIC, MSG_COUNT) ' + \
+            'values(:1, :2, :3)'
+    cur.executemany(sql, rows)
+###############################################################################
+
+###############################################################################
 # Insert a set of rows into either table BRUCE_DISCARD_TOPIC or
 # BRUCE_POSSIBLE_DUP_TOPIC, depending on the text blurb in input parameter
 # 'table_spec', which gets incorporated into the SQL insert statement.  The
@@ -808,6 +833,10 @@ def DoPersistDiscardReport(con, cur, report):
     # Add rows to BRUCE_BAD_TOPIC table.
     InsertStringRows(cur, report_id, 'BRUCE_BAD_TOPIC(ID, TOPIC)', 100,
                      report['recent_bad_topic'])
+
+    # Add rows to BRUCE_RATE_LIMIT_DISCARD table.
+    InsertRateLimitDiscardRows(cur, report_id, 100,
+            report['rate_limit_discard'])
 
     # Add rows to BRUCE_DISCARD_TOPIC table.
     InsertTopicErrorInfoRows(cur, report_id,
