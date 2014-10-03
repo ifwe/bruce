@@ -39,6 +39,22 @@ namespace Bruce {
     NO_COPY_SEMANTICS(TMetadataFetcher);
 
     public:
+    /* RAII convenience class for disconnecting. */
+    class TDisconnecter final {
+      NO_COPY_SEMANTICS(TDisconnecter);
+
+      public:
+      explicit TDisconnecter(TMetadataFetcher &fetcher)
+          : Fetcher(fetcher) {
+      }
+
+      ~TDisconnecter() noexcept {
+        Fetcher.Disconnect();
+      }
+
+      TMetadataFetcher &Fetcher;
+    };  // TDisconnecter
+
     explicit TMetadataFetcher(
         const KafkaProto::TWireProtocol &kafka_protocol);
 
@@ -51,7 +67,7 @@ namespace Bruce {
       return Connect(host_name.c_str(), port);
     }
 
-    void Disconnect() {
+    void Disconnect() noexcept {
       assert(this);
       Sock.Reset();
     }
@@ -61,8 +77,26 @@ namespace Bruce {
        milliseconds.  A negative timeout value means "infinite timeout". */
     std::unique_ptr<TMetadata> Fetch(int timeout_ms = -1);
 
+    enum class TTopicAutocreateResult {
+      /* Topic was successfully created. */
+      Success,
+
+      /* Topic creation failed.  Give up. */
+      Fail,
+      
+      /* Topic creation failed due to communication error.  Try again with
+         different broker. */
+      TryOtherBroker
+    };  // TTopicAutocreateResult
+
+    /* Attempt to create a new Kafka topic.  For this to work, the brokers must
+       be configured with auto.create.topics.enable=true.  To request creation
+       of a new topic, we send a single topic metadata request for the topic we
+       wish to create. */
+    TTopicAutocreateResult TopicAutocreate(const char *topic, int timeout_ms);
+
     private:
-    bool SendRequest(int timeout_ms);
+    bool SendRequest(const std::vector<uint8_t> &request, int timeout_ms);
 
     bool ReadResponse(int timeout_ms);
 

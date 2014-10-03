@@ -254,6 +254,9 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "size in bytes to write to discard report", false,
         config.DiscardReportBadMsgPrefixSize, "MAX_BYTES");
     cmd.add(arg_discard_report_bad_msg_prefix_size);
+    SwitchArg arg_topic_autocreate("", "topic_autocreate", "Enable support "
+        "for automatic topic creation.  The Kafka brokers must also be "
+        "configured to support this.", cmd, config.TopicAutocreate);
     SwitchArg arg_use_old_input_format("", "use_old_input_format", "Expect "
         "input UNIX datagrams to adhere to old format.  Do not use this "
         "option, since it will soon be removed.  Its purpose is to provide "
@@ -304,6 +307,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         arg_discard_log_bad_msg_prefix_size.getValue();
     config.DiscardReportBadMsgPrefixSize =
         arg_discard_report_bad_msg_prefix_size.getValue();
+    config.TopicAutocreate = arg_topic_autocreate.getValue();
     config.UseOldInputFormat = arg_use_old_input_format.getValue();
     config.UseOldOutputFormat = arg_use_old_output_format.getValue();
   } catch (const ArgException &x) {
@@ -340,6 +344,7 @@ TConfig::TConfig(int argc, char *argv[])
       DiscardLogMaxArchiveSize(8 * 1024),
       DiscardLogBadMsgPrefixSize(256),
       DiscardReportBadMsgPrefixSize(256),
+      TopicAutocreate(false),
       UseOldInputFormat(false),
       UseOldOutputFormat(false) {
   ParseArgs(argc, argv, *this);
@@ -413,6 +418,9 @@ void Bruce::LogConfig(const TConfig &config) {
 
   syslog(LOG_NOTICE, "Discard report bad msg prefix size: %lu bytes",
          static_cast<unsigned long>(config.DiscardReportBadMsgPrefixSize));
+  syslog(LOG_NOTICE, config.TopicAutocreate ?
+         "Automatic topic creation enabled" :
+         "Automatic topic creation disabled");
   syslog(LOG_NOTICE, "Using %s input datagram format",
          config.UseOldInputFormat ? "old" : "new");
   syslog(LOG_NOTICE, "Using %s output format",

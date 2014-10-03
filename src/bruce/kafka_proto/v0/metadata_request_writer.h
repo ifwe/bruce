@@ -76,6 +76,10 @@ namespace Bruce {
             struct iovec &body_iov, void *header_buf, const char *topic_begin,
             const char *topic_end, int32_t correlation_id);
 
+        void WriteSingleTopicRequest(std::vector<uint8_t> &result,
+            const char *topic_begin, const char *topic_end,
+            int32_t correlation_id);
+
         /* An all topics request requires 1 iovec structure, given by parameter
            'iov'.  'header_buf' points to a caller-supplied buffer with space
            for the number of bytes returned by static method

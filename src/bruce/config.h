@@ -97,6 +97,8 @@ namespace Bruce {
 
     size_t DiscardReportBadMsgPrefixSize;
 
+    bool TopicAutocreate;
+
     bool UseOldInputFormat;
 
     bool UseOldOutputFormat;

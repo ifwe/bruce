@@ -131,7 +131,24 @@ namespace Bruce {
     void Discard(std::list<std::list<TMsg::TPtr>> &&batch_list,
         TAnomalyTracker::TDiscardReason reason);
 
-    void ValidateNewMsg(TMsg::TPtr &msg);
+    bool UpdateMetadataAfterTopicAutocreate(const std::string &topic);
+
+    /* A false return value indicates that we started a metadata fetch after
+       successful automatic topic creation, and the shutdown delay expired
+       during metadata fetch.  Therefore we should terminate execution.  A true
+       return value means "keep executing".  In the above-mentioned case where
+       false is returned, or in case of topic autocreate failure, 'msg' will be
+       discarded, and empty on return.  Otherwise 'msg' retains its
+       contents. */
+    bool AutocreateTopic(TMsg::TPtr &msg);
+
+    /* A false return value indicates that we started a metadata fetch due to
+       automatic topic creation, and the shutdown delay expired during metadata
+       fetch.  Therefore we should terminate execution.  A true return value
+       means "keep executing".  In the above-mentioned case where false is
+       returned, or in case of validation failure, 'msg' will be discarded and
+       empty on return.  Otherwise 'msg' retains its contents. */
+    bool ValidateNewMsg(TMsg::TPtr &msg);
 
     void ValidateBeforeReroute(std::list<TMsg::TPtr> &msg_list);
 
@@ -203,6 +220,14 @@ namespace Bruce {
     std::list<std::list<TMsg::TPtr>> EmptyDispatcher();
 
     bool RespondToPause();
+
+    void DiscardOnShutdownDuringMetadataUpdate(TMsg::TPtr &&msg);
+
+    void DiscardOnShutdownDuringMetadataUpdate(
+        std::list<TMsg::TPtr> &&msg_list);
+
+    void DiscardOnShutdownDuringMetadataUpdate(
+        std::list<std::list<TMsg::TPtr>> &&batch_list);
 
     bool HandleMetadataUpdate();
 

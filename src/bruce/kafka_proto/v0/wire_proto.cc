@@ -37,12 +37,14 @@
 #include <bruce/kafka_proto/v0/produce_response_reader.h>
 #include <bruce/kafka_proto/v0/protocol_util.h>
 #include <bruce/metadata.h>
+#include <bruce/util/time_util.h>
 #include <server/counter.h>
 
 using namespace Bruce;
 using namespace Bruce::Conf;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::KafkaProto::V0;
+using namespace Bruce::Util;
 
 SERVER_COUNTER(AckErrorBrokerNotAvailable);
 SERVER_COUNTER(AckErrorInvalidMessage);
@@ -59,6 +61,10 @@ SERVER_COUNTER(AckErrorStaleControllerEpochCode);
 SERVER_COUNTER(AckErrorUndocumented);
 SERVER_COUNTER(AckErrorUnknown);
 SERVER_COUNTER(AckErrorUnknownTopicOrPartition);
+SERVER_COUNTER(TopicAutocreateGotErrorResponse);
+SERVER_COUNTER(TopicAutocreateNoTopicInResponse);
+SERVER_COUNTER(TopicAutocreateSuccess);
+SERVER_COUNTER(TopicAutocreateUnexpectedTopicInResponse);
 
 TProduceRequestWriterApi *
 TWireProto::CreateProduceRequestWriter() const {
@@ -180,6 +186,12 @@ void TWireProto::WriteMetadataRequest(std::vector<uint8_t> &result,
   TMetadataRequestWriter().WriteAllTopicsRequest(result, correlation_id);
 }
 
+void TWireProto::WriteSingleTopicMetadataRequest(std::vector<uint8_t> &result,
+    const char *topic, int32_t correlation_id) const {
+  TMetadataRequestWriter().WriteSingleTopicRequest(result, topic,
+      topic + std::strlen(topic), correlation_id);
+}
+
 std::unique_ptr<TMetadata>
 TWireProto::BuildMetadataFromResponse(const void *response_buf,
     size_t response_buf_size) const {
@@ -221,6 +233,56 @@ TWireProto::BuildMetadataFromResponse(const void *response_buf,
   }
 
   return std::unique_ptr<TMetadata>(builder.Build());
+}
+
+bool TWireProto::TopicAutocreateWasSuccessful(const char *topic,
+    const void *response_buf, size_t response_buf_size) const {
+  assert(this);
+  TMetadataResponseReader reader(response_buf, response_buf_size);
+
+  if (!reader.NextTopic()) {
+    TopicAutocreateNoTopicInResponse.Increment();
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Autocreate for topic [%s] failed: no topic in metadata "
+             "response", topic);
+    }
+
+    return false;
+  }
+
+  std::string response_topic(reader.GetCurrentTopicNameBegin(),
+      reader.GetCurrentTopicNameEnd());
+
+  if (response_topic != topic) {
+    TopicAutocreateUnexpectedTopicInResponse.Increment();
+    syslog(LOG_ERR, "Autocreate for topic [%s] failed: unexpected topic [%s] "
+           "in metadata response", topic, response_topic.c_str());
+    return false;
+  }
+
+  int16_t error_code = reader.GetCurrentTopicErrorCode();
+
+  /* An error code of 5 means "leader not available", which is what we expect
+     to see when the topic was successfully created.  An error code of 0 (no
+     error) probably indicates that the topic was already created by some other
+     Kafka client (perhaps a Bruce instance running on some other host) since
+     we last updated our metadata. */
+  if ((error_code != 0) && (error_code != 5)) {
+    TopicAutocreateGotErrorResponse.Increment();
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Autocreate for topic [%s] failed: got error code %d",
+             topic, static_cast<int>(error_code));
+    }
+
+    return false;
+  }
+
+  TopicAutocreateSuccess.Increment();
+  return true;
 }
 
 int16_t TWireProto::GetRequiredAcks() const {

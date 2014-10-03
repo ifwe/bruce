@@ -58,12 +58,12 @@ namespace Base {
     public:
 
     /* Default-construct as an illegal value (-1). */
-    TFd()
+    TFd() noexcept
         : OsHandle(-1) {
     }
 
     /* Move-construct, leaving the donor in the default-constructed state. */
-    TFd(TFd &&that) {
+    TFd(TFd &&that) noexcept {
       assert(&that);
       OsHandle = that.OsHandle;
       that.OsHandle = -1;
@@ -88,7 +88,7 @@ namespace Base {
 
     /* Close the file descriptor we own, if any.  If the descriptor is in the
        stdio range (0-2), then don't close it. */
-    ~TFd() {
+    ~TFd() noexcept {
       assert(this);
 
       if (OsHandle >= 3) {
@@ -97,7 +97,7 @@ namespace Base {
     }
 
     /* Swaperator. */
-    TFd &operator=(TFd &&that) {
+    TFd &operator=(TFd &&that) noexcept {
       assert(this);
       assert(&that);
       std::swap(OsHandle, that.OsHandle);
@@ -122,13 +122,13 @@ namespace Base {
     }
 
     /* Returns the naked file descriptor, which may be -1. */
-    operator int() const {
+    operator int() const noexcept {
       assert(this);
       return OsHandle;
     }
 
     /* True iff. this handle is open. */
-    bool IsOpen() const {
+    bool IsOpen() const noexcept {
       assert(this);
       return OsHandle >= 0;
     }
@@ -141,7 +141,7 @@ namespace Base {
     /* Returns the naked file desciptor, which may be -1, and returns to the
        default-constructed state.  This is how to get the naked file desciptor
        away from the object without the object attempting to close it. */
-    int Release() {
+    int Release() noexcept {
       assert(this);
       int result = OsHandle;
       OsHandle = -1;
@@ -149,7 +149,7 @@ namespace Base {
     }
 
     /* Return to the default-constructed state. */
-    TFd &Reset() {
+    TFd &Reset() noexcept {
       assert(this);
       return *this = TFd();
     }
@@ -180,7 +180,7 @@ namespace Base {
     enum TNoThrow { NoThrow };
 
     /* Constuctor used by Pipe() and SocketPair(). */
-    TFd(int os_handle, TNoThrow)
+    TFd(int os_handle, TNoThrow) noexcept
         : OsHandle(os_handle) {}
 
     /* The naked file descriptor we wrap.  This can be -1. */
@@ -191,4 +191,3 @@ namespace Base {
   extern const TFd In, Out, Err;
 
 }  // Base
-

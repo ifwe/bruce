@@ -68,9 +68,16 @@ namespace Bruce {
         virtual void WriteMetadataRequest(std::vector<uint8_t> &result,
             int32_t correlation_id) const override;
 
+        virtual void WriteSingleTopicMetadataRequest(
+            std::vector<uint8_t> &result, const char *topic,
+            int32_t correlation_id) const override;
+
         virtual std::unique_ptr<TMetadata>
         BuildMetadataFromResponse(const void *response_buf,
             size_t response_buf_size) const override;
+
+        virtual bool TopicAutocreateWasSuccessful(const char *topic,
+            const void *response_buf, size_t response_buf_size) const override;
 
         virtual int16_t GetRequiredAcks() const override;
 

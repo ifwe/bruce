@@ -22,6 +22,7 @@
 #include <bruce/kafka_proto/v0/metadata_request_writer.h>
 
 #include <cassert>
+#include <cstring>
 #include <limits>
 
 #include <base/field_access.h>
@@ -35,14 +36,25 @@ void TMetadataRequestWriter::WriteSingleTopicRequest(struct iovec &header_iov,
   assert(this);
   assert(header_buf);
   assert(topic_begin);
-  assert(topic_end);
-  assert(topic_end >= topic_begin);
+  assert(topic_end > topic_begin);
   header_iov.iov_base = header_buf;
   header_iov.iov_len = NUM_SINGLE_TOPIC_HEADER_BYTES;
   body_iov.iov_base = const_cast<char *>(topic_begin);
   size_t topic_size = topic_end - topic_begin;
   body_iov.iov_len = topic_size;
   WriteHeader(header_buf, topic_size, correlation_id);
+}
+
+void TMetadataRequestWriter::WriteSingleTopicRequest(
+    std::vector<uint8_t> &result, const char *topic_begin,
+    const char *topic_end, int32_t correlation_id) {
+  assert(this);
+  assert(topic_begin);
+  assert(topic_end > topic_begin);
+  size_t topic_size = topic_end - topic_begin;
+  result.resize(NUM_SINGLE_TOPIC_HEADER_BYTES + topic_size);
+  WriteHeader(&result[0], topic_size, correlation_id);
+  std::memcpy(&result[NUM_SINGLE_TOPIC_HEADER_BYTES], topic_begin, topic_size);
 }
 
 void TMetadataRequestWriter::WriteAllTopicsRequest(struct iovec &iov,

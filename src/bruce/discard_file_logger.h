@@ -64,7 +64,8 @@ namespace Bruce {
       KafkaErrorAck,
       ServerShutdown,
       NoAvailablePartitions,
-      RateLimit
+      RateLimit,
+      FailedTopicAutocreate
     };
 
     TDiscardFileLogger();

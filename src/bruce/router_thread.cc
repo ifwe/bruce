@@ -33,6 +33,7 @@
 
 #include <base/gettid.h>
 #include <base/io_utils.h>
+#include <base/no_default_case.h>
 #include <bruce/util/connect_to_host.h>
 #include <bruce/util/system_error_codes.h>
 #include <bruce/util/time_util.h>
@@ -50,7 +51,9 @@ using namespace Bruce::MsgDispatch;
 using namespace Bruce::Util;
 
 SERVER_COUNTER(BatchExpiryDetected);
+SERVER_COUNTER(ConnectFailOnTopicAutocreate);
 SERVER_COUNTER(ConnectFailOnTryGetMetadata);
+SERVER_COUNTER(ConnectSuccessOnTopicAutocreate);
 SERVER_COUNTER(ConnectSuccessOnTryGetMetadata);
 SERVER_COUNTER(DiscardBadTopicMsgOnRoute);
 SERVER_COUNTER(DiscardBadTopicOnReroute);
@@ -60,6 +63,7 @@ SERVER_COUNTER(DiscardLongMsg);
 SERVER_COUNTER(DiscardNoAvailablePartition);
 SERVER_COUNTER(DiscardNoAvailablePartitionOnReroute);
 SERVER_COUNTER(DiscardNoLongerAvailableTopicMsg);
+SERVER_COUNTER(DiscardOnTopicAutocreateFail);
 SERVER_COUNTER(FinishRefreshMetadata);
 SERVER_COUNTER(GetMetadataFail);
 SERVER_COUNTER(GetMetadataSuccess);
@@ -227,30 +231,158 @@ void TRouterThread::Discard(std::list<std::list<TMsg::TPtr>> &&batch_list,
   MsgStateTracker.MsgEnterProcessed(to_discard);
 }
 
-/* On return, if validaton succeeded, 'msg' will remain nonempty.  If
-   validation failed, then the message will have been discarded and 'msg' will
-   be empty. */
-void TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
+bool TRouterThread::UpdateMetadataAfterTopicAutocreate(
+    const std::string &topic) {
+  assert(this);
+  size_t sleep_ms = 3000;
+  static const size_t NUM_ATTEMPTS = 3;
+
+  /* Wait a few seconds, and then update our metadata.  If metadata does not
+     yet show the new topic, wait a bit longer and try again.  If new topic
+     still does not appear after a few iterations of this, then give up. */
+  for (size_t i = 0; ; ) {
+    SleepMilliseconds(sleep_ms);
+
+    if (!HandleMetadataUpdate()) {
+      /* Shutdown delay expired during metadata update. */
+      return false;
+    }
+
+    if (Metadata->FindTopicIndex(topic) >= 0) {
+      /* Success: topic appears in new metadata */
+      return true;
+    }
+
+    if (++i == NUM_ATTEMPTS) {
+      break;
+    }
+
+    sleep_ms *= 2;
+    syslog(LOG_INFO, "Newly created topic [%s] does not yet appear in "
+           "metadata: will fetch metadata again in %d milliseconds",
+           topic.c_str(), static_cast<int>(sleep_ms));
+  }
+
+  syslog(LOG_WARNING, "Newly created topic [%s] does not appear in metadata "
+         "after %d updates", topic.c_str(), static_cast<int>(NUM_ATTEMPTS));
+  return true;  // keep running
+}
+
+bool TRouterThread::AutocreateTopic(TMsg::TPtr &msg) {
+  assert(this);
+  assert(!KnownBrokers.empty());
+  assert(msg);
+  const std::string &topic = msg->GetTopic();
+  TMetadataFetcher::TDisconnecter disconnecter(MetadataFetcher);
+  size_t chosen = std::rand() % KnownBrokers.size();
+  bool fail = false;
+
+  for (size_t i = 0;
+       i < KnownBrokers.size();
+       chosen = ((chosen + 1) % KnownBrokers.size()), ++i) {
+    const TKafkaBroker &broker = KnownBrokers[chosen];
+    syslog(LOG_INFO, "Router thread sending autocreate request for topic [%s] "
+           "to broker %s port %d", topic.c_str(), broker.Host.c_str(),
+           static_cast<int>(broker.Port));
+
+    if (!MetadataFetcher.Connect(broker.Host, broker.Port)) {
+      ConnectFailOnTopicAutocreate.Increment();
+      syslog(LOG_ERR, "Router thread failed to connect to broker for topic "
+             "autocreate");
+      continue;
+    }
+
+    ConnectSuccessOnTopicAutocreate.Increment();
+
+    switch (MetadataFetcher.TopicAutocreate(topic.c_str(),
+        Config.KafkaSocketTimeout * 1000)) {
+      case TMetadataFetcher::TTopicAutocreateResult::Success: {
+        syslog(LOG_NOTICE, "Automatic creation of topic [%s] was successful: "
+               "updating metadata", topic.c_str());
+
+        /* Update metadata so it shows the newly created topic. */
+        bool keep_running = UpdateMetadataAfterTopicAutocreate(topic);
+
+        if (!keep_running) {
+          /* Shutdown delay expired during metadata update. */
+          DiscardOnShutdownDuringMetadataUpdate(std::move(msg));
+        }
+
+        return keep_running;
+      }
+      case TMetadataFetcher::TTopicAutocreateResult::Fail: {
+        fail = true;
+        break;
+      }
+      case TMetadataFetcher::TTopicAutocreateResult::TryOtherBroker: {
+        break;
+      }
+      NO_DEFAULT_CASE;
+    }
+
+    if (fail) {
+      break;
+    }
+
+    /* Try next broker. */
+    syslog(LOG_ERR, "Router thread did not get valid topic autocreate "
+           "response from broker");
+  }
+
+  static TLogRateLimiter lim(std::chrono::seconds(30));
+
+  if (lim.Test()) {
+    syslog(LOG_ERR, "Discarding message because topic autocreate failed: [%s]",
+           topic.c_str());
+  }
+
+  Discard(std::move(msg),
+          TAnomalyTracker::TDiscardReason::FailedTopicAutocreate);
+  DiscardOnTopicAutocreateFail.Increment();
+  return true;
+}
+
+bool TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
   assert(this);
   assert(Metadata);
   const std::string &topic = msg->GetTopic();
   int topic_index = Metadata->FindTopicIndex(topic);
 
   if (topic_index < 0) {
-    static TLogRateLimiter lim(std::chrono::seconds(30));
+    if (Config.TopicAutocreate) {
+      if (!AutocreateTopic(msg)) {
+        /* Shutdown delay expired during metadata update. */
+        assert(!msg);
+        return false;
+      }
 
-    if (lim.Test()) {
-      syslog(LOG_ERR, "Discarding message due to unknown topic: [%s]",
-             topic.c_str());
+      /* On successful topic autocreate, the message will still exist.  On
+         failure, it will have been discarded. */
+      if (!msg) {
+        return true;
+      }
+
+      topic_index = Metadata->FindTopicIndex(topic);
     }
 
-    AnomalyTracker.TrackBadTopicDiscard(msg);
-    MsgStateTracker.MsgEnterProcessed(*msg);
-    DiscardBadTopicMsgOnRoute.Increment();
-    msg.reset();
-  } else if (msg->BodyIsTruncated() ||
-             ((msg->GetKeyAndValue().Size() + SingleMsgOverhead) >
-              MessageMaxBytes)) {
+    if (topic_index < 0) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Discarding message due to unknown topic: [%s]",
+               topic.c_str());
+      }
+
+      AnomalyTracker.TrackBadTopicDiscard(msg);
+      MsgStateTracker.MsgEnterProcessed(*msg);
+      DiscardBadTopicMsgOnRoute.Increment();
+      msg.reset();
+      return true;
+    }
+  }
+
+  if (msg->BodyIsTruncated() ||
+      ((msg->GetKeyAndValue().Size() + SingleMsgOverhead) > MessageMaxBytes)) {
     /* Check for truncation _after_ checking for topic existence.  If the topic
        doesn't exist, we treat it as a bad topic discard even if the message is
        also too long.  Perform this check _before_ assigning a partition so we
@@ -299,6 +431,8 @@ void TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
       DiscardDueToRateLimit.Increment();
     }
   }
+
+  return true;
 }
 
 void TRouterThread::ValidateBeforeReroute(std::list<TMsg::TPtr> &msg_list) {
@@ -599,8 +733,14 @@ void TRouterThread::RouteFinalMsgs() {
   /* Get any remaining queued messages from the input thread. */
   std::list<TMsg::TPtr> msg_list = MsgChannel.NonblockingGet();
 
+  bool keep_running = true;
+
   for (TMsg::TPtr &msg : msg_list) {
-    ValidateNewMsg(msg);
+    keep_running = ValidateNewMsg(msg);
+
+    if (!keep_running) {
+      break;
+    }
 
     if (msg) {
       DebugLogger.LogMsg(msg);
@@ -608,6 +748,17 @@ void TRouterThread::RouteFinalMsgs() {
     }
 
     assert(!msg);
+  }
+
+  if (!keep_running) {
+    /* The shutdown timeout expired while we were updating metadata after
+       automatic topic creation.  Discard all remaining messages before we shut
+       down. */
+    for (TMsg::TPtr &msg : msg_list) {
+      if (msg) {
+        DiscardOnShutdownDuringMetadataUpdate(std::move(msg));
+      }
+    }
   }
 }
 
@@ -860,6 +1011,39 @@ bool TRouterThread::RespondToPause() {
   return true;
 }
 
+void TRouterThread::DiscardOnShutdownDuringMetadataUpdate(TMsg::TPtr &&msg) {
+  assert(this);
+  static TLogRateLimiter lim(std::chrono::seconds(30));
+
+  if (lim.Test()) {
+    syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
+           "shutdown delay expiration during metadata update",
+    msg->GetTopic().c_str());
+  }
+
+  Discard(std::move(msg), TAnomalyTracker::TDiscardReason::ServerShutdown);
+}
+
+void TRouterThread::DiscardOnShutdownDuringMetadataUpdate(
+    std::list<TMsg::TPtr> &&msg_list) {
+  assert(this);
+  std::list<TMsg::TPtr> to_discard(std::move(msg_list));
+
+  for (TMsg::TPtr &msg : to_discard) {
+    DiscardOnShutdownDuringMetadataUpdate(std::move(msg));
+  }
+}
+
+void TRouterThread::DiscardOnShutdownDuringMetadataUpdate(
+    std::list<std::list<TMsg::TPtr>> &&batch_list) {
+  assert(this);
+  std::list<std::list<TMsg::TPtr>> to_discard(std::move(batch_list));
+
+  for (std::list<TMsg::TPtr> &batch : to_discard) {
+    DiscardOnShutdownDuringMetadataUpdate(std::move(batch));
+  }
+}
+
 bool TRouterThread::HandleMetadataUpdate() {
   assert(this);
 
@@ -870,31 +1054,17 @@ bool TRouterThread::HandleMetadataUpdate() {
   }
 
   StartRefreshMetadata.Increment();
+  bool keep_running = true;
 
   if (!RefreshMetadata()) {
     /* Shutdown delay expired while getting metadata.  The dispatcher is
        already shut down, so we are finished. */
-
-    std::list<std::list<TMsg::TPtr>> to_discard = EmptyDispatcher();
-
-    for (const std::list<TMsg::TPtr> &msg_list : to_discard) {
-      assert(!msg_list.empty());
-      static TLogRateLimiter lim(std::chrono::seconds(30));
-
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
-               "shutdown delay expiration during metadata update",
-        msg_list.front()->GetTopic().c_str());
-      }
-    }
-
-    Discard(std::move(to_discard),
-            TAnomalyTracker::TDiscardReason::ServerShutdown);
-    return false;
+    DiscardOnShutdownDuringMetadataUpdate(EmptyDispatcher());
+    keep_running = false;
   }
 
   FinishRefreshMetadata.Increment();
-  return true;
+  return keep_running;
 }
 
 void TRouterThread::ContinueShutdown() {
@@ -1040,6 +1210,8 @@ void TRouterThread::DoRun() {
     }
   }
 
+  Discard(PerTopicBatcher.GetAllBatches(),
+          TAnomalyTracker::TDiscardReason::ServerShutdown);
   ShutdownStatus = TShutdownStatus::Normal;
 }
 
@@ -1090,13 +1262,18 @@ void TRouterThread::HandleMsgAvailable(uint64_t now) {
   std::list<std::list<TMsg::TPtr>> ready_batches;
   std::list<TMsg::TPtr> msg_list = MsgChannel.Get();
   std::list<TMsg::TPtr> remaining;
+  bool keep_running = true;
 
   for (auto iter = msg_list.begin(), next = iter;
        iter != msg_list.end();
        iter = next) {
     ++next;
     TMsg::TPtr &msg = *iter;
-    ValidateNewMsg(msg);
+    keep_running = ValidateNewMsg(msg);
+
+    if (!keep_running) {
+      break;
+    }
 
     if (!msg) {
       continue;
@@ -1129,10 +1306,23 @@ void TRouterThread::HandleMsgAvailable(uint64_t now) {
     }
   }
 
-  RouteAnyPartitionNow(std::move(ready_batches));
+  if (keep_running) {
+    RouteAnyPartitionNow(std::move(ready_batches));
 
-  for (TMsg::TPtr &msg : remaining) {
-    Route(std::move(msg));
+    for (TMsg::TPtr &msg : remaining) {
+      Route(std::move(msg));
+    }
+  } else {
+    /* Shutdown delay expired while fetching metadata due to topic autocreate.
+       Discard all remaining messages. */
+    for (TMsg::TPtr &msg : msg_list) {
+      if (msg) {
+        DiscardOnShutdownDuringMetadataUpdate(std::move(msg));
+      }
+    }
+
+    DiscardOnShutdownDuringMetadataUpdate(std::move(remaining));
+    DiscardOnShutdownDuringMetadataUpdate(std::move(ready_batches));
   }
 }
 
@@ -1208,19 +1398,7 @@ void TRouterThread::UpdateKnownBrokers(const TMetadata &md) {
 std::shared_ptr<TMetadata> TRouterThread::TryGetMetadata() {
   assert(this);
   assert(!KnownBrokers.empty());
-
-  struct t_disconnecter final {
-    explicit t_disconnecter(TMetadataFetcher &fetcher)
-        : Fetcher(fetcher) {
-    }
-
-    ~t_disconnecter() noexcept {
-      Fetcher.Disconnect();
-    }
-
-    TMetadataFetcher &Fetcher;
-  } disconnecter(MetadataFetcher);
-
+  TMetadataFetcher::TDisconnecter disconnecter(MetadataFetcher);
   size_t chosen = std::rand() % KnownBrokers.size();
   std::shared_ptr<TMetadata> result;
 

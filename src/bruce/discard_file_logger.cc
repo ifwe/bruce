@@ -180,6 +180,8 @@ static const char *ReasonToBlurb(TDiscardFileLogger::TDiscardReason reason) {
       return "NO_AVAILABLE_PARTITIONS";
     case TDiscardFileLogger::TDiscardReason::RateLimit:
       return "RATE_LIMIT";
+    case TDiscardFileLogger::TDiscardReason::FailedTopicAutocreate:
+      return "TOPIC_AUTOCREATE_FAIL";
     NO_DEFAULT_CASE;
   }
 

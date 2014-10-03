@@ -101,7 +101,7 @@ std::unique_ptr<TMetadata> TMetadataFetcher::Fetch(int timeout_ms) {
 
   std::unique_ptr<TMetadata> result;
 
-  if (!SendRequest(timeout_ms) || !ReadResponse(timeout_ms)) {
+  if (!SendRequest(MetadataRequest, timeout_ms) || !ReadResponse(timeout_ms)) {
     return std::move(result);
   }
 
@@ -141,13 +141,43 @@ std::unique_ptr<TMetadata> TMetadataFetcher::Fetch(int timeout_ms) {
   return std::move(result);
 }
 
-bool TMetadataFetcher::SendRequest(int timeout_ms) {
+TMetadataFetcher::TTopicAutocreateResult
+TMetadataFetcher::TopicAutocreate(const char *topic, int timeout_ms) {
+  assert(this);
+
+  if (!Sock.IsOpen()) {
+    throw std::logic_error("Must connect to host before getting metadata");
+  }
+
+  std::vector<uint8_t> request;
+  KafkaProtocol.WriteSingleTopicMetadataRequest(request, topic, 0);
+
+  if (!SendRequest(request, timeout_ms) || !ReadResponse(timeout_ms)) {
+    return TTopicAutocreateResult::TryOtherBroker;
+  }
+
+  bool success = false;
+
+  try {
+    success = KafkaProtocol.TopicAutocreateWasSuccessful(topic,
+        &ResponseBuf[0], ResponseBuf.size());
+  } catch (const TWireProtocol::TBadMetadataResponse &x) {
+    BadMetadataResponse.Increment();
+    syslog(LOG_ERR, "Failed to parse metadata response: %s", x.what());
+    return TTopicAutocreateResult::TryOtherBroker;
+  }
+
+  return success ? TTopicAutocreateResult::Success :
+                   TTopicAutocreateResult::Fail;
+}
+
+bool TMetadataFetcher::SendRequest(const std::vector<uint8_t> &request,
+    int timeout_ms) {
   assert(this);
   StartSendMetadataRequest.Increment();
 
   try {
-    if (!TryWriteExactly(Sock, &MetadataRequest[0], MetadataRequest.size(),
-                         timeout_ms)) {
+    if (!TryWriteExactly(Sock, &request[0], request.size(), timeout_ms)) {
       SendMetadataRequestFail.Increment();
       syslog(LOG_ERR, "Failed to send metadata request");
       return false;
