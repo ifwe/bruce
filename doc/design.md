@@ -52,9 +52,13 @@ a list of partitions for each topic along with the locations of the replicas
 for each partition, and status information for the brokers, topics, and
 partitions.  Bruce uses this information to choose a destination broker and
 partition for each message.  If Bruce receives a message for an unknown topic,
-it will discard the message.  Bruce does not currently support automatic topic
-creation, although this capability will probably be added in the near future.
-As documented
+it will discard the message unless automatic topic creation is enabled.  In the
+case where automatic topic creation is enabled, Bruce first sends a single
+topic metadata request to one of the brokers, which is the mechanism for
+requesting creation of a new topic.  Assuming that a response indicating
+success is received, Bruce then does a complete refresh of its metadata, so
+that the metadata shows information about the new topic, and then handles the
+message as usual.  As documented
 [here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-types),
 Bruce provides two different message types, *AnyPartition* messages and
 *PartitionKey* messages, which implement different types of routing behavior.

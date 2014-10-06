@@ -343,6 +343,8 @@ the maximum.  The default value is 8192.
 * `--discard_report_bad_msg_prefix_size N`: Maximum bad message prefix size in
 bytes to write to discard report available from Bruce's web interface.  The
 default value is 256.
+* `--topic_autocreate`: Enable automatic topic creation.  For this to work, the
+brokers must be configured with `auto.create.topics.enable=true`.
 * `--omit_timestamp`: Do not use this option, since it will soon be removed.
 Its purpose is to provide compatibility with legacy infrastructure at Tagged.
 * `--use_old_input_format`: Do not use this option, since it will soon be
