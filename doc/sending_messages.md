@@ -5,8 +5,8 @@
 The quickest way to get started sending messages to Bruce is by using the
 simple command line client.  This client is included in Bruce's RPM package,
 and can be built separately as described
-[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#building-bruces-client-library).
-Sending a message to Bruce can then be done as follows:
+[here](build_install.md#building-bruces-client-library).  Sending a message to
+Bruce can then be done as follows:
 
 ```
 simple_bruce_client --socket_path /var/run/bruce/bruce.socket \
@@ -19,10 +19,9 @@ typing `simple_bruce_client --help`.
 ### Other Clients
 
 Example client code for sending messages to Bruce in various programming
-languages may be found in the
-[example_clients](https://github.com/tagged/bruce/tree/master/example_clients)
-directory of Bruce's Git repository.  Community contributions for additional
-programming languages are much appreciated.
+languages may be found in the [example_clients](../example_clients) directory
+of Bruce's Git repository.  Community contributions for additional programming
+languages are much appreciated.
 
 ### Message Types
 
@@ -164,7 +163,7 @@ except for the presence of the `PartitionKey` field.
 
 Once you are able to send messages to Bruce, you will probably be interested
 in learning about its
-[status monitoring interface](https://github.com/tagged/bruce#status-monitoring).
+[status monitoring interface](../README.md#status-monitoring).
 
 -----
 

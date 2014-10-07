@@ -1,12 +1,11 @@
 ## Status Monitoring
 
 Bruce provides a web-based management interface.  The default port number is
-9090, but can be changed as described
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
-Assuming that Bruce is running on a system named `example`, your web browser
-will show the following when directed at `http://example:9090`:
+9090, but can be changed as described [here](detailed_config.md).  Assuming
+that Bruce is running on a system named `example`, your web browser will show
+the following when directed at `http://example:9090`:
 
-![Bruce management interface](https://github.com/tagged/bruce/blob/master/doc/web_interface.jpg?raw=true)
+![Bruce management interface](web_interface.jpg?raw=true)
 
 As shown above, for each status option you can choose either plain or JSON
 output.  JSON output is intended for comsumption by monitoring tools, allowing
@@ -14,9 +13,9 @@ them to parse the output using off-the-shelf JSON libraries.  Although human
 beings can read this output, the plain option is more visually compact and
 oriented toward human viewers.  For example Nagios monitoring scripts that
 report problems indicated by the JSON counter and discard output, see
-[src/bruce/scripts/check_bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/check_bruce_counters.py)
+[src/bruce/scripts/check_bruce_counters.py](../src/bruce/scripts/check_bruce_counters.py)
 and
-[src/bruce/scripts/check_bruce_discards.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/check_bruce_discards.py).
+[src/bruce/scripts/check_bruce_discards.py](../src/bruce/scripts/check_bruce_discards.py).
 The discards script also contains example code for writing discard reports to
 an Oracle database, providing a queryable history of data quality information.
 
@@ -54,12 +53,10 @@ Bruce started running (1408585285 seconds since the epoch), Bruce's process ID
 which is 14246, and Bruce's version which is `1.0.6.70.ga324763`.  The counter
 values track various events inside Bruce, and can be used for health monitoring
 and troubleshooting.  Details on the meanings of some of the more interesting
-counters are provided
-[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
+counters are provided [here](troubleshooting.md).
 Also, you can look in Bruce's source code to see what a counter indicates.  For
-instance, near the top of
-[src/bruce/msg.cc](https://github.com/tagged/bruce/blob/master/src/bruce/msg.cc)
-you will see the following definitions:
+instance, near the top of [src/bruce/msg.cc](../src/bruce/msg.cc) you will see
+the following definitions:
 
 ```C++
 SERVER_COUNTER(MsgCreate);
@@ -94,8 +91,7 @@ TMsg::~TMsg() noexcept {
 
 ### Discard Reporting
 
-When certain problems occur, which are detailed
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md), Bruce will
+When certain problems occur, which are detailed [here](design.md), Bruce will
 discard messages.  When discards occur, they are tracked and reported through
 Bruce's discard reporting web interface.  If you choose the plain option for
 *Get discard info* in Bruce's web interface shown near the top of this page,
@@ -161,22 +157,20 @@ These discards are included in the 32149 total discards for `topic1`.  Stated
 differently, of the 32149 total discards for topic `topic1`, 123 were due to
 Bruce's rate limiting mechanism and the rest were due to other reasons.  Bruce
 provides an optional per-topic message rate limiting mechanism, as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md#message-rate-limiting).
-Detailed configuration information for this mechanism is given
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+[here](design.md#message-rate-limiting).  Detailed configuration information
+for this mechanism is given [here](detailed_config.md).
 
 The timestamps in the discard reports are the client-provided ones documented
-[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats),
-and are interpreted as milliseconds since the epoch.  A total of 15 messages
-with invalid topics were received, and recently received invalid topics are
-`bad_topic_1` and `bad_topic_2`.  Prefixes of recently received malformed
-messages also appear in Bruce's discard reports in base64-encoded form.
-Bruce's process ID is 17706, and the time when the discard report was created
-is 1408661249 (represented in seconds, not milliseconds, since the epoch).  The
-version of Bruce that produced the report is `1.0.6.70.ga324763`.  The default
-discard report interval, as shown above, is 600 seconds, and is configurable,
-as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+[here](sending_messages.md#message-formats), and are interpreted as
+milliseconds since the epoch.  A total of 15 messages with invalid topics were
+received, and recently received invalid topics are `bad_topic_1` and
+`bad_topic_2`.  Prefixes of recently received malformed messages also appear in
+Bruce's discard reports in base64-encoded form.  Bruce's process ID is 17706,
+and the time when the discard report was created is 1408661249 (represented in
+seconds, not milliseconds, since the epoch).  The version of Bruce that
+produced the report is `1.0.6.70.ga324763`.  The default discard report
+interval, as shown above, is 600 seconds, and is configurable, as documented
+[here](detailed_config.md).
 
 ### Queued Message Information
 
@@ -238,17 +232,15 @@ Bruce refreshes its metadata at regular intervals.  The interval length
 defaults to 15 minutes plus or minus some randomness, which is added so that
 different Bruce instances will tend to spread out their requests and not all
 ask for new metadata at the same time.  Configuration of the interval length is
-documented
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
-Additionally, you can manually cause Bruce to update its metadata.  Clicking
-on the *Update metadata* button in Bruce's web interface shown near the top of
-this page (i.e. sending an HTTP POST to
-`http://example:9090/sys/metadata_update`) causes Bruce to update its metadata.
-Certain error conditions can also cause Bruce to update its metadata, as
-described [here](https://github.com/tagged/bruce/blob/master/doc/design.md).
+documented [here](detailed_config.md).  Additionally, you can manually cause
+Bruce to update its metadata.  Clicking on the *Update metadata* button in
+Bruce's web interface shown near the top of this page (i.e. sending an HTTP
+POST to `http://example:9090/sys/metadata_update`) causes Bruce to update its
+metadata.  Certain error conditions can also cause Bruce to update its
+metadata, as described [here](design.md).
 
 At this point it is helpful to have some information on
-[Bruce's design](https://github.com/tagged/bruce#design-overview).
+[Bruce's design](../README.md#design-overview).
 
 -----
 

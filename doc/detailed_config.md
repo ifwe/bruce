@@ -2,7 +2,7 @@
 
 Before reading the full details of Bruce's configuration options, you will
 probably want an overview of Bruce's design, which is avaliable
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md).
+[here](design.md).
 
 ### Config File
 
@@ -248,10 +248,10 @@ allowed size will need to increase its SO_SNDBUF socket option above the
 default value.
 * `--max_failed_delivery_attempts N`: Each time Bruce receives an error ACK
 causing it to initiate a "pause without discard" action as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md#dispatcher),
-Bruce increments the failed delivery attempt account for each message in the
-message set that the ACK applies to.  Once a message's failed delivery attempt
-count exceeds this value, the message is discarded.  The default vaule is 5.
+[here](design.md#dispatcher), Bruce increments the failed delivery attempt
+account for each message in the message set that the ACK applies to.  Once a
+message's failed delivery attempt count exceeds this value, the message is
+discarded.  The default vaule is 5.
 * `--daemon`: Causes Bruce to run as a daemon.
 * `--client_id ID`: This specifies the client ID string to send in produce
 requests, as documented
@@ -309,15 +309,13 @@ it.  The default value is 4.
 seconds.  The default value is 600.
 * `--debug_dir DIR`: This specifies a directory for debug instrumentation
 files, as described
-[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).  If
-unspecified, the debug instrumentation file option is disabled.
+[here](troubleshooting.md).  If unspecified, the debug instrumentation file
+option is disabled.
 * `--msg_debug_time_limit N`: This specifies a message debugging time limit in
-seconds, as described
-[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
+seconds, as described [here](troubleshooting.md).
 The default value is 3600.
 * `--msg_debug_byte_limit N`: This specifies a message debugging byte limit, as
-described
-[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
+described [here](troubleshooting.md).
 The default value is (2 * 1024 8 1024 * 1024).
 * `--skip_compare_metadata_on_refresh`: On metadata refresh, don't compare new
 metadata to old metadata.  Always replace the metadata even if it is unchanged.
@@ -355,8 +353,7 @@ removed.  Its purpose is to provide compatibility with legacy infrastructure at
 Tagged.
 
 Now that you are familiar with all of Bruce's configuration options, you may
-find information on
-[troubleshooting](https://github.com/tagged/bruce#troubleshooting) helpful.
+find information on [troubleshooting](../README.md#troubleshooting) helpful.
 
 -----
 

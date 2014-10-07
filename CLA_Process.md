@@ -2,8 +2,8 @@
 
 Thank you for your interest in contributing to a Tagged, Inc. ("Tagged") open source project! We welcome and are grateful for all contributions, but do ask that you follow a few steps before submitting your contribution:
 
-* Please review any [Coding Conventions](./coding_conventions.md) for this project.
-* Please review the [Tagged Pull Request Process](./pull_requests.md).
+* Please review any [Coding Conventions](doc/coding.md) for this project.
+* Please review the [Tagged Pull Request Process](doc/pull_requests.md).
 * Read and complete the [Tagged Contributor License Agreement](./CLA.md). Learn more about the agreement in its [Appendix](./CLA-appendix.md).
 * When complete, email a PDF of the signed agreement to [legal@tagged.com](mailto:legal@tagged.com).
 * Once you have received a confirmation that your signed CLA was received, contribute your code, documentation, or any other materials to Tagged.

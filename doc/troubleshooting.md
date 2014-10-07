@@ -2,10 +2,9 @@
 
 ### Counters
 
-As described
-[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#counter-reporting),
-Bruce's web interface provides counter reports that can be used for
-troubleshooting.  Some of Bruce's more interesting counters are as follows:
+As described [here](status_monitoring.md#counter-reporting), Bruce's web
+interface provides counter reports that can be used for troubleshooting.  Some
+of Bruce's more interesting counters are as follows:
 
 * `MsgCreate`: This is incremented each time Bruce creates a message.
 * `MsgDestroy`: This is incremented each time Bruce destroys a message.  The
@@ -33,7 +32,7 @@ information, it is recommended to query Bruce's discard reporting interface at
 intervals somewhat shorter that Bruce's discard reporting interval.
 
 It is also useful to look in
-[src/bruce/scripts/check_bruce_counters.py](https://github.com/tagged/bruce/blob/master/src/bruce/scripts/check_bruce_counters.py)
+[src/bruce/scripts/check_bruce_counters.py](../src/bruce/scripts/check_bruce_counters.py)
 to see which counters the script monitors and how it responds to incremented
 values.
 
@@ -44,7 +43,7 @@ Bruce to log discards to local files.  To do this, see the
 `--discard_log_path PATH`, `--discard_log_bad_msg_prefix_size N`,
 `--discard_log_max_file_size N`, and `--discard_log_max_archive_size N` command
 line options, which are documented
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments).
+[here](detailed_config.md#command-line-arguments).
 As documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets),
 a Kafka message consists of a key and a value, either of which may be empty.
@@ -54,16 +53,14 @@ values are written in base64 encoded form.
 
 ### Debug Logfiles
 
-As documented
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments),
-the `--debug_dir DIR`, `--msg_debug_time_limit N` and
-`--msg_debug_byte_limit N` command line options configure Bruce's debug logfile
-mechanism, which causes Bruce to maintain 3 separate logfiles: One for messages
-received from its input socket, one for messages sent to Kafka, and one for
-messages that Bruce received a successful ACK for.  The `--debug_dir DIR`
-option specifies the directory in which these files are placed.  To start
-and stop the logging mechanism, you must send HTTP requests to Bruce's web
-interface as follows:
+As documented [here](detailed_config.md#command-line-arguments), the
+`--debug_dir DIR`, `--msg_debug_time_limit N` and `--msg_debug_byte_limit N`
+command line options configure Bruce's debug logfile mechanism, which causes
+Bruce to maintain 3 separate logfiles: One for messages received from its input
+socket, one for messages sent to Kafka, and one for messages that Bruce
+received a successful ACK for.  The `--debug_dir DIR` option specifies the
+directory in which these files are placed.  To start and stop the logging
+mechanism, you must send HTTP requests to Bruce's web interface as follows:
 
 * To start logging for a specific topic, send an HTTP GET to
 `http://bruce_host:9090/msg_debug/add_topic/name_of_topic`.
@@ -87,18 +84,16 @@ future work.  The values are written in base64 encoded form.
 ### Other Tools
 
 Bruce's queue status interface described
-[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#queued-message-information)
+[here](status_monitoring.md#queued-message-information)
 provides per-topic information on messages being processed by Bruce.  In cases
 where Kafka isn't keeping up with the message volume, this may be helpful in
 identifying specific topics that are placing heavy load on the system.  Useful
 information can also be obtained from Bruce's syslog messages.  As documented
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md#command-line-arguments),
-the `--log_level LEVEL` command line option configures Bruce's logging
-verbosity.
+[here](detailed_config.md#command-line-arguments), the `--log_level LEVEL`
+command line option configures Bruce's logging verbosity.
 
 If you are interested in making custom modifications or contributing to Bruce,
-information is provided
-[here](https://github.com/tagged/bruce#modifying-bruces-implementation).
+information is provided [here](../README.md#modifying-bruces-implementation).
 
 -----
 

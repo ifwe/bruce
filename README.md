@@ -26,65 +26,59 @@ from diverse clients regardless of what programming language a client is
 written in.  Client code is currently available in C, C++, Java, Python, and
 PHP.  Code contributions for clients in other programming languages are much
 appreciated.  Technical details on how to send messages to Bruce are provided
-[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md).
-Bruce runs on Linux, and has been tested on CentOS versions 7 and 6.5, and
-Ubuntu versions 14.04.1 LTS and 13.10.  Bruce requires at least version 0.8 of
-Kafka.
+[here](doc/sending_messages.md).  Bruce runs on Linux, and has been tested on
+CentOS versions 7 and 6.5, and Ubuntu versions 14.04.1 LTS and 13.10.  Bruce
+requires at least version 0.8 of Kafka.
 
 ## Setting Up a Build Environment
 
 To get Bruce working, you need to set up a build environment.  A good first
 step is to
-[set up the Google Test Framework](https://github.com/tagged/bruce/blob/master/doc/gtest.md),
+[set up the Google Test Framework](doc/gtest.md),
 which Bruce uses for its unit tests.  The remaining steps differ depending on
 which Linux distribution you are using.  Currently, instructions are available
-for
-[CentOS 7](https://github.com/tagged/bruce/blob/master/doc/centos_7_env.md),
-[CentOS 6.5](https://github.com/tagged/bruce/blob/master/doc/centos_6_5_env.md),
-and [Ubuntu (14.04.1 LTS and 13.10)](https://github.com/tagged/bruce/blob/master/doc/ubuntu_14_and_13_env.md).
+for [CentOS 7](doc/centos_7_env.md), [CentOS 6.5](doc/centos_6_5_env.md),
+and [Ubuntu (14.04.1 LTS and 13.10)](doc/ubuntu_14_and_13_env.md).
 
 ## Building and Installing Bruce
 
 Once your build environment is set up, the next step is to
-[build and install](https://github.com/tagged/bruce/blob/master/doc/build_install.md)
-Bruce.
+[build and install](doc/build_install.md) Bruce.
 
 ## Running Bruce with Basic Configuration
 
 Simple instructions for running Bruce with a basic configuration can be found
-[here](https://github.com/tagged/bruce/blob/master/doc/basic_config.md).
+[here](doc/basic_config.md).
 
 ## Sending Messages
 
 Information on how to send messages to Bruce can be found
-[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md).
+[here](doc/sending_messages.md).
 
 ## Status Monitoring
 
-Information on status monitoring can be found
-[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md).
+Information on status monitoring can be found [here](doc/status_monitoring.md).
 
 ## Design Overview
 
 Before going into more details on Bruce's configuration options, it is helpful
 to have an understanding of Bruce's design, which is described
-[here](https://github.com/tagged/bruce/blob/master/doc/design.md).
+[here](doc/design.md).
 
 ## Detailed Configuration
 
 Full details of Bruce's configuration options are provided
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+[here](doc/detailed_config.md).
 
 ## Troubleshooting
 
 Information that may help with troubleshooting is provided
-[here](https://github.com/tagged/bruce/blob/master/doc/troubleshooting.md).
+[here](doc/troubleshooting.md).
 
 ## Modifying Bruce's Implementation
 
 Information for developers interested in making custom modifications or
-contributing code to Bruce is provided
-[here](https://github.com/tagged/bruce/blob/master/doc/dev_info.md).
+contributing code to Bruce is provided [here](doc/dev_info.md).
 
 ## Getting Help
 

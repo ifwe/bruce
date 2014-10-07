@@ -5,16 +5,14 @@ system, which is based on [SCons](http://www.scons.org/).
 
 ### Build System
 
-Files [SConstruct](https://github.com/tagged/bruce/blob/master/SConstruct) and
-[src/SConscript](https://github.com/tagged/bruce/blob/master/src/SConscript)
+Files [SConstruct](../SConstruct) and [src/SConscript](../src/SConscript)
 contain the build configuration.  As shown
-[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#building-bruce-directly),
-to build something, first source the file
-[bash_defs](https://github.com/tagged/bruce/blob/master/bash_defs)
-in the root of Bruce's Git repository.  Then `cd` into the `src` directory or any directory beneath
-`src` and use the `build` command to build a particular target.  In general,
-to build an executable you simply specify its name when invoking the `build`
-command.  For instance:
+[here](build_install.md#building-bruce-directly), to build something, first
+source the file [bash_defs](../bash_defs) in the root of Bruce's Git
+repository.  Then `cd` into the `src` directory or any directory beneath `src`
+and use the `build` command to build a particular target.  In general, to build
+an executable you simply specify its name when invoking the `build` command.
+For instance:
 
 ```
 source bash_defs
@@ -39,8 +37,7 @@ thread, which would then appear as executable file
 `out/debug/bruce/input_thread.test`.  If you type
 `build --test input_thread.test`, that will build the unit test and then
 immediately execute it.  Before building or running any unit tests, you must
-have the Google Test Framework installed, as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/gtest.md).
+have the Google Test Framework installed, as documented [here](gtest.md).
 
 If you type `build -c`, that will remove all build artifacts by deleting the
 `out` directory.  For `make` users, this is the equivalent of `make clean`.
@@ -91,11 +88,11 @@ arbitrary Python code.  Adding, removing or renaming source files does not
 require any changes to the build scripts, since they are written to figure out
 the dependencies on their own.  If you want to build all targets (or a
 substantial subset of all targets) with a single command, you can execute the
-[build_all](https://github.com/tagged/bruce/blob/master/build_all) script in
-the root of the Git repository.  For instance, `build_all run_tests` will build
-and run all unit tests.  Type `build_all --help` for a full description of the
-command line options.  Eventually it would be nice to eliminate the `build_all`
-script and integrate its functionality directly into the SCons configuration.
+[build_all](../build_all) script in the root of the Git repository.  For
+instance, `build_all run_tests` will build and run all unit tests.  Type
+`build_all --help` for a full description of the command line options.
+Eventually it would be nice to eliminate the `build_all` script and integrate
+its functionality directly into the SCons configuration.
 
 ### Debug Builds
 
@@ -144,11 +141,10 @@ debugging tool.  This is enabled in debug builds of Bruce.
 
 ### Contributing Code
 
-Information on contributing to Bruce is provided
-[here](https://github.com/tagged/bruce/blob/master/CONTRIBUTING.md).
+Information on contributing to Bruce is provided [here](../CONTRIBUTING.md).
 
 Information on getting help with Bruce is provided
-[here](https://github.com/tagged/bruce#getting-help).
+[here](../README.md#getting-help).
 
 -----
 

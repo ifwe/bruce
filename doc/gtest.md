@@ -19,7 +19,8 @@ cd ../..
 cp -a include/gtest /usr/include
 ```
 
-Now [continue setting up your build environment](https://github.com/tagged/bruce/blob/master/README.md#setting-up-a-build-environment).
+Now
+[continue setting up your build environment](../README.md#setting-up-a-build-environment).
 
 -----
 

@@ -122,7 +122,8 @@ As shown above, when executing commands in the shell where you activated the
 virtualenv environment, Python 2.7.3 will be used by default.  Before building
 Bruce, you must perform this step in the shell where you are doing the build.
 
-Now proceed to [build, install, and configure Bruce](https://github.com/tagged/bruce/blob/master/README.md#building-and-installing-bruce).
+Now proceed to
+[build, install, and configure Bruce](../README.md#building-and-installing-bruce).
 
 -----
 

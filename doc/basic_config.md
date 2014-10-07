@@ -1,21 +1,18 @@
 ## Basic Configuration
 
 A simple Bruce configuration can be found in the
-[config](https://github.com/tagged/bruce/tree/master/config) directory of
-Bruce's Git repository, and instructions for deploying it can be found
-[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#installing-bruce).
-Before using it, you need to edit Bruce's config file
-(`/etc/bruce/bruce_conf.xml` in the example configuration) as follows.  Look
-for the `<initialBrokers>` XML element near the bottom of the file.  You will
-find a list of Kafka brokers to try contacting for Bruce's initial metadata
-request.  This list needs to be edited to specify the brokers in your Kafka
-cluster.  Specifying a single broker is ok, since Bruce will learn about other
-brokers from the metadata response it receives.  However, specifying multiple
-brokers is preferable to guard against a situation where the specified broker
-is down.  If you wish to start Bruce using its init script after following the
-steps given
-[here](https://github.com/tagged/bruce/blob/master/doc/build_install.md#installing-bruce),
-that can be done as follows:
+[config](../config) directory of Bruce's Git repository, and instructions for
+deploying it can be found [here](build_install.md#installing-bruce).  Before
+using it, you need to edit Bruce's config file (`/etc/bruce/bruce_conf.xml` in
+the example configuration) as follows.  Look for the `<initialBrokers>` XML
+element near the bottom of the file.  You will find a list of Kafka brokers to
+try contacting for Bruce's initial metadata request.  This list needs to be
+edited to specify the brokers in your Kafka cluster.  Specifying a single
+broker is ok, since Bruce will learn about other brokers from the metadata
+response it receives.  However, specifying multiple brokers is preferable to
+guard against a situation where the specified broker is down.  If you wish to
+start Bruce using its init script after following the steps given
+[here](build_install.md#installing-bruce), that can be done as follows:
 
 ```
 chkconfig bruce on
@@ -65,7 +62,7 @@ arbitrary, and may require tuning.  Snappy message compression is also
 configured for all topics.
 
 Full details of Bruce's configuration options are provided
-[here](https://github.com/tagged/bruce/blob/master/doc/detailed_config.md).
+[here](detailed_config.md).
 
 You can shut down Bruce using its init script as follows:
 
@@ -87,7 +84,7 @@ kill -INT PROCESS_ID_OF_BRUCE
 ```
 
 Once Bruce has been set up with a basic configuration, you can
-[send messages](https://github.com/tagged/bruce#sending-messages).
+[send messages](../README.md#sending-messages).
 
 -----
 

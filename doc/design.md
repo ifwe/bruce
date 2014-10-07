@@ -22,10 +22,9 @@ content.  When a message arrives on its input socket, the input thread attempts
 to allocate memory from this pool to store the message contents.  If the pool
 does not contain enough free memory, Bruce will discard the message.  All
 messages discarded for any reason are tracked and reported through Bruce's web
-interface, as described
-[here](https://github.com/tagged/bruce/blob/master/doc/status_monitoring.md#discard-reporting).
-On successful message creation, the input thread queues the message for
-processing by the router thread and continues monitoring its input socket.
+interface, as described [here](status_monitoring.md#discard-reporting).  On
+successful message creation, the input thread queues the message for processing
+by the router thread and continues monitoring its input socket.
 
 Communication between Bruce and its clients is purely one-way in nature.
 Clients write messages as individual datagrams to Bruce's input socket and the
@@ -58,8 +57,7 @@ topic metadata request to one of the brokers, which is the mechanism for
 requesting creation of a new topic.  Assuming that a response indicating
 success is received, Bruce then does a complete refresh of its metadata, so
 that the metadata shows information about the new topic, and then handles the
-message as usual.  As documented
-[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-types),
+message as usual.  As documented [here](sending_messages.md#message-types),
 Bruce provides two different message types, *AnyPartition* messages and
 *PartitionKey* messages, which implement different types of routing behavior.
 The Router thread shares responsibility for message batching with the
@@ -146,11 +144,10 @@ of the following limits:
 
 - Maximum batching delay, specified in milliseconds.  This threshold is
 triggered when the age of the oldest message
-[timestamp](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats)
-in the batch is at least the specified value.
+[timestamp](sending_messages.md#message-formats) in the batch is at least the
+specified value.
 - Maximum combined message data size, specified in bytes.  This includes only
-the sizes of the
-[keys and values](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-formats).
+the sizes of the [keys and values](sending_messages.md#message-formats).
 - Maximum message count.
 
 Batching may also be configured so that topics without individual batching
@@ -193,13 +190,13 @@ broker and transferred the message to the dispatcher.
 
 For PartitionKey messages, the chosen partition is determined by the partition
 key which the client provides along with the message, as documented
-[here](https://github.com/tagged/bruce/blob/master/doc/sending_messages.md#message-types).
-Since the partition determines the destination broker, per-topic batching of
-PartitionKey messages is done at the broker level after the router thread has
-transferred a message to the dispatcher.  All other aspects of batching for
-PartitionKey messages operate in the same manner as for AnyPartition messages.
-In the case of combined topics batching, a single batch may contain a mixture
-of AnyPartition and PartitionKey messages.
+[here](sending_messages.md#message-types).  Since the partition determines the
+destination broker, per-topic batching of PartitionKey messages is done at the
+broker level after the router thread has transferred a message to the
+dispatcher.  All other aspects of batching for PartitionKey messages operate in
+the same manner as for AnyPartition messages.  In the case of combined topics
+batching, a single batch may contain a mixture of AnyPartition and PartitionKey
+messages.
 
 #### Produce Request Creation and Final Partition Selection
 
@@ -298,8 +295,7 @@ erroneously discarded by the rate limiting mechanism if the system clock is set
 back.  As with all other types of discards, messages discarded by the rate
 limiting mechanism will be included in Bruce's discard reports.
 
-Next:
-[detailed configuration](https://github.com/tagged/bruce#detailed-configuration).
+Next: [detailed configuration](../README.md#detailed-configuration).
 
 -----
 
