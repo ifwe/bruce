@@ -104,6 +104,7 @@ import errno
 import getopt
 import json
 import os
+import select
 import signal
 import socket
 import subprocess
@@ -792,7 +793,7 @@ def InsertTopicErrorInfoRows(cur, report_id, table_spec, topic_max_size,
 # success, or raise exception on error.
 # Exceptions raised: TDatabaseError, cx_Oracle.Warning, cx_Oracle.Error
 ###############################################################################
-def DoPersistDiscardReport(con, cur, report):
+def DoPersistDiscardReportImpl(con, cur, report):
     # Add report row to BRUCE_DATA_QUALITY_REPORT table.
     report_id = InsertReportRow(cur, report)
 
@@ -856,21 +857,6 @@ def DoPersistDiscardReport(con, cur, report):
 ###############################################################################
 
 ###############################################################################
-# Exception thrown when operation times out.
-###############################################################################
-class TTimeoutException(Exception):
-    'exception thrown when operation times out'
-    def __init__(self): Exception.__init__(self)
-###############################################################################
-
-###############################################################################
-# SIGALRM handler that implements timeout for database operations.
-###############################################################################
-def AlarmHandler(signame, frame):
-    raise TTimeoutException()
-###############################################################################
-
-###############################################################################
 # Input parameter 'report' is a parsed discard report.  Write the report to the
 # database.  Return the empty string on success, or an error message on error.
 # The entire report is written as a single transaction, so the database update
@@ -880,19 +866,17 @@ def AlarmHandler(signame, frame):
 # paramaters 'username' and 'password' provide the credentials for database
 # access.
 ###############################################################################
-def PersistDiscardReport(report, username, password):
+def PersistDiscardReportImpl(report, username, password):
     db_string = username + '/' + password + '@' + Opts.Dbhost + ':' + \
             str(Opts.Dbport) + '/' + Opts.Database
     con = None  # database connection
     cur = None  # database cursor
-    signal.signal(signal.SIGALRM, AlarmHandler)
-    signal.alarm(Opts.DatabaseTimeout)
 
     try:
         con = cx_Oracle.connect(db_string)
         cur = con.cursor()
         cur.bindarraysize = 256
-        DoPersistDiscardReport(con, cur, report)
+        DoPersistDiscardReportImpl(con, cur, report)
         signal.alarm(0)  # cancel alarm on success
         result = ''
     except TDatabaseError, x:
@@ -900,16 +884,13 @@ def PersistDiscardReport(report, username, password):
         # script.
         result = 'Persist error: ' + x.message
         print result
+    except cx_Oracle.Error, x:
+        result = 'Database error: ' + str(x)
+        print result
     except cx_Oracle.Warning, x:
         # Here we make the conservative assumption that in the case of a
         # warning, the database transaction failed.
         result = 'Database warning: ' + str(x)
-        print result
-    except cx_Oracle.Error, x:
-        result = 'Database error: ' + str(x)
-        print result
-    except TTimeoutException:
-        result = 'Database timeout'
         print result
     finally:
         if cur != None:
@@ -922,6 +903,72 @@ def PersistDiscardReport(report, username, password):
         print 'Database transaction will be attempted again later'
 
     return result
+###############################################################################
+
+###############################################################################
+# 'persist_fn' is a lambda that persists a discard report to Oracle.  It
+# returns the empty string on success or an error message on failure.  fork() a
+# child process and let the child do the database operation.  If 'persist_fn'
+# returns an error string, then return the error string.  If the child does not
+# finish within 'timeout_ms' milliseconds then return an error message
+# indicating timeout.  If 'persist_fn' returns the empty string, then return
+# the empty string (indicating success).
+#
+# In a previous implementation, SIGALRM was used to implement a timeout for the
+# database operation, but this did not work well in practice.  Probably the
+# cx_Oracle library or some other piece of code was masking SIGALRM and then
+# getting stuck somewhere.  Hopefully the approach below will be a more
+# reliable mechanism for implementing the timeout.
+###############################################################################
+def RunPersistFnAsChild(persist_fn, timeout_ms):
+    global pipe_to_parent
+    read_fd, write_fd = os.pipe()
+    pid = os.fork()
+
+    if pid:
+        # parent executes here
+        os.close(write_fd)
+        poller = select.poll()
+        poller.register(read_fd, select.POLLIN | select.POLLHUP)
+        events = poller.poll(timeout_ms)
+
+        if not events:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
+
+            return 'Timed out waiting for child to perform database operation'
+
+        if events[0][1] & select.POLLIN:
+            read_end = os.fdopen(read_fd)
+
+            # return error string from pipe
+            return read_end.read()
+    else:
+        # child executes here
+        os.close(read_fd)
+        write_end = os.fdopen(write_fd, 'w')
+
+        # Write the empty string on success, or an error message on error.
+        write_end.write(persist_fn())
+
+        try:
+            write_end.close()
+        except IOError:
+            pass
+
+        sys.exit(0)
+
+    # empty error string indicates child was successful
+    return ''
+###############################################################################
+
+###############################################################################
+def PersistDiscardReport(report, username, password):
+    my_persist_fn = \
+            lambda : PersistDiscardReportImpl(report, username, password)
+    return RunPersistFnAsChild(my_persist_fn, Opts.DatabaseTimeout * 1000)
 ###############################################################################
 
 ###############################################################################
