@@ -97,6 +97,13 @@
 #    -g
 #    --ignore_bad_topics:
 #        Do not report errors due to bad topic discards.
+#
+#    -i TOPIC_FILE
+#    --ignore_topics_file TOPIC_FILE
+#        Specifies a file containing discard topics to ignore when reporting
+#        errors.  Discards for these topics are still stored in Oracle, but
+#        will not cause reporting of Nagios errors.  The file is a simple text
+#        file with one topic per line.
 ###############################################################################
 
 import cx_Oracle
@@ -582,18 +589,20 @@ def SerializeToJson(structured_data):
 ###############################################################################
 
 ###############################################################################
-# Analyze input parameter 'report', looking for discards.  Return EC_SUCCESS if
-# no discards are found.  Otherwise return EC_CRITICAL.
+# Analyze input parameter 'report', looking for discards.  Ignore any topics in
+# input set 'ignore_topics'.  Return EC_SUCCESS if no discards are found.
+# Otherwise return EC_CRITICAL.
 ###############################################################################
-def AnalyzeDiscardReport(report):
+def AnalyzeDiscardReport(report, ignore_topics):
     if report['malformed_msg_count'] > 0:
         return EC_CRITICAL
 
     if (not Opts.IgnoreBadTopics) and report['bad_topic_msg_count'] > 0:
         return EC_CRITICAL
 
-    if report['discard_topic']:
-        return EC_CRITICAL
+    for topic_item in report['discard_topic']:
+        if topic_item['topic'] not in ignore_topics:
+            return EC_CRITICAL
 
     return EC_SUCCESS
 ###############################################################################
@@ -1171,6 +1180,38 @@ def ParseCredentialsFileContents(file_contents):
 ###############################################################################
 
 ###############################################################################
+# If 'ignore_topics_file' is a nonempty string, open the file and read it line
+# by line.  Each line is interpreted as a topic.  Return a set containing all
+# topics from the file.  If 'ignore_topics_file' is the empty string, return an
+# empty set.
+###############################################################################
+def BuildIgnoreTopicSet(ignore_topics_file):
+    topics = set([])
+
+    if ignore_topics_file == '':
+        return topics
+
+    try:
+        is_open = False
+        infile = open(ignore_topics_file, 'r')
+        is_open = True
+
+        for line in infile:
+            topics.add(line.rstrip('\n'))
+    except OSError as e:
+        Die(EC_UNKNOWN, 'Failed to file ' + ignore_topics_file +
+            ' with topics to ignore: ' + e.strerror)
+    except IOError as e:
+        Die(EC_UNKNOWN, 'Failed to open file ' + ignore_topics_file +
+            ' with topics to ignore: ' + e.strerror)
+    finally:
+        if is_open:
+            infile.close()
+
+    return topics
+###############################################################################
+
+###############################################################################
 # Class for storing program options
 #
 # members:
@@ -1193,13 +1234,16 @@ def ParseCredentialsFileContents(file_contents):
 #         report in the database.
 #     Credentials: Credentials file for database access.
 #     IgnoreBadTopics: Don't report errors for bad topics.
+#     IgnoreTopicsFile: File containing discard topics to ignore when reporting
+#         Nagios errors.  File format is text with one topic per line.
+#         Discards for ignored topics are still stored in Oracle.
 ###############################################################################
 class TProgramOptions(object):
     'program options class'
     def __init__(self, verbose, work_dir, nagios_server, max_report_age,
                  nagios_user, bruce_host, bruce_status_port, testfile, dbhost,
                  dbport, database, database_timeout, credentials,
-                 ignore_bad_topics):
+                 ignore_bad_topics, ignore_topics_file):
         self.Verbose = verbose
         self.WorkDir = work_dir
         self.NagiosServer = nagios_server
@@ -1214,6 +1258,7 @@ class TProgramOptions(object):
         self.DatabaseTimeout = database_timeout
         self.Credentials = credentials
         self.IgnoreBadTopics = ignore_bad_topics
+        self.IgnoreTopicsFile = ignore_topics_file
 ###############################################################################
 
 ###############################################################################
@@ -1223,11 +1268,13 @@ class TProgramOptions(object):
 ###############################################################################
 def ParseArgs(args):
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'vw:s:a:u:b:p:t:D:P:d:T:c:g',
+        opts, args = getopt.getopt(sys.argv[1:],
+                'vw:s:a:u:b:p:t:D:P:d:T:c:gi:',
                 ['verbose', 'work_dir=', 'nagios_server=', 'max_report_age=',
                  'nagios_user=', 'bruce_host=', 'bruce_status_port=',
                  'testfile=', 'dbhost=', 'dbport=', 'database=',
-                 'database_timeout=', 'credentials=', 'ignore_bad_topics'])
+                 'database_timeout=', 'credentials=', 'ignore_bad_topics',
+                 'ignore_topics_file'])
     except getopt.GetoptError as e:
         Die(EC_UNKNOWN, str(e))
 
@@ -1245,6 +1292,7 @@ def ParseArgs(args):
     opt_database_timeout = 15
     opt_credentials = ''
     opt_ignore_bad_topics = False
+    opt_ignore_topics_file = ''
 
     for o, a in opts:
         if o in ('-v', '--verbose'):
@@ -1305,6 +1353,8 @@ def ParseArgs(args):
             opt_credentials = a
         elif o in ('-g', '--ignore_bad_topics'):
             opt_ignore_bad_topics = True
+        elif o in ('-i', '--ignore_topics_file'):
+            opt_ignore_topics_file = a
         else:
             Die(EC_UNKNOWN, 'Unhandled command line option')
 
@@ -1328,7 +1378,8 @@ def ParseArgs(args):
                            opt_max_report_age, opt_nagios_user, opt_bruce_host,
                            opt_bruce_status_port, opt_testfile, opt_dbhost,
                            opt_dbport, opt_database, opt_database_timeout,
-                           opt_credentials, opt_ignore_bad_topics)
+                           opt_credentials, opt_ignore_bad_topics,
+                           opt_ignore_topics_file)
 ###############################################################################
 
 ###############################################################################
@@ -1365,12 +1416,16 @@ def main():
     if 'finished_report' in response:
         finished_report = response['finished_report']
 
+    ignore_topics = BuildIgnoreTopicSet(Opts.IgnoreTopicsFile)
+
     # See if reports contain any discards.
     if finished_report == None:
-        nagios_code_from_reports = AnalyzeDiscardReport(unfinished_report)
+        nagios_code_from_reports = \
+                AnalyzeDiscardReport(unfinished_report, ignore_topics)
     else:
-        nagios_code_from_reports = max(AnalyzeDiscardReport(unfinished_report),
-                          AnalyzeDiscardReport(finished_report))
+        nagios_code_from_reports = \
+                max(AnalyzeDiscardReport(unfinished_report, ignore_topics),
+                    AnalyzeDiscardReport(finished_report, ignore_topics))
 
     if Opts.Verbose:
         print SerializeToJson(response)
