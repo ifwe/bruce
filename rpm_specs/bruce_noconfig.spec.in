@@ -23,7 +23,7 @@ License:	ASL 2.0
 Source0:	%{name}-%{version}.tar.gz
 
 #BuildRequires:	
-#Requires:	
+Requires:	snappy
 
 %description
 Bruce is a producer daemon for Apache Kafka.
