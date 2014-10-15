@@ -237,7 +237,7 @@ namespace Bruce {
 
     bool CheckMaxFileSize(uint64_t next_entry_size);
 
-    void WriteToLog(const std::vector<uint8_t> &log_entry);
+    void WriteToLog(const std::string &log_entry);
 
     size_t MaxMsgPrefixLen;
 

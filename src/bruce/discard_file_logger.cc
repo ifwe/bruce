@@ -52,27 +52,34 @@ using namespace Base;
 using namespace Bruce;
 using namespace Bruce::Util;
 
-static void ComposeLogEntry(TMsg::TTimestamp timestamp, const char *event,
-    const char *info, const std::string &topic, std::vector<uint8_t> &body) {
+static std::string ComposeLogEntry(TMsg::TTimestamp timestamp,
+    const char *event, const char *info, const std::string &topic,
+    const void *key, size_t key_size, const void *msg, size_t msg_size) {
   assert(event);
   assert(info);
+  assert(key || (key_size == 0));
+  assert(msg || (msg_size == 0));
   uint64_t now = GetEpochMilliseconds();
+  std::string encoded_key;
 
-  /* Base64 encode message body, since it may contain binary data. */
-  std::string encoded_body = base64_encode(&body[0], body.size());
+  if (key_size) {
+    encoded_key = base64_encode(reinterpret_cast<const unsigned char *>(key),
+                                key_size);
+  }
+
+  std::string encoded_msg;
+
+  if (msg_size) {
+    encoded_msg = base64_encode(reinterpret_cast<const unsigned char *>(msg),
+                                msg_size);
+  }
 
   std::ostringstream os;
-  os << "now: " << now << " ts: " << timestamp
-      << " event: " << event << " info: " << info << " topic: " << topic.size()
-      << "[" << topic << "] body: " << encoded_body.size() << "[";
-  std::string prefix(os.str());
-  std::string suffix("]\n");
-  body.resize(prefix.size() + encoded_body.size() + suffix.size());
-
-  std::memcpy(&body[0], prefix.data(), prefix.size());
-  std::memcpy(&body[prefix.size()], encoded_body.data(), encoded_body.size());
-  std::memcpy(&body[prefix.size() + encoded_body.size()], suffix.data(),
-              suffix.size());
+  os << "now: " << now << " ts: " << timestamp << " event: " << event
+      << " info: " << info << " topic: " << topic.size() << "[" << topic
+      << "] key: " << encoded_key.size() << "[" << encoded_key << "] msg: "
+      << encoded_msg.size() << "[" << encoded_msg << "]\n";
+  return os.str();
 }
 
 static void CreateDir(const char *dir) {
@@ -195,13 +202,17 @@ void TDiscardFileLogger::LogDiscard(const TMsg &msg, TDiscardReason reason) {
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf;
-  /* TODO: write both key and value */
-  WriteValue(buf, 0, msg, false, UseOldOutputFormat);
-  EnforceMaxPrefixLen(buf);
-  ComposeLogEntry(msg.GetTimestamp(), "DISC", ReasonToBlurb(reason),
-                  msg.GetTopic(), buf);
-  WriteToLog(buf);
+  std::vector<uint8_t> key_buf;
+  WriteKey(key_buf, 0, msg);
+  EnforceMaxPrefixLen(key_buf);
+  std::vector<uint8_t> value_buf;
+  WriteValue(value_buf, 0, msg, false, UseOldOutputFormat);
+  EnforceMaxPrefixLen(value_buf);
+  const uint8_t *key_buf_begin = key_buf.empty() ? nullptr : &key_buf[0];
+  const uint8_t *value_buf_begin = value_buf.empty() ? nullptr : &value_buf[0];
+  WriteToLog(ComposeLogEntry(msg.GetTimestamp(), "DISC", ReasonToBlurb(reason),
+                 msg.GetTopic(), key_buf_begin, key_buf.size(),
+                 value_buf_begin, value_buf.size()));
 }
 
 void TDiscardFileLogger::LogDuplicate(const TMsg &msg) {
@@ -211,12 +222,17 @@ void TDiscardFileLogger::LogDuplicate(const TMsg &msg) {
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf;
-  /* TODO: write both key and value */
-  WriteValue(buf, 0, msg, false, UseOldOutputFormat);
-  EnforceMaxPrefixLen(buf);
-  ComposeLogEntry(msg.GetTimestamp(), "DUP", "NONE", msg.GetTopic(), buf);
-  WriteToLog(buf);
+  std::vector<uint8_t> key_buf;
+  WriteKey(key_buf, 0, msg);
+  EnforceMaxPrefixLen(key_buf);
+  std::vector<uint8_t> value_buf;
+  WriteValue(value_buf, 0, msg, false, UseOldOutputFormat);
+  EnforceMaxPrefixLen(value_buf);
+  const uint8_t *key_buf_begin = key_buf.empty() ? nullptr : &key_buf[0];
+  const uint8_t *value_buf_begin = value_buf.empty() ? nullptr : &value_buf[0];
+  WriteToLog(ComposeLogEntry(msg.GetTimestamp(), "DUP", "NONE", msg.GetTopic(),
+                 key_buf_begin, key_buf.size(), value_buf_begin,
+                 value_buf.size()));
 }
 
 void TDiscardFileLogger::LogNoMemDiscard(TMsg::TTimestamp timestamp,
@@ -235,18 +251,13 @@ void TDiscardFileLogger::LogNoMemDiscard(TMsg::TTimestamp timestamp,
   }
 
   const std::string topic(topic_begin, topic_end);
-
-  /* TODO: write both key and value */
-
-  std::vector<uint8_t> buf;
-
-  if (value_begin) {
-    buf.assign(reinterpret_cast<const uint8_t *>(value_begin),
-               EnforceMaxPrefixLen(value_begin, value_end));
-  }
-
-  ComposeLogEntry(timestamp, "DISC", "NO_MEM", topic, buf);
-  WriteToLog(buf);
+  size_t key_size = reinterpret_cast<const uint8_t *>(key_end) -
+      reinterpret_cast<const uint8_t *>(key_begin);
+  size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
+      reinterpret_cast<const uint8_t *>(value_begin);
+  WriteToLog(ComposeLogEntry(timestamp, "DISC", "NO_MEM", topic, key_begin,
+                 std::min(key_size, MaxMsgPrefixLen), value_begin,
+                 std::min(value_size, MaxMsgPrefixLen)));
 }
 
 void TDiscardFileLogger::LogMalformedMsgDiscard(const void *msg_begin,
@@ -257,11 +268,11 @@ void TDiscardFileLogger::LogMalformedMsgDiscard(const void *msg_begin,
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(msg_begin),
-      EnforceMaxPrefixLen(msg_begin, msg_end));
-  ComposeLogEntry(GetEpochMilliseconds(), "DISC", "MALFORMED", std::string(),
-                  buf);
-  WriteToLog(buf);
+  size_t msg_size = reinterpret_cast<const uint8_t *>(msg_end) -
+      reinterpret_cast<const uint8_t *>(msg_begin);
+  WriteToLog(ComposeLogEntry(GetEpochMilliseconds(), "DISC", "MALFORMED",
+                 std::string(), nullptr, 0, msg_begin, std::min(msg_size,
+                 MaxMsgPrefixLen)));
 }
 
 void TDiscardFileLogger::LogUnsupportedApiKeyDiscard(const void *msg_begin,
@@ -272,14 +283,14 @@ void TDiscardFileLogger::LogUnsupportedApiKeyDiscard(const void *msg_begin,
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(msg_begin),
-      EnforceMaxPrefixLen(msg_begin, msg_end));
   std::ostringstream os;
   os << "API_KEY(" << api_key << ")";
   std::string info(os.str());
-  ComposeLogEntry(GetEpochMilliseconds(), "DISC", info.c_str(), std::string(),
-                  buf);
-  WriteToLog(buf);
+  size_t msg_size = reinterpret_cast<const uint8_t *>(msg_end) -
+      reinterpret_cast<const uint8_t *>(msg_begin);
+  WriteToLog(ComposeLogEntry(GetEpochMilliseconds(), "DISC", info.c_str(),
+                 std::string(), nullptr, 0, msg_begin,
+                 std::min(msg_size, MaxMsgPrefixLen)));
 }
 
 void TDiscardFileLogger::LogUnsupportedMsgVersionDiscard(const void *msg_begin,
@@ -290,14 +301,14 @@ void TDiscardFileLogger::LogUnsupportedMsgVersionDiscard(const void *msg_begin,
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(msg_begin),
-      EnforceMaxPrefixLen(msg_begin, msg_end));
   std::ostringstream os;
   os << "VERSION(" << version << ")";
   std::string info(os.str());
-  ComposeLogEntry(GetEpochMilliseconds(), "DISC", info.c_str(), std::string(),
-                  buf);
-  WriteToLog(buf);
+  size_t msg_size = reinterpret_cast<const uint8_t *>(msg_end) -
+      reinterpret_cast<const uint8_t *>(msg_begin);
+  WriteToLog(ComposeLogEntry(GetEpochMilliseconds(), "DISC", info.c_str(),
+                 std::string(), nullptr, 0, msg_begin,
+                 std::min(msg_size, MaxMsgPrefixLen)));
 }
 
 void TDiscardFileLogger::LogBadTopicDiscard(TMsg::TTimestamp timestamp,
@@ -316,18 +327,13 @@ void TDiscardFileLogger::LogBadTopicDiscard(TMsg::TTimestamp timestamp,
   }
 
   const std::string topic(topic_begin, topic_end);
-
-  /* TODO: write both key and value */
-
-  std::vector<uint8_t> buf;
-
-  if (value_begin) {
-    buf.assign(reinterpret_cast<const uint8_t *>(value_begin),
-               EnforceMaxPrefixLen(value_begin, value_end));
-  }
-
-  ComposeLogEntry(timestamp, "DISC", "BAD_TOPIC", topic, buf);
-  WriteToLog(buf);
+  size_t key_size = reinterpret_cast<const uint8_t *>(key_end) -
+      reinterpret_cast<const uint8_t *>(key_begin);
+  size_t value_size = reinterpret_cast<const uint8_t *>(value_end) -
+      reinterpret_cast<const uint8_t *>(value_begin);
+  WriteToLog(ComposeLogEntry(timestamp, "DISC", "BAD_TOPIC", topic, key_begin,
+                 std::min(key_size, MaxMsgPrefixLen), value_begin,
+                 std::min(value_size, MaxMsgPrefixLen)));
 }
 
 void TDiscardFileLogger::LogBadTopicDiscard(const TMsg &msg) {
@@ -337,13 +343,17 @@ void TDiscardFileLogger::LogBadTopicDiscard(const TMsg &msg) {
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf;
-  /* TODO: write both key and value */
-  WriteValue(buf, 0, msg, false, UseOldOutputFormat);
-  EnforceMaxPrefixLen(buf);
-  ComposeLogEntry(msg.GetTimestamp(), "DISC", "BAD_TOPIC", msg.GetTopic(),
-                  buf);
-  WriteToLog(buf);
+  std::vector<uint8_t> key_buf;
+  WriteKey(key_buf, 0, msg);
+  EnforceMaxPrefixLen(key_buf);
+  std::vector<uint8_t> value_buf;
+  WriteValue(value_buf, 0, msg, false, UseOldOutputFormat);
+  EnforceMaxPrefixLen(value_buf);
+  const uint8_t *key_buf_begin = key_buf.empty() ? nullptr : &key_buf[0];
+  const uint8_t *value_buf_begin = value_buf.empty() ? nullptr : &value_buf[0];
+  WriteToLog(ComposeLogEntry(msg.GetTimestamp(), "DISC", "BAD_TOPIC",
+                 msg.GetTopic(), key_buf_begin, key_buf.size(),
+                 value_buf_begin, value_buf.size()));
 }
 
 void TDiscardFileLogger::LogLongMsgDiscard(const TMsg &msg) {
@@ -353,12 +363,17 @@ void TDiscardFileLogger::LogLongMsgDiscard(const TMsg &msg) {
     return;  // fast path for case where logging is disabled
   }
 
-  std::vector<uint8_t> buf;
-  /* TODO: write both key and value */
-  WriteValue(buf, 0, msg, false, UseOldOutputFormat);
-  EnforceMaxPrefixLen(buf);
-  ComposeLogEntry(msg.GetTimestamp(), "DISC", "LONG_MSG", msg.GetTopic(), buf);
-  WriteToLog(buf);
+  std::vector<uint8_t> key_buf;
+  WriteKey(key_buf, 0, msg);
+  EnforceMaxPrefixLen(key_buf);
+  std::vector<uint8_t> value_buf;
+  WriteValue(value_buf, 0, msg, false, UseOldOutputFormat);
+  EnforceMaxPrefixLen(value_buf);
+  const uint8_t *key_buf_begin = key_buf.empty() ? nullptr : &key_buf[0];
+  const uint8_t *value_buf_begin = value_buf.empty() ? nullptr : &value_buf[0];
+  WriteToLog(ComposeLogEntry(msg.GetTimestamp(), "DISC", "LONG_MSG",
+                 msg.GetTopic(), key_buf_begin, key_buf.size(),
+                 value_buf_begin, value_buf.size()));
 }
 
 TDiscardFileLogger::TArchiveCleaner::TArchiveCleaner(uint64_t max_archive_size,
@@ -764,7 +779,7 @@ bool TDiscardFileLogger::CheckMaxFileSize(uint64_t next_entry_size) {
   return LogFd.IsOpen();
 }
 
-void TDiscardFileLogger::WriteToLog(const std::vector<uint8_t> &log_entry) {
+void TDiscardFileLogger::WriteToLog(const std::string &log_entry) {
   assert(this);
 
   if (log_entry.empty()) {
@@ -794,7 +809,7 @@ void TDiscardFileLogger::WriteToLog(const std::vector<uint8_t> &log_entry) {
     ArchiveCleaner->SendCleanRequest();
   }
 
-  ssize_t ret = IfLt0(write(LogFd, &log_entry[0], log_entry.size()));
+  ssize_t ret = IfLt0(write(LogFd, log_entry.data(), log_entry.size()));
 
   if (static_cast<size_t>(ret) < log_entry.size()) {
     syslog(LOG_ERR, "write() to discard logfile returned short count: "
