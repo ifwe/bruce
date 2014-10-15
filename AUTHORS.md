@@ -9,5 +9,5 @@ written by former Tagged employees who worked on the
 [Chris Tidder](https://github.com/ctidder),
 [Deanna Rubin](https://github.com/dr4b), and
 [Joshua Ball](https://github.com/sciolizer).
-The former Stig Team has since formed its own company,
-[OrlyAtomics](http://orlyatomics.com/).
+The former Stig Team has since formed its own company, OrlyAtomics, which was
+acquired by [Mesosphere](https://mesosphere.com).
