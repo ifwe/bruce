@@ -21,7 +21,6 @@
 
 #include <bruce/batch/single_topic_batcher.h>
 
-#include <iostream>
 #include <memory>
 #include <string>
 

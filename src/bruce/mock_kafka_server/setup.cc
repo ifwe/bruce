@@ -31,8 +31,11 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <bruce/util/exceptions.h>
+
 using namespace Bruce;
 using namespace Bruce::MockKafkaServer;
+using namespace Bruce::Util;
 
 static std::string MakeErrorMsg(size_t line_num, const char *msg) {
   std::string blurb("Error on line ");
@@ -57,10 +60,17 @@ void TSetup::Get(const std::string &setup_file_path, TInfo &out) {
   std::ifstream infile(setup_file_path);
 
   if (!infile.is_open()) {
-    THROW_ERROR(TFileOpenError);
+    throw TFileOpenError(setup_file_path);
   }
 
-  FillResult(infile);
+  infile.exceptions(std::ifstream::badbit);
+
+  try {
+    FillResult(infile);
+  } catch (const std::ifstream::failure &) {
+    throw TFileReadError(setup_file_path);
+  }
+
   std::swap(Result.BasePort, out.BasePort);
   Result.Ports.swap(out.Ports);
   Result.Topics.swap(out.Topics);

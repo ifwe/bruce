@@ -409,12 +409,19 @@ static bool FillCmdVec(const TConfig &cfg,
     std::ifstream infile(cfg.CmdFile);
 
     if (!infile.is_open()) {
-      std::cerr << "Failed to open file " << cfg.CmdFile << " for reading"
+      std::cerr << "Failed to open file [" << cfg.CmdFile << "] for reading"
           << std::endl;
       return false;
     }
 
-    if (!ReadCmdFile(infile, result)) {
+    infile.exceptions(std::ifstream::badbit);
+
+    try {
+      if (!ReadCmdFile(infile, result)) {
+        return false;
+      }
+    } catch (const std::ifstream::failure &) {
+      std::cerr << "Error reading file [" << cfg.CmdFile << "]" << std::endl;
       return false;
     }
   }

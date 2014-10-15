@@ -189,6 +189,8 @@ namespace Bruce {
       const TSetup::TPartition *FindPartition(const std::string &topic,
           int32_t partition) const;
 
+      void DoRun();
+
       std::string PeerAddressString;
 
       size_t ProduceRequestCount;

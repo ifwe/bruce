@@ -22,8 +22,6 @@
 #include <bruce/batch/per_topic_batcher.h>
 
 #include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <string>
 

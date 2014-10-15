@@ -32,17 +32,12 @@
 
 #include <netinet/in.h>
 
-#include <base/thrower.h>
-
 namespace Bruce {
 
   namespace MockKafkaServer {
 
     class TSetup final {
       public:
-      DEFINE_ERROR(TFileOpenError, std::runtime_error,
-                   "Failed to open setup file");
-
       class TFileFormatError final : public std::runtime_error {
         public:
         TFileFormatError(size_t line_num, const char *msg);

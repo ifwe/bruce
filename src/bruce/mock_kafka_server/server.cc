@@ -29,6 +29,7 @@
 #include <syslog.h>
 
 #include <base/debug_log.h>
+#include <bruce/util/exceptions.h>
 #include <bruce/util/worker_thread.h>
 #include <socket/address.h>
 
@@ -52,9 +53,11 @@ int TServer::Init() {
 
   try {
     TSetup().Get(Ss.Config.SetupFile, Ss.Setup);
-  } catch (const TSetup::TFileOpenError &) {
-    std::cerr << "Failed to open file " << Ss.Config.SetupFile
-        << " for reading" << std::endl;
+  } catch (const TFileOpenError &x) {
+    std::cerr << x.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (const TFileReadError &x) {
+    std::cerr << x.what() << std::endl;
     return EXIT_FAILURE;
   }
 

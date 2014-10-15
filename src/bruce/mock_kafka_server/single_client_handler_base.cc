@@ -53,84 +53,11 @@ void TSingleClientHandlerBase::Run() {
     return;  // failed to open output file
   }
 
-  const TSetup::TPort &port = Setup.Ports[PortOffset];
-  ProduceRequestCount = 0;
-  MetadataRequestCount = 0;
-  MsgSetCount = 0;
-  MsgCount = 0;
-  const TFd &shutdown_request_fd = GetShutdownRequestFd();
-
-  while (!shutdown_request_fd.IsReadable()) {
-    if (port.ReadDelay &&
-        (((ProduceRequestCount + MetadataRequestCount + 1) %
-          port.ReadDelayInterval) == 0)) {
-      if (Config.QuietLevel <= 1) {
-        Out << "Info: Sleeping " << port.ReadDelay
-            << " milliseconds before reading next request." << std::endl;
-      }
-
-      if (shutdown_request_fd.IsReadable(port.ReadDelay)) {
-        break;
-      }
-    }
-
-    bool done = false;
-
-    switch (GetRequest()) {
-      case TGetRequestResult::GotRequest: {
-        break;
-      }
-      case TGetRequestResult::GotShutdownRequest:
-      case TGetRequestResult::ClientDisconnected:
-      case TGetRequestResult::InvalidRequest: {
-        done = true;
-        break;
-      }
-      NO_DEFAULT_CASE;
-    }
-
-    if (done) {
-      break;
-    }
-
-    switch (GetRequestType()) {
-      case TRequestType::UnknownRequest: {
-        done = true;
-        break;
-      }
-      case TRequestType::ProduceRequest: {
-        ++ProduceRequestCount;
-        done = !HandleProduceRequest();
-        break;
-      }
-      case TRequestType::MetadataRequest: {
-        if (!ValidateMetadataRequestHeader()) {
-          Out << "Error: Exiting due to invalid metadata request" << std::endl;
-          done = true;
-          break;
-        }
-
-        ++MetadataRequestCount;
-        done = !HandleMetadataRequest();
-        break;
-      }
-      NO_DEFAULT_CASE;
-    }
-
-    if (done) {
-      break;
-    }
-  }
-
-  if ((Config.QuietLevel <= 2) && (!Config.SingleOutputFile)) {
-    Out << "end: ==============================================" << std::endl
-        << std::endl
-        << "final counts:" << std::endl
-        << "produce requests: " << ProduceRequestCount << std::endl
-        << "metadata requests: " << MetadataRequestCount << std::endl
-        << "message sets: " << MsgSetCount << std::endl
-        << "messages: " << MsgCount << std::endl
-        << std::endl;
+  try {
+    DoRun();
+  } catch (const std::ofstream::failure &) {
+    std::cerr << "Error writing to server output file" << std::endl;
+    return;
   }
 }
 
@@ -207,12 +134,13 @@ bool TSingleClientHandlerBase::OpenOutputFile() {
 
   Out.open(path, flags);
 
-  if (Out.fail()) {
+  if (!Out.is_open()) {
     std::cerr << "Error: Failed to open output file " << path << " for writing"
         << std::endl;
     return false;
   }
 
+  Out.exceptions(std::ofstream::badbit);
   return true;
 }
 
@@ -803,4 +731,87 @@ const TSetup::TPartition *TSingleClientHandlerBase::FindPartition(
   }
 
   return &t.Partitions[partition];
+}
+
+void TSingleClientHandlerBase::DoRun() {
+  assert(this);
+  const TSetup::TPort &port = Setup.Ports[PortOffset];
+  ProduceRequestCount = 0;
+  MetadataRequestCount = 0;
+  MsgSetCount = 0;
+  MsgCount = 0;
+  const TFd &shutdown_request_fd = GetShutdownRequestFd();
+
+  while (!shutdown_request_fd.IsReadable()) {
+    if (port.ReadDelay &&
+        (((ProduceRequestCount + MetadataRequestCount + 1) %
+          port.ReadDelayInterval) == 0)) {
+      if (Config.QuietLevel <= 1) {
+        Out << "Info: Sleeping " << port.ReadDelay
+            << " milliseconds before reading next request." << std::endl;
+      }
+
+      if (shutdown_request_fd.IsReadable(port.ReadDelay)) {
+        break;
+      }
+    }
+
+    bool done = false;
+
+    switch (GetRequest()) {
+      case TGetRequestResult::GotRequest: {
+        break;
+      }
+      case TGetRequestResult::GotShutdownRequest:
+      case TGetRequestResult::ClientDisconnected:
+      case TGetRequestResult::InvalidRequest: {
+        done = true;
+        break;
+      }
+      NO_DEFAULT_CASE;
+    }
+
+    if (done) {
+      break;
+    }
+
+    switch (GetRequestType()) {
+      case TRequestType::UnknownRequest: {
+        done = true;
+        break;
+      }
+      case TRequestType::ProduceRequest: {
+        ++ProduceRequestCount;
+        done = !HandleProduceRequest();
+        break;
+      }
+      case TRequestType::MetadataRequest: {
+        if (!ValidateMetadataRequestHeader()) {
+          Out << "Error: Exiting due to invalid metadata request" << std::endl;
+          done = true;
+          break;
+        }
+
+        ++MetadataRequestCount;
+        done = !HandleMetadataRequest();
+        break;
+      }
+      NO_DEFAULT_CASE;
+    }
+
+    if (done) {
+      break;
+    }
+  }
+
+  if ((Config.QuietLevel <= 2) && (!Config.SingleOutputFile)) {
+    Out << "end: ==============================================" << std::endl
+        << std::endl
+        << "final counts:" << std::endl
+        << "produce requests: " << ProduceRequestCount << std::endl
+        << "metadata requests: " << MetadataRequestCount << std::endl
+        << "message sets: " << MsgSetCount << std::endl
+        << "messages: " << MsgCount << std::endl
+        << std::endl;
+  }
 }

@@ -1339,14 +1339,16 @@ void TConf::TBuilder::ReadConfigFile(const char *config_filename,
     throw TConfigFileOpenFailed(config_filename);
   }
 
-  infile.seekg(0, infile.end);
-  size_t size = infile.tellg();
-  infile.seekg(0);
-  file_contents.resize(size);
-  infile.read(reinterpret_cast<char *>(&file_contents[0]),
-              file_contents.size());
+  infile.exceptions(std::ifstream::badbit);
 
-  if (!infile) {
+  try {
+    infile.seekg(0, infile.end);
+    size_t size = infile.tellg();
+    infile.seekg(0);
+    file_contents.resize(size);
+    infile.read(reinterpret_cast<char *>(&file_contents[0]),
+                file_contents.size());
+  } catch (const std::ifstream::failure &) {
     throw TConfigFileReadFailed(config_filename);
   }
 }
