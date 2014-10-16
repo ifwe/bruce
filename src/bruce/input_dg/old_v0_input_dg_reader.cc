@@ -38,7 +38,7 @@ TMsg::TPtr TOldV0InputDgReader::BuildMsg() {
   const uint8_t *pos = DataBegin;
 
   if (DataSize < (OLD_V0_TS_FIELD_SIZE + OLD_V0_TOPIC_SZ_FIELD_SIZE)) {
-    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker, NoLogDiscard);
     return TMsg::TPtr();
   }
 
@@ -50,13 +50,13 @@ TMsg::TPtr TOldV0InputDgReader::BuildMsg() {
                       OLD_V0_TOPIC_SZ_FIELD_SIZE;
 
   if (topic_size < 0) {
-    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker, NoLogDiscard);
     return TMsg::TPtr();
   }
 
   if (static_cast<size_t>(topic_size + OLD_V0_BODY_SZ_FIELD_SIZE) >
       bytes_left) {
-    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker, NoLogDiscard);
     return TMsg::TPtr();
   }
 
@@ -69,7 +69,7 @@ TMsg::TPtr TOldV0InputDgReader::BuildMsg() {
   bytes_left -= OLD_V0_BODY_SZ_FIELD_SIZE;
 
   if ((body_size < 0) || (static_cast<size_t>(body_size) != bytes_left)) {
-    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker);
+    DiscardMalformedMsg(DgBegin, DgSize, AnomalyTracker, NoLogDiscard);
     return TMsg::TPtr();
   }
 
@@ -85,7 +85,7 @@ TMsg::TPtr TOldV0InputDgReader::BuildMsg() {
 
   if (!msg) {
     DiscardMsgNoMem(timestamp, topic_begin, topic_end, nullptr, nullptr,
-        body_begin, body_begin + body_size, AnomalyTracker);
+        body_begin, body_begin + body_size, AnomalyTracker, NoLogDiscard);
   }
 
   return std::move(msg);

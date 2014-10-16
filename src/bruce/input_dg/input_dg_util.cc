@@ -54,37 +54,45 @@ SERVER_COUNTER(InputThreadProcessOldFormatMsg);
 SERVER_COUNTER(InputThreadProcessOldOldFormatMsg);
 
 static void DiscardMsgWithNoTopic(const char *msg_begin, size_t msg_size,
-    TAnomalyTracker &anomaly_tracker) {
+    TAnomalyTracker &anomaly_tracker, bool no_log_discard) {
+  if (!no_log_discard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Discarding message with invalid format");
+    }
+  }
+
   anomaly_tracker.TrackMalformedMsgDiscard(
       reinterpret_cast<const uint8_t *>(msg_begin),
       reinterpret_cast<const uint8_t *>(msg_begin) + msg_size);
   InputThreadDiscardOldOldFormatMsgMalformed.Increment();
-  static TLogRateLimiter lim(std::chrono::seconds(30));
-
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Discarding message with invalid format");
-  }
 }
 
 static void DiscardOldOldFormatMsgNoMem(const char *msg_begin, char *topic_end,
     const char *body_begin, const char *body_end,
-    TAnomalyTracker &anomaly_tracker) {
+    TAnomalyTracker &anomaly_tracker, bool no_log_discard) {
   assert(topic_end >= msg_begin);
   assert(body_begin > topic_end);
   assert(body_end >= body_begin);
+
+  if (!no_log_discard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      /* Make the topic into a C string for logging. */
+      assert(topic_end < body_begin);
+      *topic_end = '\0';
+
+      syslog(LOG_ERR,
+             "Discarding message due to buffer space cap (topic: [%s])",
+             msg_begin);
+    }
+  }
+
   anomaly_tracker.TrackNoMemDiscard(GetEpochMilliseconds(), msg_begin,
       topic_end, nullptr, nullptr, body_begin, body_end);
   InputThreadDiscardOldOldFormatMsgNoMem.Increment();
-  static TLogRateLimiter lim(std::chrono::seconds(30));
-
-  if (lim.Test()) {
-    /* Make the topic into a C string for logging. */
-    assert(topic_end < body_begin);
-    *topic_end = '\0';
-
-    syslog(LOG_ERR, "Discarding message due to buffer space cap (topic: [%s])",
-           msg_begin);
-  }
 }
 
 static TMsg::TPtr BuildMsgFromOldOldFormatDg(const char *msg_start,
@@ -115,7 +123,8 @@ static TMsg::TPtr BuildMsgFromOldOldFormatDg(const char *msg_start,
   char * const topic_end = std::find(msg_begin, msg_end, ' ');
 
   if (topic_end == msg_end) {
-    DiscardMsgWithNoTopic(msg_begin, msg_size, anomaly_tracker);
+    DiscardMsgWithNoTopic(msg_begin, msg_size, anomaly_tracker,
+                          config.NoLogDiscard);
     return TMsg::TPtr();
   }
 
@@ -134,7 +143,7 @@ static TMsg::TPtr BuildMsgFromOldOldFormatDg(const char *msg_start,
 
   if (!msg) {
     DiscardOldOldFormatMsgNoMem(msg_begin, topic_end, body_begin,
-                                body_begin + body_size, anomaly_tracker);
+        body_begin + body_size, anomaly_tracker, config.NoLogDiscard);
   }
 
   return std::move(msg);
@@ -142,7 +151,7 @@ static TMsg::TPtr BuildMsgFromOldOldFormatDg(const char *msg_start,
 
 static TMsg::TPtr BuildMsgFromOldFormatDg(const void *dg, size_t dg_size,
     Capped::TPool &pool, TAnomalyTracker &anomaly_tracker,
-    TMsgStateTracker &msg_state_tracker) {
+    TMsgStateTracker &msg_state_tracker, bool no_log_discard) {
   assert(dg);
   InputThreadProcessOldFormatMsg.Increment();
   const uint8_t *dg_bytes = reinterpret_cast<const uint8_t *>(dg);
@@ -157,23 +166,25 @@ static TMsg::TPtr BuildMsgFromOldFormatDg(const void *dg, size_t dg_size,
     case 0: {
       return TOldV0InputDgReader(dg_bytes, versioned_part_begin,
           versioned_part_end, pool, anomaly_tracker,
-          msg_state_tracker).BuildMsg();
+          msg_state_tracker, no_log_discard).BuildMsg();
     }
     default: {
       break;
     }
   }
 
+  if (!no_log_discard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Discarding message with unsupported version: %d",
+             static_cast<int>(ver));
+    }
+  }
+
   anomaly_tracker.TrackUnsupportedMsgVersionDiscard(dg_bytes,
       dg_bytes + dg_size, ver);
   InputThreadDiscardMsgUnsupportedVersion.Increment();
-  static TLogRateLimiter lim(std::chrono::seconds(30));
-
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Discarding message with unsupported version: %d",
-           static_cast<int>(ver));
-  }
-
   return TMsg::TPtr();
 }
 
@@ -192,14 +203,16 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
       INPUT_DG_API_KEY_FIELD_SIZE + INPUT_DG_API_VERSION_FIELD_SIZE;
 
   if (dg_size < fixed_part_size) {
-    DiscardMalformedMsg(dg_bytes, dg_size, anomaly_tracker);
+    DiscardMalformedMsg(dg_bytes, dg_size, anomaly_tracker,
+                        config.NoLogDiscard);
     return TMsg::TPtr();
   }
 
   int32_t sz = ReadInt32FromHeader(dg_bytes);
 
   if ((sz < 0) || (static_cast<size_t>(sz) != dg_size)) {
-    DiscardMalformedMsg(dg_bytes, dg_size, anomaly_tracker);
+    DiscardMalformedMsg(dg_bytes, dg_size, anomaly_tracker,
+                        config.NoLogDiscard);
     return TMsg::TPtr();
   }
 
@@ -208,7 +221,7 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
   /* TODO: remove this temporary hack when it is no longer needed */
   if ((static_cast<uint16_t>(api_key) & 0xff00) != (1 << 8)) {
     return BuildMsgFromOldFormatDg(dg, dg_size, pool, anomaly_tracker,
-        msg_state_tracker);
+        msg_state_tracker, config.NoLogDiscard);
   }
 
   size_t key_part_size = INPUT_DG_SZ_FIELD_SIZE + INPUT_DG_API_KEY_FIELD_SIZE;
@@ -221,27 +234,29 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
     case ((1 << 8) + 0): {
       return BuildAnyPartitionMsgFromDg(dg_bytes, dg_size, api_version,
           versioned_part_begin, versioned_part_end, pool, anomaly_tracker,
-          msg_state_tracker);
+          msg_state_tracker, config.NoLogDiscard);
     }
     case ((1 << 8) + 1): {
       return BuildPartitionKeyMsgFromDg(dg_bytes, dg_size, api_version,
           versioned_part_begin, versioned_part_end, pool, anomaly_tracker,
-          msg_state_tracker);
+          msg_state_tracker, config.NoLogDiscard);
     }
     default: {
       break;
     }
   }
 
+  if (!config.NoLogDiscard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Discarding message with unsupported API key: %d",
+             static_cast<int>(api_key));
+    }
+  }
+
   anomaly_tracker.TrackUnsupportedApiKeyDiscard(dg_bytes, dg_bytes + dg_size,
       api_key);
   InputThreadDiscardMsgUnsupportedApiKey.Increment();
-  static TLogRateLimiter lim(std::chrono::seconds(30));
-
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Discarding message with unsupported API key: %d",
-           static_cast<int>(api_key));
-  }
-
   return TMsg::TPtr();
 }

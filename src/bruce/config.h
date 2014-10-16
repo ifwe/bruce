@@ -79,6 +79,8 @@ namespace Bruce {
 
     size_t DiscardReportInterval;
 
+    bool NoLogDiscard;
+
     std::string DebugDir;
 
     size_t MsgDebugTimeLimit;

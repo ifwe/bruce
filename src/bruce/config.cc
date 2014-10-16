@@ -198,6 +198,9 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "Discard reporting interval in seconds.", false,
         config.DiscardReportInterval, "INTERVAL_SECONDS");
     cmd.add(arg_discard_report_interval);
+    SwitchArg arg_no_log_discard("", "no_log_discard", "Do not write syslog "
+        "messages when discards occur.  Discard information will still be "
+        "available through the web interface.", cmd, config.NoLogDiscard);
     ValueArg<decltype(config.DebugDir)> arg_debug_dir("", "debug_dir",
         "Directory for debug instrumentation files.", false, config.DebugDir,
         "DIR");
@@ -294,6 +297,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.MinPauseDelay = arg_min_pause_delay.getValue();
     config.OmitTimestamp = arg_omit_timestamp.getValue();
     config.DiscardReportInterval = arg_discard_report_interval.getValue();
+    config.NoLogDiscard = arg_no_log_discard.getValue();
     config.DebugDir = arg_debug_dir.getValue();
     config.MsgDebugTimeLimit = arg_msg_debug_time_limit.getValue();
     config.MsgDebugByteLimit = arg_msg_debug_byte_limit.getValue();
@@ -336,6 +340,7 @@ TConfig::TConfig(int argc, char *argv[])
       MinPauseDelay(5000),
       OmitTimestamp(false),
       DiscardReportInterval(600),
+      NoLogDiscard(false),
       DebugDir("/home/bruce/debug"),
       MsgDebugTimeLimit(3600),
       MsgDebugByteLimit(2UL * 1024UL * 1024UL * 1024UL),
@@ -396,6 +401,12 @@ void Bruce::LogConfig(const TConfig &config) {
 
   syslog(LOG_NOTICE, "Discard reporting interval %lu seconds",
          static_cast<unsigned long>(config.DiscardReportInterval));
+
+  if (config.UseOldInputFormat) {
+    syslog(LOG_NOTICE, "Omit writing syslog messages when discards occur: %s",
+           config.NoLogDiscard ? "true" : "false");
+  }
+
   syslog(LOG_NOTICE, "Debug directory [%s]", config.DebugDir.c_str());
   syslog(LOG_NOTICE, "Message debug time limit %lu seconds",
          static_cast<unsigned long>(config.MsgDebugTimeLimit));

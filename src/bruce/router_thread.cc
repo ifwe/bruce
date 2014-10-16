@@ -329,11 +329,14 @@ bool TRouterThread::AutocreateTopic(TMsg::TPtr &msg) {
            "response from broker");
   }
 
-  static TLogRateLimiter lim(std::chrono::seconds(30));
+  if (!Config.NoLogDiscard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
 
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Discarding message because topic autocreate failed: [%s]",
-           topic.c_str());
+    if (lim.Test()) {
+      syslog(LOG_ERR,
+             "Discarding message because topic autocreate failed: [%s]",
+             topic.c_str());
+    }
   }
 
   Discard(std::move(msg),
@@ -366,11 +369,13 @@ bool TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
     }
 
     if (topic_index < 0) {
-      static TLogRateLimiter lim(std::chrono::seconds(30));
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message due to unknown topic: [%s]",
-               topic.c_str());
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message due to unknown topic: [%s]",
+                 topic.c_str());
+        }
       }
 
       AnomalyTracker.TrackBadTopicDiscard(msg);
@@ -389,12 +394,14 @@ bool TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
        still log the fact that we got a too long message even when Kafka
        problems would prevent assigning a partition. */
 
-    static TLogRateLimiter lim(std::chrono::seconds(30));
+    if (!Config.NoLogDiscard) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
 
-    if (lim.Test()) {
-      syslog(LOG_ERR,
-             "Discarding message that exceeds max allowed size: topic [%s]",
-             topic.c_str());
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+               "Discarding message that exceeds max allowed size: topic [%s]",
+               topic.c_str());
+      }
     }
 
     AnomalyTracker.TrackLongMsgDiscard(msg);
@@ -408,11 +415,13 @@ bool TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
     const TMetadata::TTopic &topic_meta = topic_vec[topic_index];
 
     if (topic_meta.GetOkPartitions().empty()) {
-      static TLogRateLimiter lim(std::chrono::seconds(30));
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message because topic has no available "
-               "partitions: [%s]", topic.c_str());
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message because topic has no available "
+                 "partitions: [%s]", topic.c_str());
+        }
       }
 
       Discard(std::move(msg),
@@ -420,11 +429,13 @@ bool TRouterThread::ValidateNewMsg(TMsg::TPtr &msg) {
       DiscardNoAvailablePartition.Increment();
     } else if (MsgRateLimiter.WouldExceedLimit(topic,
         msg->GetCreationTimestamp())) {
-      static TLogRateLimiter lim(std::chrono::seconds(30));
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message due to rate limit: [%s]",
-            topic.c_str());
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message due to rate limit: [%s]",
+              topic.c_str());
+        }
       }
 
       Discard(std::move(msg), TAnomalyTracker::TDiscardReason::RateLimit);
@@ -442,11 +453,13 @@ void TRouterThread::ValidateBeforeReroute(std::list<TMsg::TPtr> &msg_list) {
   int topic_index = Metadata->FindTopicIndex(topic);
 
   if (topic_index < 0) {
-    static TLogRateLimiter lim(std::chrono::seconds(30));
+    if (!Config.NoLogDiscard) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
 
-    if (lim.Test()) {
-      syslog(LOG_ERR, "Discarding message due to unknown topic on reroute: "
-             "[%s]", topic.c_str());
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Discarding message due to unknown topic on reroute: "
+               "[%s]", topic.c_str());
+      }
     }
 
     for (TMsg::TPtr &msg : msg_list) {
@@ -465,11 +478,13 @@ void TRouterThread::ValidateBeforeReroute(std::list<TMsg::TPtr> &msg_list) {
         topic_meta.GetOkPartitions();
 
     if (partition_vec.empty()) {
-      static TLogRateLimiter lim(std::chrono::seconds(30));
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
   
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message because topic has no available "
-               "partitions on reroute: [%s]", topic.c_str());
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message because topic has no available "
+                 "partitions on reroute: [%s]", topic.c_str());
+        }
       }
 
       Discard(std::move(msg_list),
@@ -771,12 +786,14 @@ void TRouterThread::DiscardFinalMsgs() {
 
   for (TMsg::TPtr &msg : msg_list) {
     if (msg) {
-      static TLogRateLimiter lim(std::chrono::seconds(30));
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message queued for router thread on "
-               "server shutdown: topic [%s]",
-               msg->GetTopic().c_str());
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message queued for router thread on "
+                 "server shutdown: topic [%s]",
+                 msg->GetTopic().c_str());
+        }
       }
 
       Discard(std::move(msg), TAnomalyTracker::TDiscardReason::ServerShutdown);
@@ -929,14 +946,18 @@ std::list<std::list<TMsg::TPtr>> TRouterThread::EmptyDispatcher() {
           /* We are resending a message that we previously sent but didn't get
              an ACK for.  Track this event, since it may cause a duplicate
              message. */
+
+          if (!Config.NoLogDiscard) {
+            static TLogRateLimiter lim(std::chrono::seconds(30));
+
+            if (lim.Test()) {
+              syslog(LOG_WARNING, "Possible duplicate message (topic: [%s])",
+                     msg->GetTopic().c_str());
+            }
+          }
+
           AnomalyTracker.TrackDuplicate(msg);
           PossibleDuplicateMsg.Increment();
-          static TLogRateLimiter lim(std::chrono::seconds(30));
-
-          if (lim.Test()) {
-            syslog(LOG_WARNING, "Possible duplicate message (topic: [%s])",
-                   msg->GetTopic().c_str());
-          }
         }
       }
     }
@@ -989,12 +1010,15 @@ bool TRouterThread::RespondToPause() {
 
     for (const std::list<TMsg::TPtr> &msg_list : to_discard) {
       assert(!msg_list.empty());
-      static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
-               "shutdown delay expiration during pause",
-        msg_list.front()->GetTopic().c_str());
+      if (!Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
+
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Router thread discarding message with topic [%s] "
+                 "on shutdown delay expiration during pause",
+          msg_list.front()->GetTopic().c_str());
+        }
       }
     }
 
@@ -1013,12 +1037,15 @@ bool TRouterThread::RespondToPause() {
 
 void TRouterThread::DiscardOnShutdownDuringMetadataUpdate(TMsg::TPtr &&msg) {
   assert(this);
-  static TLogRateLimiter lim(std::chrono::seconds(30));
 
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
-           "shutdown delay expiration during metadata update",
-    msg->GetTopic().c_str());
+  if (!Config.NoLogDiscard) {
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
+             "shutdown delay expiration during metadata update",
+      msg->GetTopic().c_str());
+    }
   }
 
   Discard(std::move(msg), TAnomalyTracker::TDiscardReason::ServerShutdown);
@@ -1231,12 +1258,15 @@ void TRouterThread::HandleShutdownFinished() {
 
   for (const std::list<TMsg::TPtr> &msg_list : to_discard) {
     assert(!msg_list.empty());
-    static TLogRateLimiter lim(std::chrono::seconds(30));
 
-    if (lim.Test()) {
-      syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
-             "shutdown",
-      msg_list.front()->GetTopic().c_str());
+    if (!Config.NoLogDiscard) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Router thread discarding message with topic [%s] on "
+               "shutdown",
+        msg_list.front()->GetTopic().c_str());
+      }
     }
   }
 
@@ -1620,23 +1650,29 @@ void TRouterThread::UpdateBatchStateForNewMetadata(const TMetadata &old_md,
   for (const TMsg::TPtr &msg : deleted_topic_msgs) {
     assert(msg);
     DiscardDeletedTopicMsg.Increment();
-    static TLogRateLimiter lim(std::chrono::seconds(30));
 
-    if (lim.Test()) {
-      syslog(LOG_ERR, "Router thread discarding message with topic [%s] that "
-             "is not present in new metadata", msg->GetTopic().c_str());
+    if (!Config.NoLogDiscard) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Router thread discarding message with topic [%s] "
+               "that is not present in new metadata", msg->GetTopic().c_str());
+      }
     }
   }
 
   for (const TMsg::TPtr &msg : unavailable_topic_msgs) {
     assert(msg);
     DiscardNoLongerAvailableTopicMsg.Increment();
-    static TLogRateLimiter lim(std::chrono::seconds(30));
 
-    if (lim.Test()) {
-      syslog(LOG_ERR, "Router thread discarding message with topic [%s] that "
-             "has no available partitions in new metadata",
-             msg->GetTopic().c_str());
+    if (!Config.NoLogDiscard) {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Router thread discarding message with topic [%s] "
+               "that has no available partitions in new metadata",
+               msg->GetTopic().c_str());
+      }
     }
   }
 

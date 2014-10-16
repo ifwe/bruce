@@ -575,11 +575,14 @@ void TReceiver::ProcessPauseAndResendMsgSet(std::list<TMsg::TPtr> &msg_set,
     if (msg->CountFailedDeliveryAttempt() >
         Ds.Config.MaxFailedDeliveryAttempts) {
       DiscardOnFailedDeliveryAttemptLimit.Increment();
-      static TLogRateLimiter lim(std::chrono::seconds(30));
 
-      if (lim.Test()) {
-        syslog(LOG_ERR, "Discarding message because failed delivery attempt "
-               "limit reached (topic: [%s])", msg->GetTopic().c_str());
+      if (!Ds.Config.NoLogDiscard) {
+        static TLogRateLimiter lim(std::chrono::seconds(30));
+
+        if (lim.Test()) {
+          syslog(LOG_ERR, "Discarding message because failed delivery attempt "
+                 "limit reached (topic: [%s])", msg->GetTopic().c_str());
+        }
       }
 
       Ds.Discard(std::move(msg),
@@ -628,6 +631,9 @@ bool TReceiver::ProcessOneAck(std::list<TMsg::TPtr> &msg_set, int16_t ack,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
+        /* Write a syslog message even if Ds.Config.NoLogDiscard is true
+           because these events are always interesting enough to be worth
+           logging. */
         syslog(LOG_ERR, "Receive thread %d (index %lu broker %ld) got ACK "
             "error that triggers discard without pause: topic [%s], %lu "
             "messages in set with total data size %lu",
@@ -664,6 +670,9 @@ bool TReceiver::ProcessOneAck(std::list<TMsg::TPtr> &msg_set, int16_t ack,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
+        /* Write a syslog message even if Ds.Config.NoLogDiscard is true
+           because these events are always interesting enough to be worth
+           logging. */
         syslog(LOG_ERR, "Receive thread %d (index %lu broker %ld) got ACK "
             "error that triggers discard and pause",
             static_cast<int>(Gettid()),
