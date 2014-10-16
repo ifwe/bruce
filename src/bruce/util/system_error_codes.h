@@ -30,7 +30,8 @@ namespace Bruce {
 
     static inline bool LostTcpConnection(int errno_value) {
       return (errno_value == ECONNRESET) || (errno_value == EPIPE) ||
-             (errno_value == EIO);
+             (errno_value == EIO) || (errno_value == EHOSTUNREACH) ||
+             (errno_value == EHOSTDOWN);
     }
 
     static inline bool LostTcpConnection(const std::system_error &x) {
