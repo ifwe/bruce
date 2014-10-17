@@ -53,8 +53,10 @@ void Bruce::Util::WriteKey(std::vector<uint8_t> &dst, size_t offset,
   dst.resize(std::max(dst.size(), offset + key_size));
 
   /* Copy the key into the buffer. */
-  TReader reader(&msg.GetKeyAndValue());
-  reader.Read(&dst[offset], key_size);
+  if (key_size) {
+    TReader reader(&msg.GetKeyAndValue());
+    reader.Read(&dst[offset], key_size);
+  }
 }
 
 /* This function becomes trivially simple when we get rid of the old output
@@ -81,20 +83,23 @@ size_t Bruce::Util::WriteValue(std::vector<uint8_t> &dst, size_t offset,
   size_t extended_value_size = timestamp_size + topic_with_space_size +
                                value_size;
   dst.resize(std::max(dst.size(), offset + extended_value_size));
-  uint8_t *msg_timestamp = &dst[offset];
-  uint8_t *msg_topic = msg_timestamp + timestamp_size;
-  uint8_t *msg_value = msg_topic + topic_with_space_size;
 
-  /* Copy the daemon's timestamp into the buffer. */
-  std::memcpy(msg_timestamp, timestamp.data(), timestamp_size);
+  if (extended_value_size) {
+    uint8_t *msg_timestamp = &dst[offset];
+    uint8_t *msg_topic = msg_timestamp + timestamp_size;
+    uint8_t *msg_value = msg_topic + topic_with_space_size;
 
-  /* Copy the topic into the buffer. */
-  std::memcpy(msg_topic, topic_with_space.data(), topic_with_space_size);
+    /* Copy the daemon's timestamp into the buffer. */
+    std::memcpy(msg_timestamp, timestamp.data(), timestamp_size);
 
-  /* Copy the value into the buffer. */
-  TReader reader(&msg.GetKeyAndValue());
-  reader.Skip(msg.GetKeySize());
-  reader.Read(msg_value, value_size);
+    /* Copy the topic into the buffer. */
+    std::memcpy(msg_topic, topic_with_space.data(), topic_with_space_size);
+
+    /* Copy the value into the buffer. */
+    TReader reader(&msg.GetKeyAndValue());
+    reader.Skip(msg.GetKeySize());
+    reader.Read(msg_value, value_size);
+  }
 
   return extended_value_size;
 }

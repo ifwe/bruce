@@ -96,21 +96,31 @@ void TDebugLogger::LogMsg(const TMsg &msg) {
     return;
   }
 
-  /* TODO: write both key and value to file */
-  size_t bytes_written = WriteValue(MsgBuf, 0, msg, AddTimestamp,
-                                    UseOldOutputFormat);
-  std::string encoded;
+  RawData.clear();
+  WriteKey(RawData, 0, msg);
+  Encoded.clear();
 
-  if (bytes_written) {
-    /* Base64 encode message, since it may contain binary data. */
-    encoded = base64_encode(&MsgBuf[0], bytes_written);
+  if (!RawData.empty()) {
+    /* Base64 encode key in case it contains binary data. */
+    Encoded = base64_encode(&RawData[0], RawData.size());
   }
 
-  encoded.push_back('\n');
-  MsgBuf.resize(encoded.size());
-  std::memcpy(&MsgBuf[0], encoded.data(), encoded.size());
+  LogEntry = "key: [";
+  LogEntry += Encoded;
+  LogEntry += "] value: [";
+  RawData.clear();
+  WriteValue(RawData, 0, msg, AddTimestamp, UseOldOutputFormat);
+  Encoded.clear();
 
-  if (!Settings->RequestLogBytes(MsgBuf.size())) {
+  if (!RawData.empty()) {
+    /* Base64 encode value in case it contains binary data. */
+    Encoded = base64_encode(&RawData[0], RawData.size());
+  }
+
+  LogEntry += Encoded;
+  LogEntry += "]\n";
+
+  if (!Settings->RequestLogBytes(LogEntry.size())) {
     /* Flip automatic kill switch if we can't log this message without
        exceeding the byte limit.  This is a safeguard to prevent filling up the
        disk. */
@@ -118,15 +128,15 @@ void TDebugLogger::LogMsg(const TMsg &msg) {
     return;
   }
 
-  ssize_t ret = write(LogFd, &MsgBuf[0], MsgBuf.size());
+  ssize_t ret = write(LogFd, LogEntry.data(), LogEntry.size());
 
   if (ret < 0) {
     /* Fail gracefully. */
     char tmp_buf[256];
     const char *err_msg = Strerror(errno, tmp_buf, sizeof(tmp_buf));
-    DisableLogging();
     syslog(LOG_ERR, "Failed to write to debug logfile %s: %s", ToBlurb(LogId),
            err_msg);
+    DisableLogging();
   }
 }
 

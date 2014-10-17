@@ -105,7 +105,11 @@ namespace Bruce {
 
       size_t MsgCount;
 
-      std::vector<uint8_t> MsgBuf;
+      std::vector<uint8_t> RawData;
+
+      std::string Encoded;
+
+      std::string LogEntry;
     };  // TDebugLogger
 
   }  // Debug
