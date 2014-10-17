@@ -94,9 +94,9 @@ void TConnector::JoinAll() {
   assert(Cs.SendWaitAfterShutdown.empty());
   Cs.SendWaitAfterShutdown.splice(Cs.SendWaitAfterShutdown.end(),
       Cs.ResendQueue.NonblockingGet());
-  Sender.Reset();
+  Sender.ExtractMsgs();
   assert(Cs.AckWaitAfterShutdown.empty());
-  Receiver.Reset();
+  Receiver.ExtractMsgs();
   std::list<TProduceRequest> send_finished;
   send_finished.splice(send_finished.end(),
                        Cs.SendFinishedQueue.NonblockingGet());
@@ -106,8 +106,5 @@ void TConnector::JoinAll() {
   }
 
   Cs.Sock.Reset();
-  Cs.ConnectFinished.Reset();
-  Cs.SendFinishedQueue.Reset();
-  Cs.ResendQueue.Reset();
   ConnectorFinishJoinAll.Increment();
 }

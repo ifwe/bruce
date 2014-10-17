@@ -88,17 +88,20 @@ void TKafkaDispatcher::Start(const std::shared_ptr<TMetadata> &md) {
     num_in_service = brokers.size();
   }
 
+  /* The connectors are not designed to be reused.  Therefore delete all
+     connectors remaining from the last dispatcher execution and create new
+     ones.  Doing things this way makes the connector implementation simpler
+     and less susceptible to bugs being introduced. */
+
+  Connectors.clear();
   Connectors.resize(num_in_service);
   Ds.MarkAllThreadsRunning(num_in_service);
 
   for (size_t i = 0; i < Connectors.size(); ++i) {
     assert(brokers[i].IsInService());
     std::unique_ptr<TConnector> &broker_ptr = Connectors[i];
-
-    if (!broker_ptr) {
-      broker_ptr.reset(new TConnector(i, Ds));
-    }
-
+    assert(!broker_ptr);
+    broker_ptr.reset(new TConnector(i, Ds));
     syslog(LOG_NOTICE, "Starting send and receive threads for broker index "
            "%lu (Kafka ID %lu)", static_cast<unsigned long>(i),
            static_cast<unsigned long>(brokers[i].GetId()));

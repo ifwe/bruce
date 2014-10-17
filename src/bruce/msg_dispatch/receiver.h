@@ -79,7 +79,7 @@ namespace Bruce {
         return ShutdownStatus;
       }
 
-      void Reset();
+      void ExtractMsgs();
 
       protected:
       virtual void Run() override;

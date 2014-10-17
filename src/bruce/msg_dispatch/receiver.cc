@@ -169,7 +169,7 @@ void TReceiver::WaitForShutdownAck() {
   OptShutdownCmd.Reset();
 }
 
-void TReceiver::Reset() {
+void TReceiver::ExtractMsgs() {
   assert(this);
 
   /* The order in which we move remaining messages to Cs.AckWaitAfterShutdown
@@ -183,17 +183,12 @@ void TReceiver::Reset() {
     EmptyAllTopics(request.second, aw);
   }
 
-  AckWaitQueue.clear();
-  OptInProgressShutdown.Reset();
+  /* After emptying out the receiver, don't bother reinitializing it to a newly
+     constructed state.  It will be destroyed and recreated before the
+     dispatcher restarts. */
+
   Metadata.reset();
-  ReceiveBufDataOffset = 0;
-  ReceiveBufDataSize = 0;
-  FullResponseInReceiveBuf = false;
-  PauseInProgress = false;
-  SendThreadTerminated = false;
   assert(!Destroying);
-  OptShutdownCmd.Reset();
-  ShutdownAck.Reset();
   ShutdownStatus = TShutdownStatus::Normal;
 }
 

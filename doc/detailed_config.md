@@ -6,11 +6,12 @@ probably want an overview of Bruce's design, which is avaliable
 
 ### Config File
 
-Bruce's config file is an XML document that specifies settings for batching and
-compression.  It also specifies a list of initial brokers to try contacting for
-metadata when Bruce is starting.  Below is an example config file.  It is well
-commented, and should be self-explanatory once the reader is familiar with the
-information provided in the above-mentioned design section.
+Bruce's config file is an XML document that specifies settings for batching,
+compression, and per-topic message rate limiting.  It also specifies a list of
+initial brokers to try contacting for metadata when Bruce is starting.  Below
+is an example config file.  It is well commented, and should be self-
+explanatory once the reader is familiar with the information provided in the
+above-mentioned design section.
 
 ```XML
 <?xml version="1.0" encoding="US-ASCII"?>

@@ -146,7 +146,7 @@ void TSender::WaitForShutdownAck() {
   OptShutdownCmd.Reset();
 }
 
-void TSender::Reset() {
+void TSender::ExtractMsgs() {
   assert(this);
 
   /* The order in which we move remaining messages to Cs.SendWaitAfterShutdown
@@ -159,20 +159,16 @@ void TSender::Reset() {
     EmptyAllTopics(CurrentRequest->second, sw);
   }
 
-  CurrentRequest.Reset();
   sw.splice(sw.end(), RequestFactory.GetAll());
-  OptInProgressShutdown.Reset();
-  OptNextBatchExpiry.Reset();
   Metadata.reset();
-  RequestFactory.Reset();
-  SendBuf.clear();
-  PauseInProgress = false;
   assert(!Destroying);
-  OptShutdownCmd.Reset();
-  ShutdownAck.Reset();
   ShutdownStatus = TShutdownStatus::Normal;
   Cs.SendWaitAfterShutdown.splice(Cs.SendWaitAfterShutdown.end(),
                                   InputQueue.Reset());
+
+  /* After emptying out the sender, don't bother reinitializing it to a newly
+     constructed state.  It will be destroyed and recreated before the
+     dispatcher restarts. */
 }
 
 void TSender::Run() {
