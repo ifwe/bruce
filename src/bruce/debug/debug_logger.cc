@@ -106,7 +106,9 @@ void TDebugLogger::LogMsg(const TMsg &msg) {
     Encoded = base64_encode(&RawData[0], RawData.size());
   }
 
-  LogEntry = "topic: ";
+  LogEntry = "ts: ";
+  LogEntry += boost::lexical_cast<std::string>(msg.GetTimestamp());
+  LogEntry += " topic: ";
   LogEntry += boost::lexical_cast<std::string>(msg.GetTopic().size());
   LogEntry += "[";
   LogEntry += msg.GetTopic();
