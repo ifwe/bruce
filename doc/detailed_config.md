@@ -307,6 +307,8 @@ number of times specified here.  The actual delay has some randomness added to
 it.  The default value is 4.
 * `--discard_report_interval N`: This specifies the discard report interval in
 seconds.  The default value is 600.
+* `--no_log_discard`: This prevents Bruce from writing syslog messages when
+discards occur.  Discards will still be reported through Bruce's web interface.
 * `--debug_dir DIR`: This specifies a directory for debug instrumentation
 files, as described
 [here](troubleshooting.md).  If unspecified, the debug instrumentation file

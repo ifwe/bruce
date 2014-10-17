@@ -14,21 +14,20 @@ it **two** levels from where the subsequent line begins.
 
 ### Naming and Namespaces
 
-When you use a namespace, please indent it one level from the surrounding code.
+When you use a namespace, please indent its contents one level from the
+surrounding code.
 
 When closing a curly brace, follow it with a `//` comment declaring which
 namespace has just been closed. For example:
 
 ```C++
-class TExprError : public TSourceError, public Base::TFinalError<TExprError> {
-  public:
-  TExprError(const Base::TCodeLocation &code_location,
-      const TPosRange &pos_range,
-      const char *message = "This expression is invalid.")
-      : TSourceError(pos_range) {
-    PostCtor(code_location, message);
-  }
-};  // TExprError
+namespace Foo {
+
+ class TBar {
+   // members go here
+ };  // TBar
+
+}  // Foo
 ```
 
 ### Local variables

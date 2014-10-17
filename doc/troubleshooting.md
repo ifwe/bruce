@@ -47,9 +47,8 @@ line options, which are documented
 As documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets),
 a Kafka message consists of a key and a value, either of which may be empty.
-Currently only the values are written to Bruce's discard logfiles.  Including
-keys in the logfiles is future work.  It should also be mentioned that the
-values are written in base64 encoded form.
+Each line of the logfile contains information for a single discarded message.
+The keys and values of the messages are written in base64 encoded form.
 
 ### Debug Logfiles
 
@@ -78,8 +77,7 @@ mechanism, you must send HTTP requests to Bruce's web interface as follows:
 Once debug logging is started, it will automatically stop when either the
 time limit specified by `--msg_debug_time_limit N` expires or the debug logfile
 size limit specified by `--msg_debug_byte_limit N` is reached.  As with discard
-logfiles, only message values are currently logged.  Adding keys to the logs is
-future work.  The values are written in base64 encoded form.
+logfiles, keys and values are written in base64 encoded form.
 
 ### Other Tools
 
