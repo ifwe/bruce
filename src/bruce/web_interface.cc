@@ -240,7 +240,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     if (!std::strcmp(request_info->uri, "/server_info/plain")) {
       request_type = TRequestType::GET_SERVER_INFO;
       MongooseGetServerInfoRequest.Increment();
-      TWebRequestHandler().HandleGetServerInfoRequestCompact(oss);
+      TWebRequestHandler().HandleGetServerInfoRequestPlain(oss);
     } else if (!std::strcmp(request_info->uri, "/server_info/json")) {
       request_type = TRequestType::GET_SERVER_INFO;
       MongooseGetServerInfoRequest.Increment();
@@ -249,7 +249,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     } else if (!std::strcmp(request_info->uri, "/counters/plain")) {
       request_type = TRequestType::GET_COUNTERS;
       MongooseGetCountersRequest.Increment();
-      TWebRequestHandler().HandleGetCountersRequestCompact(oss);
+      TWebRequestHandler().HandleGetCountersRequestPlain(oss);
     } else if (!std::strcmp(request_info->uri, "/counters/json")) {
       request_type = TRequestType::GET_COUNTERS;
       MongooseGetCountersRequest.Increment();
@@ -258,8 +258,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     } else if (!std::strcmp(request_info->uri, "/discards/plain")) {
       request_type = TRequestType::GET_DISCARDS;
       MongooseGetDiscardsRequest.Increment();
-      TWebRequestHandler().HandleGetDiscardsRequestCompact(oss,
-          AnomalyTracker);
+      TWebRequestHandler().HandleGetDiscardsRequestPlain(oss, AnomalyTracker);
     } else if (!std::strcmp(request_info->uri, "/discards/json")) {
       request_type = TRequestType::GET_DISCARDS;
       MongooseGetDiscardsRequest.Increment();
@@ -269,7 +268,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
                             "/metadata_fetch_time/plain")) {
       request_type = TRequestType::GET_METADATA_FETCH_TIME;
       MongooseGetMetadataFetchTimeRequest.Increment();
-      TWebRequestHandler().HandleMetadataFetchTimeRequestCompact(oss,
+      TWebRequestHandler().HandleMetadataFetchTimeRequestPlain(oss,
           MetadataTimestamp);
     } else if (!std::strcmp(request_info->uri,
                             "/metadata_fetch_time/json")) {
@@ -281,8 +280,7 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
     } else if (!std::strcmp(request_info->uri, "/queues/plain")) {
       request_type = TRequestType::GET_QUEUE_STATS;
       MongooseGetQueueStatsRequest.Increment();
-      TWebRequestHandler().HandleQueueStatsRequestCompact(oss,
-          MsgStateTracker);
+      TWebRequestHandler().HandleQueueStatsRequestPlain(oss, MsgStateTracker);
     } else if (!std::strcmp(request_info->uri, "/queues/json")) {
       request_type = TRequestType::GET_QUEUE_STATS;
       MongooseGetQueueStatsRequest.Increment();

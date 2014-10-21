@@ -179,29 +179,28 @@ interface shown near the top of this page, you will get output that looks
 something like this:
 
 ```
-pid: 18592
-now: 1408667163 Thu Aug 21 17:26:03 2014
-version: 1.0.6.70.ga324763
+pid: 4446
+now: 1413927753 Tue Oct 21 14:42:33 2014
+version: 1.0.8.33.gf45da3b
 
-queued:        147  send_wait:          0  ack_wait:        147  topic: [topic1]
+batch:       9120  send_wait:          0  ack_wait:      40379  topic: [topic2]
+batch:          0  send_wait:       2752  ack_wait:       2750  topic: [topic1]
 
-       147 total queued (send_wait + ack_wait)
-         0 total send_wait
-       147 total ack_wait
-     21653 total new
-     21800 total (all states: new + send_wait + ack_wait)
+    125472 total new
+      9120 total batch
+      2752 total send_wait
+     43129 total ack_wait
+    180473 total (all states: new + batch + send_wait + ack_wait)
 ```
 
 As with discard reports, you can see the process ID, current time, and Bruce's
-version at the top.  It also shows that for topic `topic1`, 147 total messages
-have been assigned to a broker and are being sent.  Of those 147 messages, 0
-are waiting to be sent to a Kafka broker and 147 are waiting for an
-acknowledgement (ACK) from a broker.  Additionally, 21653 messages are either
-being batched or are new messages that Bruce has not yet started processing.
-As future work, the intent is to have this last value represent only messages
-that Bruce has not yet started processing.  Per-topic batched message counts
-would then appear along with the above-illustrated counts of messages waiting
-to be sent and waiting for acknowledgements.
+version at the top.  It also shows that for topic `topic2`, 9120 messages are
+being batched, 0 messages are waiting to be sent to a Kafka broker, and 40379
+messages are waiting for acknowledgements (ACKs) from Kafka.  Likewise, for
+topic `topic1`, 0 messages are being batched, 2752 messages are waiting to be
+sent to a Kafka broker, and 2750 messages are waiting for ACKs.  Additionally,
+125472 messages are new, which means that they have not yet been batched or
+routed.
 
 ### Metadata Fetch Time
 

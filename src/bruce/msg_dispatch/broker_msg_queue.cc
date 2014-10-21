@@ -81,6 +81,7 @@ void TBrokerMsgQueue::Put(TMsg::TTimestamp now, TMsg::TPtr &&msg) {
       TryBatchCombinedTopics(now, std::move(msg), combined_topics_status);
 
       if (msg) {
+        MsgStateTracker.MsgEnterSendWait(*msg);
         std::list<TMsg::TPtr> single_item_list;
         single_item_list.push_back(std::move(msg));
         ReadyList.push_back(std::move(single_item_list));
@@ -138,6 +139,7 @@ void TBrokerMsgQueue::Put(TMsg::TTimestamp now, TMsg::TPtr &&msg) {
 void TBrokerMsgQueue::PutNow(TMsg::TTimestamp now, TMsg::TPtr &&msg) {
   assert(this);
   assert(msg);
+  MsgStateTracker.MsgEnterSendWait(*msg);
   std::list<TMsg::TPtr> single_item_list;
   single_item_list.push_back(std::move(msg));
   TExpiryStatus per_topic_status, combined_topics_status;
@@ -169,6 +171,7 @@ void TBrokerMsgQueue::PutNow(TMsg::TTimestamp now,
     return;
   }
 
+  MsgStateTracker.MsgEnterSendWait(batch);
   TExpiryStatus per_topic_status, combined_topics_status;
   bool was_empty = false;
 
@@ -196,7 +199,6 @@ bool TBrokerMsgQueue::NonblockingGet(TMsg::TTimestamp now,
     std::list<std::list<TMsg::TPtr>> &ready_msgs) {
   assert(this);
   TExpiryStatus per_topic_status, combined_topics_status;
-  std::list<std::list<TMsg::TPtr>> tmp;
 
   {
     std::lock_guard<std::mutex> lock(Mutex);
@@ -204,11 +206,9 @@ bool TBrokerMsgQueue::NonblockingGet(TMsg::TTimestamp now,
     /* Transfer any ready batches from the batchers to 'ReadyList'. */
     CheckBothBatchers(now, per_topic_status, combined_topics_status);
 
-    tmp.splice(tmp.end(), std::move(ReadyList));
+    ready_msgs.splice(ready_msgs.end(), std::move(ReadyList));
   }
 
-  MsgStateTracker.MsgEnterSendWait(tmp);
-  ready_msgs.splice(ready_msgs.end(), std::move(tmp));
   TOpt<TMsg::TTimestamp> opt_next_expiry =
       min_opt_ts(per_topic_status.OptFinalExpiry,
                  combined_topics_status.OptFinalExpiry);
@@ -223,27 +223,19 @@ bool TBrokerMsgQueue::NonblockingGet(TMsg::TTimestamp now,
 
 std::list<std::list<TMsg::TPtr>> TBrokerMsgQueue::GetAllOnShutdown() {
   assert(this);
-  std::list<std::list<TMsg::TPtr>> all_msgs;
 
-  {
-    std::lock_guard<std::mutex> lock(Mutex);
-    all_msgs = GetAllMsgs();
-  }
-
-  MsgStateTracker.MsgEnterSendWait(all_msgs);
-  return std::move(all_msgs);
+  std::lock_guard<std::mutex> lock(Mutex);
+  return GetAllMsgs();
 }
 
 std::list<std::list<TMsg::TPtr>> TBrokerMsgQueue::Reset() {
   assert(this);
-  std::list<std::list<TMsg::TPtr>> all_msgs = GetAllMsgs();
   SenderNotify.Reset();
-  MsgStateTracker.MsgEnterSendWait(all_msgs);
-  return std::move(all_msgs);
+  return GetAllMsgs();
 }
 
-void TBrokerMsgQueue::TryBatchPerTopic(TMsg::TTimestamp now, TMsg::TPtr &&msg,
-    TExpiryStatus &expiry_status) {
+void TBrokerMsgQueue::TryBatchPerTopic(TMsg::TTimestamp now,
+    TMsg::TPtr &&msg_ptr, TExpiryStatus &expiry_status) {
   assert(this);
   expiry_status.Clear();
 
@@ -253,12 +245,21 @@ void TBrokerMsgQueue::TryBatchPerTopic(TMsg::TTimestamp now, TMsg::TPtr &&msg,
 
   expiry_status.OptInitialExpiry = PerTopicBatcher.GetNextCompleteTime();
 
-  if (msg->GetRoutingType() == TMsg::TRoutingType::PartitionKey) {
-    ReadyList.splice(ReadyList.end(),
-                     PerTopicBatcher.AddMsg(std::move(msg), now));
-    /* Note: We may still be holding the message here, since the batcher only
-       accepts messages when appropriate. */
+  if (msg_ptr->GetRoutingType() == TMsg::TRoutingType::PartitionKey) {
+    TMsg &msg = *msg_ptr;
+    std::list<std::list<TMsg::TPtr>> batch_list =
+        PerTopicBatcher.AddMsg(std::move(msg_ptr), now);
 
+    /* Note: msg_ptr may still contain the message here, since the batcher only
+       accepts messages when appropriate.  If msg_ptr is empty, then the
+       batcher now contains the message so we transition its state to batching.
+     */
+    if (!msg_ptr) {
+      MsgStateTracker.MsgEnterBatching(msg);
+    }
+
+    MsgStateTracker.MsgEnterSendWait(batch_list);
+    ReadyList.splice(ReadyList.end(), std::move(batch_list));
     expiry_status.OptFinalExpiry = PerTopicBatcher.GetNextCompleteTime();
   } else {
     expiry_status.OptFinalExpiry = expiry_status.OptInitialExpiry;
@@ -266,14 +267,23 @@ void TBrokerMsgQueue::TryBatchPerTopic(TMsg::TTimestamp now, TMsg::TPtr &&msg,
 }
 
 void TBrokerMsgQueue::TryBatchCombinedTopics(TMsg::TTimestamp now,
-    TMsg::TPtr &&msg, TExpiryStatus &expiry_status) {
+    TMsg::TPtr &&msg_ptr, TExpiryStatus &expiry_status) {
   assert(this);
   expiry_status.OptInitialExpiry = CombinedTopicsBatcher.GetNextCompleteTime();
-  ReadyList.splice(ReadyList.end(),
-                   CombinedTopicsBatcher.AddMsg(std::move(msg), now));
-  /* Note: We may still be holding the message here, since the batcher only
-     accepts messages when appropriate. */
+  TMsg &msg = *msg_ptr;
+  std::list<std::list<TMsg::TPtr>> batch_list =
+      CombinedTopicsBatcher.AddMsg(std::move(msg_ptr), now);
 
+  /* Note: msg_ptr may still contain the message here, since the batcher only
+     accepts messages when appropriate.  If msg_ptr is empty, then the batcher
+     now contains the message so we transition its state to batching.
+   */
+  if (!msg_ptr) {
+    MsgStateTracker.MsgEnterBatching(msg);
+  }
+
+  MsgStateTracker.MsgEnterSendWait(batch_list);
+  ReadyList.splice(ReadyList.end(), std::move(batch_list));
   expiry_status.OptFinalExpiry = CombinedTopicsBatcher.GetNextCompleteTime();
 }
 
@@ -295,6 +305,7 @@ TBrokerMsgQueue::CheckPerTopicBatcher(TMsg::TTimestamp now,
     }
   }
 
+  MsgStateTracker.MsgEnterSendWait(ready_batches);
   return std::move(ready_batches);
 }
 
@@ -317,6 +328,7 @@ TBrokerMsgQueue::CheckCombinedTopicsBatcher(TMsg::TTimestamp now,
     }
   }
 
+  MsgStateTracker.MsgEnterSendWait(ready_batches);
   return std::move(ready_batches);
 }
 
@@ -358,6 +370,8 @@ TBrokerMsgQueue::GetAllMsgs() {
   std::list<std::list<TMsg::TPtr>> per_topic = PerTopicBatcher.GetAllBatches();
   std::list<std::list<TMsg::TPtr>> combined_topics =
       CombinedTopicsBatcher.TakeBatch();
+  MsgStateTracker.MsgEnterSendWait(per_topic);
+  MsgStateTracker.MsgEnterSendWait(combined_topics);
 
   /* If expiry is defined for both batchers, queue the contents of the batcher
      with the earliest expiry first.  Otherwise choose arbitrarily. */

@@ -49,11 +49,14 @@ namespace Bruce {
     /* Message state. */
     enum class TState {
       /* The message was just received from the input socket, and has not yet
-         been routed for delivery to a broker. */
-      New,  
+         been batched or routed for delivery to a broker. */
+      New,
 
-      /* The message has been routed for delivery to a broker and is waiting to
-         be sent. */
+      /* The message is being batched. */
+      Batching,
+
+      /* The message has been batched if appropriate, and routed for delivery
+         to a broker.  It is now waiting to be sent. */
       SendWait,
 
       /* The message has been sent to a broker, and is waiting for an ACK. */

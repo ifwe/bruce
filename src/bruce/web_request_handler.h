@@ -39,27 +39,27 @@ namespace Bruce {
     public:
     TWebRequestHandler() = default;
 
-    void HandleGetServerInfoRequestCompact(std::ostream &os);
+    void HandleGetServerInfoRequestPlain(std::ostream &os);
 
     void HandleGetServerInfoRequestJson(std::ostream &os);
 
-    void HandleGetCountersRequestCompact(std::ostream &os);
+    void HandleGetCountersRequestPlain(std::ostream &os);
 
     void HandleGetCountersRequestJson(std::ostream &os);
 
-    void HandleGetDiscardsRequestCompact(std::ostream &os,
+    void HandleGetDiscardsRequestPlain(std::ostream &os,
         const TAnomalyTracker &tracker);
 
     void HandleGetDiscardsRequestJson(std::ostream &os,
         const TAnomalyTracker &tracker);
 
-    void HandleMetadataFetchTimeRequestCompact(std::ostream &os,
+    void HandleMetadataFetchTimeRequestPlain(std::ostream &os,
         const TMetadataTimestamp &metadata_timestamp);
 
     void HandleMetadataFetchTimeRequestJson(std::ostream &os,
         const TMetadataTimestamp &metadata_timestamp);
 
-    void HandleQueueStatsRequestCompact(std::ostream &os,
+    void HandleQueueStatsRequestPlain(std::ostream &os,
         const TMsgStateTracker &tracker);
 
     void HandleQueueStatsRequestJson(std::ostream &os,
@@ -87,7 +87,7 @@ namespace Bruce {
         Base::TEventSemaphore &update_request_sem);
 
     private:
-    void WriteDiscardReportCompact(std::ostream &os,
+    void WriteDiscardReportPlain(std::ostream &os,
         const TAnomalyTracker::TInfo &info);
 
     void WriteDiscardReportJson(std::ostream &os,

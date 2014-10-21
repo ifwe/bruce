@@ -69,7 +69,7 @@ static void FillTimeBuf(time_t seconds_since_epoch, char time_buf[]) {
   }
 }
 
-void TWebRequestHandler::HandleGetServerInfoRequestCompact(std::ostream &os) {
+void TWebRequestHandler::HandleGetServerInfoRequestPlain(std::ostream &os) {
   assert(this);
   uint64_t now = GetEpochSeconds();
   char time_buf[TIME_BUF_SIZE];
@@ -96,7 +96,7 @@ void TWebRequestHandler::HandleGetServerInfoRequestJson(std::ostream &os) {
   os << ind0 << "}" << std::endl;
 }
 
-void TWebRequestHandler::HandleGetCountersRequestCompact(std::ostream &os) {
+void TWebRequestHandler::HandleGetCountersRequestPlain(std::ostream &os) {
   assert(this);
   TCounter::Sample();
   time_t sample_time = TCounter::GetSampleTime();
@@ -164,7 +164,7 @@ void TWebRequestHandler::HandleGetCountersRequestJson(std::ostream &os) {
   os << ind0 << "}" << std::endl;
 }
 
-void TWebRequestHandler::HandleGetDiscardsRequestCompact(std::ostream &os,
+void TWebRequestHandler::HandleGetDiscardsRequestPlain(std::ostream &os,
     const TAnomalyTracker &tracker) {
   assert(this);
   uint64_t now = GetEpochSeconds();
@@ -179,11 +179,11 @@ void TWebRequestHandler::HandleGetDiscardsRequestCompact(std::ostream &os,
       << "report interval in seconds: " << tracker.GetReportInterval()
       << std::endl << std::endl
       << "current (unfinished) reporting period:" << std::endl;
-  WriteDiscardReportCompact(os, current_unfinished);
+  WriteDiscardReportPlain(os, current_unfinished);
 
   if (latest_finished) {
     os << std::endl << "latest finished reporting period:" << std::endl;
-    WriteDiscardReportCompact(os, *latest_finished);
+    WriteDiscardReportPlain(os, *latest_finished);
   }
 }
 
@@ -232,8 +232,8 @@ void TWebRequestHandler::HandleGetDiscardsRequestJson(std::ostream &os,
   os << ind0 << "}" << std::endl;
 }
 
-void TWebRequestHandler::HandleMetadataFetchTimeRequestCompact(
-    std::ostream &os, const TMetadataTimestamp &metadata_timestamp) {
+void TWebRequestHandler::HandleMetadataFetchTimeRequestPlain(std::ostream &os,
+    const TMetadataTimestamp &metadata_timestamp) {
   assert(this);
   uint64_t last_update_time = 0, last_modified_time = 0;
   metadata_timestamp.GetTimes(last_update_time, last_modified_time);
@@ -276,7 +276,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestJson(std::ostream &os,
   os << ind0 << "}" << std::endl;
 }
 
-void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
+void TWebRequestHandler::HandleQueueStatsRequestPlain(std::ostream &os,
     const TMsgStateTracker &tracker) {
   assert(this);
   std::vector<TMsgStateTracker::TTopicStatsItem> topic_stats;
@@ -288,14 +288,15 @@ void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
   os << "pid: " << getpid() << std::endl
       << "now: " << now << " " << time_buf << std::endl
       << "version: " << bruce_build_id << std::endl << std::endl;
+  long total_batch = 0;
   long total_send_wait = 0;
   long total_ack_wait = 0;
 
   for (const auto &item : topic_stats) {
+    total_batch += item.second.BatchingCount;
     total_send_wait += item.second.SendWaitCount;
     total_ack_wait += item.second.AckWaitCount;
-    os << "queued: " << std::setw(10)
-        << (item.second.SendWaitCount + item.second.AckWaitCount)
+    os << "batch: " << std::setw(10) << item.second.BatchingCount
         << "  send_wait: " << std::setw(10) << item.second.SendWaitCount
         << "  ack_wait: " << std::setw(10) << item.second.AckWaitCount
         << "  topic: [" << item.first << "]" << std::endl;
@@ -305,14 +306,14 @@ void TWebRequestHandler::HandleQueueStatsRequestCompact(std::ostream &os,
     os << std::endl;
   }
 
-  long total_queued = total_send_wait + total_ack_wait;
-  os << std::setw(10) << total_queued << " total queued (send_wait + ack_wait)"
-      << std::endl
+  os << std::setw(10) << new_count << " total new" << std::endl
+      << std::setw(10) << total_batch << " total batch" << std::endl
       << std::setw(10) << total_send_wait << " total send_wait" << std::endl
       << std::setw(10) << total_ack_wait << " total ack_wait" << std::endl
-      << std::setw(10) << new_count << " total new" << std::endl
-      << std::setw(10) << total_queued + new_count
-      << " total (all states: new + send_wait + ack_wait)" << std::endl;
+      << std::setw(10)
+      << (new_count + total_batch + total_send_wait + total_ack_wait)
+      << " total (all states: new + batch + send_wait + ack_wait)"
+      << std::endl;
 }
 
 void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
@@ -347,6 +348,8 @@ void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
         {
           TIndent ind3(ind2);
           os << ind3 << "\"topic\": \"" << item.first << "\"," << std::endl
+              << ind3 << "\"batch\": " << item.second.BatchingCount << ","
+              << std::endl
               << ind3 << "\"send_wait\": " << item.second.SendWaitCount << ","
               << std::endl
               << ind3 << "\"ack_wait\": " << item.second.AckWaitCount
@@ -438,7 +441,7 @@ void TWebRequestHandler::HandleMetadataUpdateRequest(std::ostream &os,
       << std::endl;
 }
 
-void TWebRequestHandler::WriteDiscardReportCompact(std::ostream &os,
+void TWebRequestHandler::WriteDiscardReportPlain(std::ostream &os,
     const TAnomalyTracker::TInfo &info) {
   assert(this);
   char time_buf[TIME_BUF_SIZE];

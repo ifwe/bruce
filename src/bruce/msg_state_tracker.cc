@@ -38,6 +38,14 @@ void TMsgStateTracker::MsgEnterNew() {
   assert(NewCount > 0);
 }
 
+void TMsgStateTracker::MsgEnterBatching(TMsg &msg) {
+  assert(this);
+  TDeltaComputer comp;
+  comp.CountBatchingEntered(msg.GetState());
+  msg.SetState(TMsg::TState::Batching);
+  UpdateStats(msg.GetTopic(), comp);
+}
+
 void TMsgStateTracker::MsgEnterSendWait(TMsg &msg) {
   assert(this);
   TDeltaComputer comp;
@@ -164,7 +172,7 @@ void TMsgStateTracker::GetStats(std::vector<TTopicStatsItem> &result,
   for (const auto &item : TopicStats) {
     const TTopicStats &stats = item.second.TopicStats;
 
-    if (stats.SendWaitCount || stats.AckWaitCount) {
+    if (stats.BatchingCount || stats.SendWaitCount || stats.AckWaitCount) {
       result.push_back(std::make_pair(item.first, stats));
     }
   }
@@ -180,12 +188,67 @@ void TMsgStateTracker::PruneTopics(const TTopicExistsFn &topic_exists_fn) {
     TTopicStatsWrapper &w = iter->second;
     w.OkToDelete = !topic_exists_fn(iter->first);
 
-    if (w.OkToDelete && (w.TopicStats.SendWaitCount == 0) &&
+    if (w.OkToDelete && (w.TopicStats.BatchingCount == 0) &&
+        (w.TopicStats.SendWaitCount == 0) &&
         (w.TopicStats.AckWaitCount == 0)) {
       iter = TopicStats.erase(iter);
     } else {
       ++iter;
     }
+  }
+}
+
+void TMsgStateTracker::TDeltaComputer::CountBatchingEntered(
+    TMsg::TState prev_state) {
+  assert(this);
+
+  switch (prev_state) {
+    case TMsg::TState::New: {
+      --NewDelta;
+      ++BatchingDelta;
+      break;
+    }
+    case TMsg::TState::Batching: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot reenter state 'Batching'");
+      }
+
+      assert(false);
+      break;
+    }
+    case TMsg::TState::SendWait: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'Batching' from 'SendWait'");
+      }
+
+      assert(false);
+      break;
+    }
+    case TMsg::TState::AckWait: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'Batching' from 'AckWait'");
+      }
+
+      assert(false);
+      break;
+    }
+    case TMsg::TState::Processed: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'Batching' from 'Processed'");
+      }
+
+      assert(false);
+      break;
+    }
+    NO_DEFAULT_CASE;
   }
 }
 
@@ -199,12 +262,27 @@ void TMsgStateTracker::TDeltaComputer::CountSendWaitEntered(
       ++SendWaitDelta;
       break;
     }
+    case TMsg::TState::Batching: {
+      --BatchingDelta;
+      ++SendWaitDelta;
+      break;
+    }
     case TMsg::TState::SendWait: {
       break;
     }
     case TMsg::TState::AckWait: {
       --AckWaitDelta;
       ++SendWaitDelta;
+      break;
+    }
+    case TMsg::TState::Processed: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'SendWait' from 'Processed'");
+      }
+
+      assert(false);
       break;
     }
     NO_DEFAULT_CASE;
@@ -221,7 +299,17 @@ void TMsgStateTracker::TDeltaComputer::CountAckWaitEntered(
 
       if (lim.Test()) {
         syslog(LOG_ERR,
-               "Bug: Cannot enter state 'AckWait' directly from state 'New'");
+               "Bug: Cannot enter state 'AckWait' from 'New'");
+      }
+
+      assert(false);
+      break;
+    }
+    case TMsg::TState::Batching: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'AckWait' from 'Batching'");
       }
 
       assert(false);
@@ -236,7 +324,17 @@ void TMsgStateTracker::TDeltaComputer::CountAckWaitEntered(
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Bug: Cannot directly reenter state 'AckWait'");
+        syslog(LOG_ERR, "Bug: Cannot reenter state 'AckWait'");
+      }
+
+      assert(false);
+      break;
+    }
+    case TMsg::TState::Processed: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'AckWait' from 'Processed'");
       }
 
       assert(false);
@@ -255,12 +353,32 @@ void TMsgStateTracker::TDeltaComputer::CountProcessedEntered(
       --NewDelta;
       break;
     }
+    case TMsg::TState::Batching: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot enter state 'Processed' from 'Batching'");
+      }
+
+      assert(false);
+      break;
+    }
     case TMsg::TState::SendWait: {
       --SendWaitDelta;
       break;
     }
     case TMsg::TState::AckWait: {
       --AckWaitDelta;
+      break;
+    }
+    case TMsg::TState::Processed: {
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Bug: Cannot reenter state 'Processed'");
+      }
+
+      assert(false);
       break;
     }
     NO_DEFAULT_CASE;
@@ -271,12 +389,13 @@ void TMsgStateTracker::UpdateStats(const std::string &topic,
     const TDeltaComputer &comp) {
   assert(this);
   long new_delta = comp.GetNewDelta();
+  long batching_delta = comp.GetBatchingDelta();
   long send_wait_delta = comp.GetSendWaitDelta();
   long ack_wait_delta = comp.GetAckWaitDelta();
 
   std::lock_guard<std::mutex> lock(Mutex);
 
-  if (send_wait_delta || ack_wait_delta) {
+  if (batching_delta || send_wait_delta || ack_wait_delta) {
     /* We could accomplish the same thing with a single call to
        TopicStats.insert(), but this way we avoid creation of a temporary
        string in the common case where the map already contains the topic. */
@@ -291,12 +410,15 @@ void TMsgStateTracker::UpdateStats(const std::string &topic,
 
     assert(iter != TopicStats.end());
     TTopicStatsWrapper &w = iter->second;
+    w.TopicStats.BatchingCount += batching_delta;
+    assert(w.TopicStats.BatchingCount >= 0);
     w.TopicStats.SendWaitCount += send_wait_delta;
     assert(w.TopicStats.SendWaitCount >= 0);
     w.TopicStats.AckWaitCount += ack_wait_delta;
     assert(w.TopicStats.AckWaitCount >= 0);
 
-    if (w.OkToDelete && (w.TopicStats.SendWaitCount == 0) &&
+    if (w.OkToDelete && (w.TopicStats.BatchingCount == 0) &&
+        (w.TopicStats.SendWaitCount == 0) &&
         (w.TopicStats.AckWaitCount == 0)) {
       TopicStats.erase(iter);
     }

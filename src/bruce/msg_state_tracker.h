@@ -41,12 +41,15 @@ namespace Bruce {
 
     public:
     struct TTopicStats {
+      long BatchingCount;
+
       long SendWaitCount;
 
       long AckWaitCount;
 
       TTopicStats()
-          : SendWaitCount(0),
+          : BatchingCount(0),
+            SendWaitCount(0),
             AckWaitCount(0) {
       }
     };  // TTopicStats
@@ -59,9 +62,14 @@ namespace Bruce {
        this. */
     void MsgEnterNew();
 
+    /* Set the state of 'msg' to TMsg::TState::Batching and update our stats to
+       reflect this.  This indicates that the message is being batched. */
+    void MsgEnterBatching(TMsg &msg);
+
     /* Set the state of 'msg' to TMsg::TState::SendWait and update our stats to
-       reflect this.   This is called after the message has been mapped to a
-       broker, and right before it is added to the broker's queue. */
+       reflect this.   This is called after the message has been batched if
+       appropriate and added to a broker's queue of messages ready to be
+       immediately sent. */
     void MsgEnterSendWait(TMsg &msg);
 
     /* Same as above, but process an entire list of messages.  All messages in
@@ -133,6 +141,7 @@ namespace Bruce {
       public:
       TDeltaComputer()
           : NewDelta(0),
+            BatchingDelta(0),
             SendWaitDelta(0),
             AckWaitDelta(0) {
       }
@@ -140,6 +149,11 @@ namespace Bruce {
       long GetNewDelta() const {
         assert(this);
         return NewDelta;
+      }
+
+      long GetBatchingDelta() const {
+        assert(this);
+        return BatchingDelta;
       }
 
       long GetSendWaitDelta() const {
@@ -152,6 +166,8 @@ namespace Bruce {
         return AckWaitDelta;
       }
 
+      void CountBatchingEntered(TMsg::TState prev_state);
+
       void CountSendWaitEntered(TMsg::TState prev_state);
 
       void CountAckWaitEntered(TMsg::TState prev_state);
@@ -160,6 +176,8 @@ namespace Bruce {
 
       private:
       long NewDelta;
+
+      long BatchingDelta;
 
       long SendWaitDelta;
 

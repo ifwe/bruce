@@ -54,7 +54,7 @@ namespace Bruce {
          of messages from the router thread triggers one of the following
          conditions:
 
-             1.  The queue of messages ready to be sent immediately becomes
+             1.  The queue of messages ready to be immediately sent becomes
                  nonempty.
 
              2.  A batching time limit becomes set when no time limit was
@@ -132,10 +132,10 @@ namespace Bruce {
         }
       };  // TExpiryStatus
 
-      void TryBatchPerTopic(TMsg::TTimestamp now, TMsg::TPtr &&msg,
+      void TryBatchPerTopic(TMsg::TTimestamp now, TMsg::TPtr &&msg_ptr,
           TExpiryStatus &expiry_status);
 
-      void TryBatchCombinedTopics(TMsg::TTimestamp now, TMsg::TPtr &&msg,
+      void TryBatchCombinedTopics(TMsg::TTimestamp now, TMsg::TPtr &&msg_ptr,
           TExpiryStatus &expiry_status);
 
       std::list<std::list<TMsg::TPtr>>
@@ -157,9 +157,9 @@ namespace Bruce {
          queue needs attention. */
       Base::TEventSemaphore SenderNotify;
 
-      /* Protects 'CombinedTopicsBatcher' and 'ReadyList' from concurrent
-         access by router thread and kafka dispatcher send and receive threads.
-       */
+      /* Protects 'PerTopicBatcher', 'CombinedTopicsBatcher', and 'ReadyList'
+         from concurrent access by router thread and kafka dispatcher send and
+         receive threads. */
       std::mutex Mutex;
 
       /* Per-topic batching for PartitionKey messages is done here.  Per-topic

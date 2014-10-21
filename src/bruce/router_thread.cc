@@ -1298,29 +1298,36 @@ void TRouterThread::HandleMsgAvailable(uint64_t now) {
        iter != msg_list.end();
        iter = next) {
     ++next;
-    TMsg::TPtr &msg = *iter;
-    keep_running = ValidateNewMsg(msg);
+    TMsg::TPtr &msg_ptr = *iter;
+    keep_running = ValidateNewMsg(msg_ptr);
 
     if (!keep_running) {
       break;
     }
 
-    if (!msg) {
+    if (!msg_ptr) {
       continue;
     }
 
-    DebugLogger.LogMsg(msg);
+    DebugLogger.LogMsg(msg_ptr);
 
     /* For AnyPartition messages, per topic batching is done here, before we
        choose a destination broker.  For PartitionKey messages, it is done
        after we choose a broker (since the partition key determines the
        broker). */
-    if ((msg->GetRoutingType() == TMsg::TRoutingType::AnyPartition) &&
+    if ((msg_ptr->GetRoutingType() == TMsg::TRoutingType::AnyPartition) &&
         PerTopicBatcher.IsEnabled()) {
+      TMsg &msg = *msg_ptr;
       ready_batches.splice(ready_batches.end(),
-                           PerTopicBatcher.AddMsg(std::move(msg), now));
-      /* Note: We may still be holding the message here, since the batcher only
-         accepts messages when appropriate. */
+                           PerTopicBatcher.AddMsg(std::move(msg_ptr), now));
+
+      /* Note: msg_ptr may still contain the message here, since the batcher
+         only accepts messages when appropriate.  If msg_ptr is empty, then the
+         batcher now contains the message so we transition its state to
+         batching. */
+      if (!msg_ptr) {
+        MsgStateTracker.MsgEnterBatching(msg);
+      }
 
       OptNextBatchExpiry = PerTopicBatcher.GetNextCompleteTime();
 
@@ -1329,7 +1336,7 @@ void TRouterThread::HandleMsgAvailable(uint64_t now) {
       }
     }
 
-    if (msg) {
+    if (msg_ptr) {
       remaining.splice(remaining.end(), msg_list, iter);
     } else {
       PerTopicBatchAnyPartition.Increment();
@@ -1339,15 +1346,15 @@ void TRouterThread::HandleMsgAvailable(uint64_t now) {
   if (keep_running) {
     RouteAnyPartitionNow(std::move(ready_batches));
 
-    for (TMsg::TPtr &msg : remaining) {
-      Route(std::move(msg));
+    for (TMsg::TPtr &msg_ptr : remaining) {
+      Route(std::move(msg_ptr));
     }
   } else {
     /* Shutdown delay expired while fetching metadata due to topic autocreate.
        Discard all remaining messages. */
-    for (TMsg::TPtr &msg : msg_list) {
-      if (msg) {
-        DiscardOnShutdownDuringMetadataUpdate(std::move(msg));
+    for (TMsg::TPtr &msg_ptr : msg_list) {
+      if (msg_ptr) {
+        DiscardOnShutdownDuringMetadataUpdate(std::move(msg_ptr));
       }
     }
 
