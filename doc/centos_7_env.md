@@ -19,7 +19,7 @@ Now proceed to
 
 -----
 
-centos_7_env.md: Copyright 2014 Tagged, Inc.
+centos_7_env.md: Copyright 2014 if(we), Inc.
 
 centos_7_env.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
 International License.

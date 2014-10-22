@@ -6,7 +6,7 @@ as described
 
 -----
 
-readme.md: Copyright 2014 Tagged, Inc.
+readme.md: Copyright 2014 if(we), Inc.
 
 readme.md is licensed under a Creative Commons Attribution-ShareAlike
 4.0 International License.

@@ -1,7 +1,7 @@
 /* <bruce/msg_dispatch/connection_shared_state.h>
 
    ----------------------------------------------------------------------------
-   Copyright 2013-2014 Tagged
+   Copyright 2013-2014 if(we)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

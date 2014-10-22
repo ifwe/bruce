@@ -26,7 +26,7 @@ to the master branch of the bruce repository.
 
 -----
 
-pull_requests.md: Copyright 2014 Tagged, Inc.
+pull_requests.md: Copyright 2014 if(we), Inc.
 
 pull_requests.md is licensed under a Creative Commons Attribution-ShareAlike
 4.0 International License.

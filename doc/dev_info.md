@@ -148,7 +148,7 @@ Information on getting help with Bruce is provided
 
 -----
 
-dev_info.md: Copyright 2014 Tagged, Inc.
+dev_info.md: Copyright 2014 if(we), Inc.
 
 dev_info.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
 International License.

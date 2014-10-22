@@ -88,7 +88,7 @@ Once Bruce has been set up with a basic configuration, you can
 
 -----
 
-basic_config.md: Copyright 2014 Tagged, Inc.
+basic_config.md: Copyright 2014 if(we), Inc.
 
 basic_config.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
 International License.

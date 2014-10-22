@@ -135,7 +135,7 @@ At this point, you are ready to
 
 -----
 
-build_install.md: Copyright 2014 Tagged, Inc.
+build_install.md: Copyright 2014 if(we), Inc.
 
 build_install.md is licensed under a Creative Commons Attribution-ShareAlike
 4.0 International License.

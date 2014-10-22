@@ -155,7 +155,7 @@ If the file is a .cc, please put this comment into its .h file.
 
 -----
 
-coding.md: Copyright 2014 Tagged, Inc.
+coding.md: Copyright 2014 if(we), Inc.
 
 coding.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
 International License.

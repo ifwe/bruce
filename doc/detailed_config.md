@@ -347,20 +347,20 @@ default value is 256.
 * `--topic_autocreate`: Enable automatic topic creation.  For this to work, the
 brokers must be configured with `auto.create.topics.enable=true`.
 * `--omit_timestamp`: Do not use this option, since it will soon be removed.
-Its purpose is to provide compatibility with legacy infrastructure at Tagged.
+Its purpose is to provide compatibility with legacy infrastructure at if(we).
 * `--use_old_input_format`: Do not use this option, since it will soon be
 removed.  Its purpose is to provide compatibility with legacy infrastructure at
-Tagged.
+if(we).
 * `--use_old_output_format`: Do not use this option, since it will soon be
 removed.  Its purpose is to provide compatibility with legacy infrastructure at
-Tagged.
+if(we).
 
 Now that you are familiar with all of Bruce's configuration options, you may
 find information on [troubleshooting](../README.md#troubleshooting) helpful.
 
 -----
 
-detailed_config.md: Copyright 2014 Tagged, Inc.
+detailed_config.md: Copyright 2014 if(we), Inc.
 
 detailed_config.md is licensed under a Creative Commons Attribution-ShareAlike
 4.0 International License.

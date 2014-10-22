@@ -3,14 +3,14 @@
 # -----------------------------------------------------------------------------
 # The copyright notice below is for the SCons build scripts included with this
 # software, which were initially developed by Michael Park
-# (see https://github.com/mpark/bob) and customized at Tagged.  Many thanks to
+# (see https://github.com/mpark/bob) and customized at if(we).  Many thanks to
 # Michael for this useful contribution.
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # The MIT License (MIT)
 # Copyright (c) 2014 Michael Park
-# Copyright (c) 2014 Tagged
+# Copyright (c) 2014 if(we)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal

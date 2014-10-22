@@ -2,7 +2,7 @@
 
 ###############################################################################
 # -----------------------------------------------------------------------------
-# Copyright 2013-2014 Tagged
+# Copyright 2013-2014 if(we)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@
 #        Host may be specified by name or address.  Regardless of whether
 #        name or address is specified, this script will convert the host to a
 #        canonicalized hostname.  For instance, 'web001' will be converted to
-#        'web001.tagged.com'.  Likewise, the IP address for web001 will be
-#        converted to 'web001.tagged.com'.
+#        'web001.ifwe.co'.  Likewise, the IP address for web001 will be
+#        converted to 'web001.ifwe.co'.
 #
 #    -p PORT
 #    --bruce_status_port PORT: (optional, default = 9090)
@@ -271,9 +271,9 @@ def IsValidIpv6Address(address):
 ###############################################################################
 # 'host' may be either a hostname or a valid IP address (IPV4 or IPV6).  Return
 # the host represented as a canonicalized hostname.  For instance, for input
-# 'web001', this function will return 'web001.tagged.com'.  Likewise, if the IP
+# 'web001', this function will return 'web001.ifwe.co'.  Likewise, if the IP
 # address of web001 is given as input, this function returns
-# 'web001.tagged.com'.  Throw a subclass of socket.error if there is a failure
+# 'web001.ifwe.co'.  Throw a subclass of socket.error if there is a failure
 # during name or address lookup.
 ###############################################################################
 def CanonicalizeHost(host):

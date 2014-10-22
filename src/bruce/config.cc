@@ -1,7 +1,7 @@
 /* <bruce/config.cc>
 
    ----------------------------------------------------------------------------
-   Copyright 2013-2014 Tagged
+   Copyright 2013-2014 if(we)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     SwitchArg arg_omit_timestamp("", "omit_timestamp", "Omit timestamps from "
         "messages (applicable only when using legacy input format).  Do not "
         "use this option, since it will soon be removed.  Its purpose is to "
-        "provide compatibility with legacy infrastructure at Tagged.", cmd,
+        "provide compatibility with legacy infrastructure at if(we).", cmd,
         config.OmitTimestamp);
     ValueArg<decltype(config.DiscardReportInterval)>
         arg_discard_report_interval("", "discard_report_interval",
@@ -263,12 +263,12 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     SwitchArg arg_use_old_input_format("", "use_old_input_format", "Expect "
         "input UNIX datagrams to adhere to old format.  Do not use this "
         "option, since it will soon be removed.  Its purpose is to provide "
-        "compatibility with legacy infrastructure at Tagged.", cmd,
+        "compatibility with legacy infrastructure at if(we).", cmd,
         config.UseOldInputFormat);
     SwitchArg arg_use_old_output_format("", "use_old_output_format", "Send "
         "messages to Kafka using old format.  Do not use this option, since "
         "it will soon be removed.  Its purpose is to provide compatibility "
-        "with legacy infrastructure at Tagged.", cmd,
+        "with legacy infrastructure at if(we).", cmd,
         config.UseOldOutputFormat);
     cmd.parse(argc, &arg_vec[0]);
     config.ConfigPath = arg_config_path.getValue();

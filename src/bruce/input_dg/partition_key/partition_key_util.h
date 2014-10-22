@@ -1,7 +1,7 @@
 /* <bruce/input_dg/partition_key/partition_key_util.h>
 
    ----------------------------------------------------------------------------
-   Copyright 2013-2014 Tagged
+   Copyright 2013-2014 if(we)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

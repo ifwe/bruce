@@ -1,6 +1,6 @@
 Bruce's core implementation was written by
 [Dave Peterson](https://github.com/dspeterson).  Bruce also contains code
-written by former Tagged employees who worked on the
+written by former Tagged/if(we) employees who worked on the
 [Stig Database Project](http://www.stigdb.org/).  These contributors include
 [Jason Lucas](https://github.com/jasonl9000),
 [Joris Van Remoortere](https://github.com/jmlvanre),

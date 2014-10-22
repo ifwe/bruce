@@ -1,7 +1,7 @@
 /* <base/syntax_error.h>
 
    ----------------------------------------------------------------------------
-   Copyright 2010-2013 Tagged
+   Copyright 2010-2013 if(we)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Copyright 2010-2013 Tagged
+   Copyright 2010-2013 if(we)
  */
 
 #pragma once

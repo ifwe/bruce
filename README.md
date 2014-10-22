@@ -83,11 +83,11 @@ contributing code to Bruce is provided [here](doc/dev_info.md).
 ## Getting Help
 
 If you have questions about Bruce, contact Dave Peterson
-(dspeterson at tagged dot com).
+(dspeterson at ifwe dot co).
 
 -----
 
-README.md: Copyright 2014 Tagged, Inc.
+README.md: Copyright 2014 if(we), Inc.
 
 README.md is licensed under a Creative Commons Attribution-ShareAlike 4.0
 International License.

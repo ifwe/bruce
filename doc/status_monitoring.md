@@ -243,7 +243,7 @@ At this point it is helpful to have some information on
 
 -----
 
-status_monitoring.md: Copyright 2014 Tagged, Inc.
+status_monitoring.md: Copyright 2014 if(we), Inc.
 
 status_monitoring.md is licensed under a Creative Commons
 Attribution-ShareAlike 4.0 International License.

@@ -25,7 +25,7 @@
 
 */
 
-/* Trivial modification by Dave Peterson <dspeterson@tagged.com>: add
+/* Trivial modification by Dave Peterson <dspeterson@ifwe.co>: add
    "#pragma once" at top of header file.
 
    Code obtained from https://github.com/ReneNyffenegger/development_misc
