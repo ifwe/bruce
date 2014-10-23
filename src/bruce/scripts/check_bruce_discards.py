@@ -498,7 +498,7 @@ def ParseDiscardResponse(json_input, host, port):
     try:
         result = json.loads(json_input)
     except ValueError:
-        Die(EC_UNKNOWN, 'Failed to parse counter report')
+        Die(EC_UNKNOWN, 'Failed to parse discard report')
 
     if type(result) is not dict:
         Die(EC_UNKNOWN, 'Discard response is not a dictionary')
