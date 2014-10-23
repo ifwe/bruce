@@ -101,6 +101,8 @@ namespace Bruce {
 
     bool TopicAutocreate;
 
+    bool RetryOnUnknownPartition;
+
     bool UseOldInputFormat;
 
     bool UseOldOutputFormat;

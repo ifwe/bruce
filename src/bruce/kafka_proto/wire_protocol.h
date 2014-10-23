@@ -94,6 +94,11 @@ namespace Bruce {
         return Constants.SingleMsgOverhead;
       }
 
+      bool GetRetryOnUnknownPartition() const {
+        assert(this);
+        return Constants.RetryOnUnknownPartition;
+      }
+
       /* Return a pointer to a newly created produce request writer object.
          Caller assumes responsibility for deleting object. */
       virtual TProduceRequestWriterApi *CreateProduceRequestWriter() const = 0;
@@ -146,6 +151,12 @@ namespace Bruce {
         /* This is the number of bytes of overhead for a single message in a
            produce request. */
         size_t SingleMsgOverhead;
+
+        /* On receipt of "unknown topic or partition" error ACK, reroute
+           message after updating metadata rather than discarding it.  This is
+           a workaround for Kafka behavior that occurs when relocating a
+           partition to a different broker. */
+        bool RetryOnUnknownPartition;
       };
 
       explicit TWireProtocol(const TConstants &constants)

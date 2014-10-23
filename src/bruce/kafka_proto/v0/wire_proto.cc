@@ -119,10 +119,15 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       syslog(LOG_ERR, "Kafka ACK returned unknown topic or partition error: "
              "topic [%s] partition %d", topic.c_str(),
              static_cast<int>(partition));
-      /* Discard the message in addition to hitting the pause button.
-         Discarding prevents us from resending in the case where the topic no
-         longer exists. */
-      return TAckResultAction::DiscardAndPause;
+
+      /* Normally we want to discard the message in addition to hitting the
+         pause button to handle the case where the topic no longer exists.  In
+         the atypical case where we are doing reconfiguration of the Kafka
+         cluster that involves moving partitions from one broker to another,
+         we don't want to discard, since the act of moving a partition may
+         cause this error code.  This is a somewhat ugly workaround. */
+      return GetRetryOnUnknownPartition() ?
+          TAckResultAction::Pause : TAckResultAction::DiscardAndPause;
     }
     case TErrorCode::InvalidMessageSize: {
       AckErrorInvalidMessageSize.Increment();
@@ -309,7 +314,8 @@ int8_t TWireProto::GetCompressionAttributes(TCompressionType type) const {
   return 0;
 }
 
-TWireProtocol::TConstants TWireProto::ComputeConstants() {
+TWireProtocol::TConstants TWireProto::ComputeConstants(
+    bool retry_on_unknown_partition) {
   using PRC = TProduceRequestConstants;
   TConstants constants;
   constants.BytesNeededToGetResponseSize =
@@ -317,5 +323,6 @@ TWireProtocol::TConstants TWireProto::ComputeConstants() {
   constants.SingleMsgOverhead = PRC::MSG_OFFSET_SIZE + PRC::MSG_SIZE_SIZE +
       PRC::CRC_SIZE + PRC::MAGIC_BYTE_SIZE + PRC::ATTRIBUTES_SIZE +
       PRC::KEY_LEN_SIZE + PRC::VALUE_LEN_SIZE;
+  constants.RetryOnUnknownPartition = retry_on_unknown_partition;
   return constants;
 }
