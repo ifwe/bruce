@@ -149,16 +149,16 @@ void TDebugSetup::SetDebugTopics(
 
 void TDebugSetup::TruncateDebugFiles() {
   assert(this);
-  truncate(GetLogPath(TLogId::MSG_RECEIVE).c_str(), 0);
-  truncate(GetLogPath(TLogId::MSG_SEND).c_str(), 0);
-  truncate(GetLogPath(TLogId::MSG_GOT_ACK).c_str(), 0);
+  IfLt0(truncate(GetLogPath(TLogId::MSG_RECEIVE).c_str(), 0));
+  IfLt0(truncate(GetLogPath(TLogId::MSG_SEND).c_str(), 0));
+  IfLt0(truncate(GetLogPath(TLogId::MSG_GOT_ACK).c_str(), 0));
 }
 
 void TDebugSetup::CreateDebugDir() {
   assert(this);
   std::string cmd("/bin/mkdir -p ");
   cmd += DebugDir;
-  std::system(cmd.c_str());
+  IfLt0(std::system(cmd.c_str()));
 }
 
 static void SettingsFtruncate(const TDebugSetup::TSettings &settings) {
