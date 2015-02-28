@@ -357,6 +357,7 @@ void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
         }
 
         os << ind2 << "}";
+        first_time = false;
       }
 
       os << std::endl;
