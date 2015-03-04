@@ -10,4 +10,5 @@ written by former Tagged/if(we) employees who worked on the
 [Deanna Rubin](https://github.com/dr4b), and
 [Joshua Ball](https://github.com/sciolizer).
 The former Stig Team has since formed its own company, OrlyAtomics, which was
-acquired by [Mesosphere](https://mesosphere.com).
+acquired by [Mesosphere](https://mesosphere.com).  Additional contributors
+include [Omid Aladini](https://github.com/omidaladini).
