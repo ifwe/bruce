@@ -149,16 +149,32 @@ void TDebugSetup::SetDebugTopics(
 
 void TDebugSetup::TruncateDebugFiles() {
   assert(this);
-  IfLt0(truncate(GetLogPath(TLogId::MSG_RECEIVE).c_str(), 0));
-  IfLt0(truncate(GetLogPath(TLogId::MSG_SEND).c_str(), 0));
-  IfLt0(truncate(GetLogPath(TLogId::MSG_GOT_ACK).c_str(), 0));
+
+  if (truncate(GetLogPath(TLogId::MSG_RECEIVE).c_str(), 0) < 0) {
+    syslog(LOG_ERR, "Failed to truncate MSG_RECEIVE debug logfile");
+  }
+
+  if (truncate(GetLogPath(TLogId::MSG_SEND).c_str(), 0) < 0) {
+    syslog(LOG_ERR, "Failed to truncate MSG_SEND debug logfile");
+  }
+
+  if (truncate(GetLogPath(TLogId::MSG_GOT_ACK).c_str(), 0) < 0) {
+    syslog(LOG_ERR, "Failed to truncate MSG_GOT_ACK debug logfile");
+  }
 }
 
 void TDebugSetup::CreateDebugDir() {
   assert(this);
   std::string cmd("/bin/mkdir -p ");
   cmd += DebugDir;
-  IfLt0(std::system(cmd.c_str()));
+
+  if (std::system(cmd.c_str()) < 0) {
+    std::string msg = "Failed to create debug directory [";
+    msg += DebugDir;
+    msg += "]";
+    syslog(LOG_ERR, msg.c_str());
+    /* Keep running, with debug logfiles disabled. */
+  }
 }
 
 static void SettingsFtruncate(const TDebugSetup::TSettings &settings) {

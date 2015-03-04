@@ -86,7 +86,16 @@ static void CreateDir(const char *dir) {
   assert(dir);
   std::string cmd("/bin/mkdir -p ");
   cmd += dir;
-  IfLt0(std::system(cmd.c_str()));
+
+  if (std::system(cmd.c_str()) < 0) {
+    std::string msg = "Failed to create discard log directory [";
+    msg += dir;
+    msg += "]";
+    syslog(LOG_ERR, msg.c_str());
+    IfLt0(-1);  // this will throw
+    /* TODO: Modify implementation to keep running, with discard file logging
+       disabled. */
+  }
 }
 
 TDiscardFileLogger::TDiscardFileLogger()
