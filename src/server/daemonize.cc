@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 
 #include <base/os_error.h>
+#include <base/error_utils.h>
 
 using namespace std;
 using namespace Base;
@@ -101,12 +102,12 @@ pid_t Server::Daemonize() {
       close(2);
       /* Reroute stdin and stdout to dev/null. */
       int dev_null = open("/dev/null", O_RDWR);
-      (void) dup(dev_null);
-      (void) dup(dev_null);
+      IfLt0(dup(dev_null));
+      IfLt0(dup(dev_null));
       /* Set newly created file permissions. */
       umask(0);
       /* Move to the root dir. */
-      (void) chdir("/");
+      IfLt0(chdir("/"));
       /* Keep signals away. */
       DefendAgainstSignals();
     }

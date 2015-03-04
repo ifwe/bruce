@@ -86,7 +86,7 @@ static void CreateDir(const char *dir) {
   assert(dir);
   std::string cmd("/bin/mkdir -p ");
   cmd += dir;
-  std::system(cmd.c_str());
+  IfLt0(std::system(cmd.c_str()));
 }
 
 TDiscardFileLogger::TDiscardFileLogger()
