@@ -42,8 +42,8 @@ namespace {
   static string ToString(const TBlob &blob) {
     ostringstream strm;
     blob.ForEachBlock<ostream &>(
-        [](const void *data, size_t size, ostream &strm) -> bool {
-          strm.write(static_cast<const char *>(data), size);
+        [](const void *data, size_t size, ostream &os) -> bool {
+          os.write(static_cast<const char *>(data), size);
           return true;
         },
         strm

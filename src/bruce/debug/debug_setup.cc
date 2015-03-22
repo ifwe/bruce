@@ -169,10 +169,7 @@ void TDebugSetup::CreateDebugDir() {
   cmd += DebugDir;
 
   if (std::system(cmd.c_str()) < 0) {
-    std::string msg = "Failed to create debug directory [";
-    msg += DebugDir;
-    msg += "]";
-    syslog(LOG_ERR, msg.c_str());
+    syslog(LOG_ERR, "Failed to create debug directory [%s]", DebugDir.c_str());
     /* Keep running, with debug logfiles disabled. */
   }
 }

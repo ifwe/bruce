@@ -269,7 +269,7 @@ void TMetadata::TBuilder::GroupInServiceBrokers() {
 
   std::vector<size_t> old_indexes_to_new(Brokers.size(), 0);
 
-  for (size_t i = 0; i < broker_index_reorder.size(); ++i) {
+  for (i = 0; i < broker_index_reorder.size(); ++i) {
     old_indexes_to_new[broker_index_reorder[i]] = i;
   }
 

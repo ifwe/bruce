@@ -127,7 +127,10 @@ check_version_file(out.Dir('bruce').Dir('client').File('build_id.c').
 # Environment.
 prog_libs = {'pthread', 'dl', 'rt'}
 gtest_libs = {'gtest', 'gtest_main', 'pthread'}
-env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
+env = Environment(CFLAGS=['-Wwrite-strings'],
+                  CCFLAGS=['-Wall', '-Wextra', '-Werror', '-Wformat=2',
+                          '-Winit-self', '-Wunused-parameter', '-Wshadow',
+                          '-Wpointer-arith', '-Wcast-align', '-Wlogical-op'],
                   CPPDEFINES=[('SRC_ROOT', '\'"' + src.abspath + '"\'')],
                   CPPPATH=[src, tclap],
                   CXXFLAGS=['-std=c++11', '-Wold-style-cast'],

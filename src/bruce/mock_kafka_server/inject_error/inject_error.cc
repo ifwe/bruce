@@ -229,7 +229,6 @@ static bool ReadCmdFile(std::istream &in,
       if (index2 == std::string::npos) {  // unspecified msg body
         arg1.assign(line, n, line.size() - n);
       } else {
-        size_t n = index + 1;
         arg1.assign(line, n, index2 - n);
         n = index2 + 1;
         arg2.assign(line, n, line.size() - n);

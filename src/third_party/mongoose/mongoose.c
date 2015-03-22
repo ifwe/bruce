@@ -2534,7 +2534,7 @@ static int parse_range_header(const char *header, int64_t *a, int64_t *b) {
 static void handle_file_request(struct mg_connection *conn, const char *path,
                                 struct mgstat *stp) {
   char date[64], lm[64], etag[64], range[64];
-  const char *fmt = "%a, %d %b %Y %H:%M:%S %Z", *msg = "OK", *hdr;
+  const char *msg = "OK", *hdr;
   time_t curtime = time(NULL);
   int64_t cl, r1, r2;
   struct vec mime_vec;
@@ -2569,8 +2569,10 @@ static void handle_file_request(struct mg_connection *conn, const char *path,
   }
 
   // Prepare Etag, Date, Last-Modified headers
-  (void) strftime(date, sizeof(date), fmt, localtime(&curtime));
-  (void) strftime(lm, sizeof(lm), fmt, localtime(&stp->mtime));
+  (void) strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S %Z",
+      localtime(&curtime));
+  (void) strftime(lm, sizeof(lm), "%a, %d %b %Y %H:%M:%S %Z",
+      localtime(&stp->mtime));
   (void) mg_snprintf(conn, etag, sizeof(etag), "%lx.%lx",
       (unsigned long) stp->mtime, (unsigned long) stp->size);
 

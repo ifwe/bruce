@@ -341,13 +341,13 @@ bool TDispatcher::Dispatch(const TOptTimeout &max_timeout,
   auto size = HandlerCount;
 
   for (size_t i = 0; i < size; ++i) {
-    auto &poller = Pollers[i];
+    auto &pr = Pollers[i];
     auto handler = HandlerPtrs[i];
 
-    if (poller.revents) {
+    if (pr.revents) {
       /* This handler's event has fired. */
       try {
-        handler->OnEvent(poller.fd, poller.revents);
+        handler->OnEvent(pr.fd, pr.revents);
       } catch (...) {
       }
     } else {
