@@ -23,12 +23,12 @@ written a message, no further interaction with Bruce is required.  From that
 point onward, Bruce takes full responsibility for reliable message delivery.
 Bruce serves as a single intake point for a Kafka cluster, receiving messages
 from diverse clients regardless of what programming language a client is
-written in.  Client code is currently available in C, C++, Java, Python, and
-PHP.  Code contributions for clients in other programming languages are much
-appreciated.  Technical details on how to send messages to Bruce are provided
-[here](doc/sending_messages.md).  Bruce runs on Linux, and has been tested on
-CentOS versions 7 and 6.5, and Ubuntu versions 14.04.1 LTS and 13.10.  Bruce
-requires at least version 0.8 of Kafka.
+written in.  Client code is currently available in C, C++, Java, Python, Ruby,
+and PHP.  Code contributions for clients in other programming languages are
+much appreciated.  Technical details on how to send messages to Bruce are
+provided [here](doc/sending_messages.md).  Bruce runs on Linux, and has been
+tested on CentOS versions 7 and 6.5, and Ubuntu versions 14.04.1 LTS and 13.10.
+Bruce requires at least version 0.8 of Kafka.
 
 ## Setting Up a Build Environment
 
