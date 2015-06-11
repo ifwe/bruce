@@ -148,6 +148,14 @@ def tmp_filename(base)
   '/tmp/' + base + '.' + n.to_s
 end
 
+def delete_file_if_exists(path)
+  begin
+    File.delete(path)
+  rescue Errno::ENOENT
+    # No such file: ignore error
+  end
+end
+
 bruce_path = '/path/to/bruce/socket'
 topic = 'some topic'  # Kafka topic
 msg_key = ''
@@ -188,5 +196,5 @@ rescue SystemCallError => x
   exit 1
 ensure
   bruce_sock.close
-  File.delete(bruce_sock_path)
+  delete_file_if_exists(bruce_sock_path)
 end
