@@ -82,8 +82,7 @@ contributing code to Bruce is provided [here](doc/dev_info.md).
 
 ## Getting Help
 
-If you have questions about Bruce, contact Dave Peterson
-(dave at dspeterson dot com).
+If you have questions about Bruce, contact Dave Peterson (dave@dspeterson.com).
 
 -----
 
