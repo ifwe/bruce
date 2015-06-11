@@ -172,10 +172,10 @@ rescue BruceMsgCreator::BruceMsgTooLarge => x
   exit 1
 end
 
-bruce_sock = Socket.new(Socket::AF_UNIX, Socket::SOCK_DGRAM, 0)
-
 begin
-  bruce_sock.bind(Socket.pack_sockaddr_un(tmp_filename('bruce_client')))
+  bruce_sock = Socket.new(Socket::AF_UNIX, Socket::SOCK_DGRAM, 0)
+  bruce_sock_path = tmp_filename('bruce_client')
+  bruce_sock.bind(Socket.pack_sockaddr_un(bruce_sock_path))
   bruce_sock.connect(Socket.pack_sockaddr_un(bruce_path))
 
   # Send AnyPartition message to Bruce.
@@ -188,4 +188,5 @@ rescue SystemCallError => x
   exit 1
 ensure
   bruce_sock.close
+  File.delete(bruce_sock_path)
 end
