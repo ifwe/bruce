@@ -20,7 +20,7 @@ echo -n "hello world" | to_bruce --socket_path /var/run/bruce/bruce.socket \
         --topic test_topic --stdin
 ```
 
-A full listing of the client's command line options may be obatined by typing
+A full listing of the client's command line options may be obtained by typing
 `to_bruce --help`.
 
 ### Other Clients
