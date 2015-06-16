@@ -32,6 +32,11 @@ namespace Bruce {
 
     class TArgParseError : public std::runtime_error {
       public:
+      explicit TArgParseError(std::string &&msg)
+          : std::runtime_error(MakeWhatArg(msg)),
+            Msg(std::move(msg)) {
+      }
+
       TArgParseError(std::string &&msg, std::string &&arg_id)
           : std::runtime_error(MakeWhatArg(msg, arg_id)),
             Msg(std::move(msg)),
@@ -49,6 +54,12 @@ namespace Bruce {
       }
 
       private:
+      std::string MakeWhatArg(const std::string &msg) {
+        std::string what_arg("Error: ");
+        what_arg += msg;
+        return std::move(what_arg);
+      }
+
       std::string MakeWhatArg(const std::string &msg,
           const std::string &arg_id) {
         std::string what_arg("Error: ");

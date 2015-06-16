@@ -21,17 +21,21 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cerrno>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/lexical_cast.hpp>
+#include <unistd.h>
 
 #include <base/basename.h>
+#include <base/error_utils.h>
 #include <base/field_access.h>
 #include <base/no_default_case.h>
 #include <base/time.h>
@@ -65,6 +69,10 @@ struct TConfig {
   std::string Key;
 
   std::string Value;
+
+  bool ValueSpecified;
+
+  bool Stdin;
 
   size_t Count;
 
@@ -101,9 +109,12 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     ValueArg<decltype(config.Key)> arg_key("", "key", "Message key.", false,
         config.Key, "KEY");
     cmd.add(arg_key);
-    ValueArg<decltype(config.Value)> arg_value("", "value", "Message value.",
-        false, config.Value, "VALUE");
+    ValueArg<decltype(config.Value)> arg_value("", "value",
+        "Message value (option is invalid if --stdin is specified).", false,
+        config.Value, "VALUE");
     cmd.add(arg_value);
+    SwitchArg arg_stdin("", "stdin", "Read message value from standard input.",
+        cmd, config.Stdin);
     ValueArg<decltype(config.Count)> arg_count("", "count", "Number of "
         "messages to send.", false, config.Count, "COUNT");
     cmd.add(arg_count);
@@ -128,6 +139,8 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.UsePartitionKey = arg_partition_key.isSet();
     config.Key = arg_key.getValue();
     config.Value = arg_value.getValue();
+    config.ValueSpecified = arg_value.isSet();
+    config.Stdin = arg_stdin.getValue();
     config.Count = arg_count.getValue();
     config.Interval = arg_interval.getValue();
     config.Seq = arg_seq.getValue();
@@ -136,6 +149,11 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.Print = arg_print.getValue();
   } catch (const ArgException &x) {
     throw TArgParseError(x.error(), x.argId());
+  }
+
+  if (config.Stdin && config.ValueSpecified) {
+    throw TArgParseError(
+        "You cannot specify --value <VALUE> and --stdin simultaneously.");
   }
 }
 
@@ -149,6 +167,31 @@ TConfig::TConfig(int argc, char *argv[])
       Bad(false),
       Print(0) {
   ParseArgs(argc, argv, *this);
+}
+
+std::string GetValueFromStdin() {
+  std::string result;
+  char buf[4096];
+
+  for (; ; ) {
+    ssize_t nbytes = read(0, buf, sizeof(buf));
+
+    if (nbytes < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+
+      IfLt0(nbytes);  // this will throw
+    }
+
+    if (nbytes == 0) {
+      break;
+    }
+
+    result.insert(result.size(), buf, nbytes);
+  }
+
+  return std::move(result);
 }
 
 bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
@@ -166,7 +209,7 @@ bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
     value.push_back(' ');
   }
 
-  value += cfg.Value;
+  value += cfg.Stdin ? GetValueFromStdin() : cfg.Value;
   uint64_t ts = GetEpochMilliseconds();
 
   if (cfg.UsePartitionKey) {
