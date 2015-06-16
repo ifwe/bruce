@@ -1,20 +1,27 @@
 ## Sending Messages
 
-### Using the Simple Command Line Client
+### Using the Command Line Client
 
 The quickest way to get started sending messages to Bruce is by using the
-simple command line client.  This client is included in Bruce's RPM package,
-and can be built separately as described
+command line client.  This client is included in Bruce's RPM package, and can
+be built separately as described
 [here](build_install.md#building-bruces-client-library).  Sending a message to
 Bruce can then be done as follows:
 
 ```
-simple_bruce_client --socket_path /var/run/bruce/bruce.socket \
-        --topic test_topic --value "hello world"
+to_bruce --socket_path /var/run/bruce/bruce.socket --topic test_topic \
+        --value "hello world"
 ```
 
-A full listing of the simple client's command line options may be obatined by
-typing `simple_bruce_client --help`.
+or alternatively:
+
+```
+echo -n "hello world" | to_bruce --socket_path /var/run/bruce/bruce.socket \
+        --topic test_topic --stdin
+```
+
+A full listing of the client's command line options may be obatined by typing
+`to_bruce --help`.
 
 ### Other Clients
 

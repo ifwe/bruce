@@ -75,7 +75,7 @@ source bash_defs
 cd src/bruce/client
 build --release libbruce_client.so
 build --release libbruce_client.a
-build --release simple_bruce_client
+build --release to_bruce
 cd ../../..
 ```
 
@@ -101,7 +101,7 @@ For example C code that uses the client library to send a message to Bruce, see
 the big comment at the top of
 [bruce/client/bruce_client.h](../src/bruce/client/bruce_client.h).  For example
 C++ code, see
-[bruce/client/simple_bruce_client.cc](../src/bruce/client/simple_bruce_client.cc).
+[bruce/client/to_bruce.cc](../src/bruce/client/to_bruce.cc).
 
 ### Installing Bruce
 

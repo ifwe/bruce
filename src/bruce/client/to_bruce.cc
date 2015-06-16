@@ -1,4 +1,4 @@
-/* <bruce/client/simple_bruce_client.cc>
+/* <bruce/client/to_bruce.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -266,7 +266,7 @@ bool CreateDg(std::vector<uint8_t> &buf, const TConfig &cfg,
   return true;
 }
 
-int simple_bruce_client_main(int argc, char **argv) {
+int to_bruce_main(int argc, char **argv) {
   std::unique_ptr<TConfig> cfg;
 
   try {
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
   int ret = EXIT_SUCCESS;
 
   try {
-    ret = simple_bruce_client_main(argc, argv);
+    ret = to_bruce_main(argc, argv);
   } catch (const std::exception &ex) {
     std::cerr << "error: " << ex.what() << std::endl;
     ret = EXIT_FAILURE;
