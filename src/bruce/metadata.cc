@@ -286,6 +286,10 @@ void TMetadata::TBuilder::GroupInServiceBrokers() {
       part.BrokerIndex = old_indexes_to_new[part.BrokerIndex];
     }
 
+    for (auto &part : t.AllPartitions) {
+      part.BrokerIndex = old_indexes_to_new[part.BrokerIndex];
+    }
+
     new_partition_choice_map.reserve(t.PartitionChoiceMap.size());
 
     for (const auto &map_item : t.PartitionChoiceMap) {
@@ -454,14 +458,21 @@ bool TMetadata::SanityCheck() const {
 
       auto ret = broker_partition_map.insert(
           std::make_pair(p.BrokerIndex, std::unordered_set<int32_t>()));
-      auto iter = ret.first;
-      iter->second.insert(p.Id);
+      ret.first->second.insert(p.Id);
       in_service_broker_indexes.insert(p.BrokerIndex);
 
-      if (!std::binary_search(t.AllPartitions.begin(), t.AllPartitions.end(),
-              p, [](const TPartition &x, const TPartition &y) {
+      const auto iter = std::lower_bound(t.AllPartitions.begin(),
+          t.AllPartitions.end(), p,
+          [](const TPartition &x, const TPartition &y) {
                    return (x.Id < y.Id);
-                 })) {
+          });
+
+      if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+        return false;
+      }
+
+      if ((iter->BrokerIndex != p.BrokerIndex) ||
+          (iter->ErrorCode != p.ErrorCode)) {
         return false;
       }
     }
@@ -483,10 +494,18 @@ bool TMetadata::SanityCheck() const {
         return false;
       }
 
-      if (!std::binary_search(t.AllPartitions.begin(), t.AllPartitions.end(),
-              p, [](const TPartition &x, const TPartition &y) {
+      const auto iter = std::lower_bound(t.AllPartitions.begin(),
+          t.AllPartitions.end(), p,
+          [](const TPartition &x, const TPartition &y) {
                    return (x.Id < y.Id);
-                 })) {
+          });
+
+      if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+        return false;
+      }
+
+      if ((iter->BrokerIndex != p.BrokerIndex) ||
+          (iter->ErrorCode != p.ErrorCode)) {
         return false;
       }
     }
