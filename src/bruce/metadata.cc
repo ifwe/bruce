@@ -416,6 +416,7 @@ bool TMetadata::SanityCheck() const {
 
   for (const auto &map_item : TopicNameToIndex) {
     if (map_item.second >= Topics.size()) {
+      syslog(LOG_ERR, "Bug!!! Index out of range in TopicNameToIndex");
       return false;
     }
 
@@ -423,6 +424,8 @@ bool TMetadata::SanityCheck() const {
   }
 
   if (topic_indexes.size() != Topics.size()) {
+    syslog(LOG_ERR,
+        "Bug!!! TopicNameToIndex has wrong size and/or dupicate indexes");
     return false;
   }
 
@@ -432,11 +435,15 @@ bool TMetadata::SanityCheck() const {
   for (const TTopic &t : Topics) {
     if (t.AllPartitions.size() !=
         (t.OkPartitions.size() + t.OutOfServicePartitions.size())) {
+      syslog(LOG_ERR, "Bug!!! AllPartitions.size() != OkPartitions.size() + "
+          "OutOfServicePartitions.size()");
       return false;
     }
 
     for (size_t i = 1; i < t.AllPartitions.size(); ++i) {
       if (t.AllPartitions[i].Id <= t.AllPartitions[i - 1].Id) {
+        syslog(LOG_ERR,
+            "Bug!!! AllPartitions is unsorted or has duplicate IDs");
         return false;
       }
     }
@@ -449,10 +456,13 @@ bool TMetadata::SanityCheck() const {
       id_set_ok.insert(p.Id);
 
       if (p.BrokerIndex >= Brokers.size()) {
+        syslog(LOG_ERR,
+            "Bug!!! OkPartitions item has out of range BrokerIndex");
         return false;
       }
 
       if (!CanUsePartition(p.GetErrorCode())) {
+        syslog(LOG_ERR, "Bug!!! OkPartitions item is unusable");
         return false;
       }
 
@@ -468,16 +478,20 @@ bool TMetadata::SanityCheck() const {
           });
 
       if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+        syslog(LOG_ERR, "Bug!!! OkPartitions item not found in AllPartitions");
         return false;
       }
 
       if ((iter->BrokerIndex != p.BrokerIndex) ||
           (iter->ErrorCode != p.ErrorCode)) {
+        syslog(LOG_ERR, "Bug!!! OkPartitions item ErrorCode does not match "
+            "corresponding ErrorCode in AllPartitions");
         return false;
       }
     }
 
     if (id_set_ok.size() != t.OkPartitions.size()) {
+      syslog(LOG_ERR, "Bug!!! OkPartitions has duplicate IDs");
       return false;
     }
 
@@ -487,10 +501,13 @@ bool TMetadata::SanityCheck() const {
       id_set_bad.insert(p.Id);
 
       if (p.BrokerIndex >= Brokers.size()) {
+        syslog(LOG_ERR,
+            "Bug!!! OutOfServicePartitions item has out of range BrokerIndex");
         return false;
       }
 
       if (CanUsePartition(p.GetErrorCode())) {
+        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item is usable");
         return false;
       }
 
@@ -501,26 +518,35 @@ bool TMetadata::SanityCheck() const {
           });
 
       if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item not found in "
+            "AllPartitions");
         return false;
       }
 
       if ((iter->BrokerIndex != p.BrokerIndex) ||
           (iter->ErrorCode != p.ErrorCode)) {
+        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item ErrorCode does "
+            "not match corresponding ErrorCode in AllPartitions");
         return false;
       }
     }
 
     if (id_set_bad.size() != t.OutOfServicePartitions.size()) {
+      syslog(LOG_ERR, "Bug!!! OutOfServicePartitions has duplicate IDs");
       return false;
     }
 
     for (auto id : id_set_ok) {
       if (id_set_bad.find(id) != id_set_bad.end()) {
+        syslog(LOG_ERR, "Bug!!! Same ID appears in both OkPartitions and "
+            "OutOfServicePartitions");
         return false;
       }
     }
 
     if (broker_partition_map.size() != t.PartitionChoiceMap.size()) {
+      syslog(LOG_ERR,
+          "Bug!!! broker_partition_map.size() != t.PartitionChoiceMap.size()");
       return false;
     }
 
@@ -528,6 +554,7 @@ bool TMetadata::SanityCheck() const {
       auto iter = t.PartitionChoiceMap.find(map_item.first);
 
       if (iter == t.PartitionChoiceMap.end()) {
+        syslog(LOG_ERR, "Bug!!! Broker index missing from PartitionChoiceMap");
         return false;
       }
 
@@ -536,10 +563,13 @@ bool TMetadata::SanityCheck() const {
       size_t chunk_size = choices.GetTopicBrokerVecNumItems();
 
       if (chunk_index >= TopicBrokerVec.size()) {
+        syslog(LOG_ERR, "Bug!!! chunk_index >= TopicBrokerVec.size()");
         return false;
       }
 
       if (chunk_size > (TopicBrokerVec.size() - chunk_index)) {
+        syslog(LOG_ERR,
+            "Bug!!! chunk_size > (TopicBrokerVec.size() - chunk_index)");
         return false;
       }
 
@@ -548,6 +578,8 @@ bool TMetadata::SanityCheck() const {
           chunk_begin + chunk_size);
 
       if (partition_id_set != map_item.second) {
+        syslog(LOG_ERR, "Bug!!! Partition choices referenced by "
+            "PartitionChoiceMap do not match partition IDs from OkPartitions");
         return false;
       }
 
@@ -558,6 +590,8 @@ bool TMetadata::SanityCheck() const {
            want to send PartitionKey messages that target specific partition
            IDs. */
         if ((i > 0) && (chunk_begin[i] <= chunk_begin[i - 1])) {
+          syslog(LOG_ERR, "Bug!!! Unsorted or duplicate partition IDs in "
+              "TopicBrokerVec chunk");
           return false;
         }
 
@@ -586,17 +620,26 @@ bool TMetadata::SanityCheck() const {
     }
 
     if (b.IsInService() != in_service) {
+      syslog(LOG_ERR,
+          "Bug!!! TBroker IsInService() method returns wrong result");
       return false;
     }
   }
 
-  if ((NumInServiceBrokers() != in_svc_count) ||
-      (adjacent_in_svc_count != in_svc_count)) {
+  if (NumInServiceBrokers() != in_svc_count) {
+    syslog(LOG_ERR, "Bug!!! NumInServiceBrokers() does not agree with count "
+        "of brokers for which IsInService() returns true");
     return false;
+  }
+
+  if (adjacent_in_svc_count != in_svc_count) {
+    syslog(LOG_ERR, "Bug!!! In service brokers should all be grouped at start "
+        "of Brokers vector");
   }
 
   for (size_t i = 0; i < topic_broker_vec_access.size(); ++i) {
     if (topic_broker_vec_access[i] != 1) {
+      syslog(LOG_ERR, "Bug!!! TopicBrokerVec item access count is wrong");
       return false;
     }
   }
