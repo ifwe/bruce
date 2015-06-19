@@ -410,7 +410,219 @@ const int32_t *TMetadata::FindPartitionChoices(const std::string &topic,
   return &TopicBrokerVec[choices_index];
 }
 
-bool TMetadata::SanityCheck() const {
+bool TMetadata::SanityCheckOkPartitions(const TTopic &t,
+    std::unordered_set<size_t> &in_service_broker_indexes,
+    std::unordered_set<int32_t> &id_set_ok,
+    std::unordered_map<size_t, std::unordered_set<int32_t>>
+        &broker_partition_map) const {
+  assert(this);
+
+  for (const TPartition &p : t.OkPartitions) {
+    id_set_ok.insert(p.Id);
+
+    if (p.BrokerIndex >= Brokers.size()) {
+      syslog(LOG_ERR, "Bug!!! OkPartitions item has out of range BrokerIndex");
+      return false;
+    }
+
+    if (!CanUsePartition(p.GetErrorCode())) {
+      syslog(LOG_ERR, "Bug!!! OkPartitions item is unusable");
+      return false;
+    }
+
+    auto ret = broker_partition_map.insert(
+        std::make_pair(p.BrokerIndex, std::unordered_set<int32_t>()));
+    ret.first->second.insert(p.Id);
+    in_service_broker_indexes.insert(p.BrokerIndex);
+
+    const auto iter = std::lower_bound(t.AllPartitions.begin(),
+        t.AllPartitions.end(), p,
+        [](const TPartition &x, const TPartition &y) {
+          return (x.Id < y.Id);
+        });
+
+    if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+      syslog(LOG_ERR, "Bug!!! OkPartitions item not found in AllPartitions");
+      return false;
+    }
+
+    if ((iter->BrokerIndex != p.BrokerIndex) ||
+        (iter->ErrorCode != p.ErrorCode)) {
+      syslog(LOG_ERR, "Bug!!! OkPartitions item ErrorCode does not match "
+          "corresponding ErrorCode in AllPartitions");
+      return false;
+    }
+  }
+
+  if (id_set_ok.size() != t.OkPartitions.size()) {
+    syslog(LOG_ERR, "Bug!!! OkPartitions has duplicate IDs");
+    return false;
+  }
+
+  return true;
+}
+
+bool TMetadata::SanityCheckOutOfServicePartitions(const TTopic &t,
+    std::unordered_set<int32_t> &id_set_bad) const {
+  assert(this);
+
+  for (const TPartition &p : t.OutOfServicePartitions) {
+    id_set_bad.insert(p.Id);
+
+    if (p.BrokerIndex >= Brokers.size()) {
+      syslog(LOG_ERR,
+          "Bug!!! OutOfServicePartitions item has out of range BrokerIndex");
+      return false;
+    }
+
+    if (CanUsePartition(p.GetErrorCode())) {
+      syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item is usable");
+      return false;
+    }
+
+    const auto iter = std::lower_bound(t.AllPartitions.begin(),
+        t.AllPartitions.end(), p,
+        [](const TPartition &x, const TPartition &y) {
+          return (x.Id < y.Id);
+        });
+
+    if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
+      syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item not found in "
+          "AllPartitions");
+      return false;
+    }
+
+    if ((iter->BrokerIndex != p.BrokerIndex) ||
+        (iter->ErrorCode != p.ErrorCode)) {
+      syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item ErrorCode does not "
+          "match corresponding ErrorCode in AllPartitions");
+      return false;
+    }
+  }
+
+  if (id_set_bad.size() != t.OutOfServicePartitions.size()) {
+    syslog(LOG_ERR, "Bug!!! OutOfServicePartitions has duplicate IDs");
+    return false;
+  }
+
+  return true;
+}
+
+bool TMetadata::SanityCheckBrokerPartitionMap(const TTopic &t,
+    const std::unordered_map<size_t, std::unordered_set<int32_t>>
+        &broker_partition_map,
+        std::vector<size_t> &topic_broker_vec_access) const {
+  assert(this);
+
+  for (const auto &map_item : broker_partition_map) {
+    auto iter = t.PartitionChoiceMap.find(map_item.first);
+
+    if (iter == t.PartitionChoiceMap.end()) {
+      syslog(LOG_ERR, "Bug!!! Broker index missing from PartitionChoiceMap");
+      return false;
+    }
+
+    const auto &choices = iter->second;
+    size_t chunk_index = choices.GetTopicBrokerVecIndex();
+    size_t chunk_size = choices.GetTopicBrokerVecNumItems();
+
+    if (chunk_index >= TopicBrokerVec.size()) {
+      syslog(LOG_ERR, "Bug!!! chunk_index >= TopicBrokerVec.size()");
+      return false;
+    }
+
+    if (chunk_size > (TopicBrokerVec.size() - chunk_index)) {
+      syslog(LOG_ERR,
+          "Bug!!! chunk_size > (TopicBrokerVec.size() - chunk_index)");
+      return false;
+    }
+
+    const int32_t *chunk_begin = &TopicBrokerVec[chunk_index];
+    std::unordered_set<int32_t> partition_id_set(chunk_begin,
+        chunk_begin + chunk_size);
+
+    if (partition_id_set != map_item.second) {
+      syslog(LOG_ERR, "Bug!!! Partition choices referenced by "
+          "PartitionChoiceMap do not match partition IDs from OkPartitions");
+      return false;
+    }
+
+    for (size_t i = 0; i < chunk_size; ++i) {
+      /* For each topic/broker combination, the array of available Kafka
+         partition IDs must be sorted in ascending order, so clients with
+         knowledge of the partition layout can rely on this ordering if they
+         want to send PartitionKey messages that target specific partition
+         IDs. */
+      if ((i > 0) && (chunk_begin[i] <= chunk_begin[i - 1])) {
+        syslog(LOG_ERR, "Bug!!! Unsorted or duplicate partition IDs in "
+            "TopicBrokerVec chunk");
+        return false;
+      }
+
+      ++topic_broker_vec_access[chunk_index + i];
+    }
+  }
+
+  return true;
+}
+
+bool TMetadata::SanityCheckOneTopic(const TTopic &t,
+    std::unordered_set<size_t> &in_service_broker_indexes,
+    std::vector<size_t> &topic_broker_vec_access) const {
+  assert(this);
+
+  if (t.AllPartitions.size() !=
+      (t.OkPartitions.size() + t.OutOfServicePartitions.size())) {
+    syslog(LOG_ERR, "Bug!!! AllPartitions.size() != OkPartitions.size() + "
+        "OutOfServicePartitions.size()");
+    return false;
+  }
+
+  for (size_t i = 1; i < t.AllPartitions.size(); ++i) {
+    if (t.AllPartitions[i].Id <= t.AllPartitions[i - 1].Id) {
+      syslog(LOG_ERR, "Bug!!! AllPartitions is unsorted or has duplicate IDs");
+      return false;
+    }
+  }
+
+  std::unordered_set<int32_t> id_set_ok;
+  std::unordered_map<size_t, std::unordered_set<int32_t>> broker_partition_map;
+
+  if (!SanityCheckOkPartitions(t, in_service_broker_indexes, id_set_ok,
+      broker_partition_map)) {
+    return false;
+  }
+
+  std::unordered_set<int32_t> id_set_bad;
+
+  if (!SanityCheckOutOfServicePartitions(t, id_set_bad)) {
+    return false;
+  }
+
+  for (auto id : id_set_ok) {
+    if (id_set_bad.find(id) != id_set_bad.end()) {
+      syslog(LOG_ERR, "Bug!!! Same ID appears in both OkPartitions and "
+          "OutOfServicePartitions");
+      return false;
+    }
+  }
+
+  if (broker_partition_map.size() != t.PartitionChoiceMap.size()) {
+    syslog(LOG_ERR,
+        "Bug!!! broker_partition_map.size() != t.PartitionChoiceMap.size()");
+    return false;
+  }
+
+  if (!SanityCheckBrokerPartitionMap(t, broker_partition_map,
+      topic_broker_vec_access)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool TMetadata::SanityCheckTopics(
+    std::unordered_set<size_t> &in_service_broker_indexes) const {
   assert(this);
   std::unordered_set<size_t> topic_indexes;
 
@@ -429,175 +641,31 @@ bool TMetadata::SanityCheck() const {
     return false;
   }
 
-  std::unordered_set<size_t> in_service_broker_indexes;
   std::vector<size_t> topic_broker_vec_access(TopicBrokerVec.size(), 0);
 
   for (const TTopic &t : Topics) {
-    if (t.AllPartitions.size() !=
-        (t.OkPartitions.size() + t.OutOfServicePartitions.size())) {
-      syslog(LOG_ERR, "Bug!!! AllPartitions.size() != OkPartitions.size() + "
-          "OutOfServicePartitions.size()");
+    if (!SanityCheckOneTopic(t, in_service_broker_indexes,
+        topic_broker_vec_access)) {
       return false;
     }
+  }
 
-    for (size_t i = 1; i < t.AllPartitions.size(); ++i) {
-      if (t.AllPartitions[i].Id <= t.AllPartitions[i - 1].Id) {
-        syslog(LOG_ERR,
-            "Bug!!! AllPartitions is unsorted or has duplicate IDs");
-        return false;
-      }
-    }
-
-    std::unordered_set<int32_t> id_set_ok;
-    std::unordered_map<size_t, std::unordered_set<int32_t>>
-        broker_partition_map;
-
-    for (const TPartition &p : t.OkPartitions) {
-      id_set_ok.insert(p.Id);
-
-      if (p.BrokerIndex >= Brokers.size()) {
-        syslog(LOG_ERR,
-            "Bug!!! OkPartitions item has out of range BrokerIndex");
-        return false;
-      }
-
-      if (!CanUsePartition(p.GetErrorCode())) {
-        syslog(LOG_ERR, "Bug!!! OkPartitions item is unusable");
-        return false;
-      }
-
-      auto ret = broker_partition_map.insert(
-          std::make_pair(p.BrokerIndex, std::unordered_set<int32_t>()));
-      ret.first->second.insert(p.Id);
-      in_service_broker_indexes.insert(p.BrokerIndex);
-
-      const auto iter = std::lower_bound(t.AllPartitions.begin(),
-          t.AllPartitions.end(), p,
-          [](const TPartition &x, const TPartition &y) {
-                   return (x.Id < y.Id);
-          });
-
-      if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
-        syslog(LOG_ERR, "Bug!!! OkPartitions item not found in AllPartitions");
-        return false;
-      }
-
-      if ((iter->BrokerIndex != p.BrokerIndex) ||
-          (iter->ErrorCode != p.ErrorCode)) {
-        syslog(LOG_ERR, "Bug!!! OkPartitions item ErrorCode does not match "
-            "corresponding ErrorCode in AllPartitions");
-        return false;
-      }
-    }
-
-    if (id_set_ok.size() != t.OkPartitions.size()) {
-      syslog(LOG_ERR, "Bug!!! OkPartitions has duplicate IDs");
+  for (size_t i = 0; i < topic_broker_vec_access.size(); ++i) {
+    if (topic_broker_vec_access[i] != 1) {
+      syslog(LOG_ERR, "Bug!!! TopicBrokerVec item access count is wrong");
       return false;
     }
+  }
 
-    std::unordered_set<int32_t> id_set_bad;
+  return true;
+}
 
-    for (const TPartition &p : t.OutOfServicePartitions) {
-      id_set_bad.insert(p.Id);
+bool TMetadata::SanityCheck() const {
+  assert(this);
+  std::unordered_set<size_t> in_service_broker_indexes;
 
-      if (p.BrokerIndex >= Brokers.size()) {
-        syslog(LOG_ERR,
-            "Bug!!! OutOfServicePartitions item has out of range BrokerIndex");
-        return false;
-      }
-
-      if (CanUsePartition(p.GetErrorCode())) {
-        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item is usable");
-        return false;
-      }
-
-      const auto iter = std::lower_bound(t.AllPartitions.begin(),
-          t.AllPartitions.end(), p,
-          [](const TPartition &x, const TPartition &y) {
-                   return (x.Id < y.Id);
-          });
-
-      if ((iter == t.AllPartitions.end()) || (iter->Id != p.Id)) {
-        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item not found in "
-            "AllPartitions");
-        return false;
-      }
-
-      if ((iter->BrokerIndex != p.BrokerIndex) ||
-          (iter->ErrorCode != p.ErrorCode)) {
-        syslog(LOG_ERR, "Bug!!! OutOfServicePartitions item ErrorCode does "
-            "not match corresponding ErrorCode in AllPartitions");
-        return false;
-      }
-    }
-
-    if (id_set_bad.size() != t.OutOfServicePartitions.size()) {
-      syslog(LOG_ERR, "Bug!!! OutOfServicePartitions has duplicate IDs");
-      return false;
-    }
-
-    for (auto id : id_set_ok) {
-      if (id_set_bad.find(id) != id_set_bad.end()) {
-        syslog(LOG_ERR, "Bug!!! Same ID appears in both OkPartitions and "
-            "OutOfServicePartitions");
-        return false;
-      }
-    }
-
-    if (broker_partition_map.size() != t.PartitionChoiceMap.size()) {
-      syslog(LOG_ERR,
-          "Bug!!! broker_partition_map.size() != t.PartitionChoiceMap.size()");
-      return false;
-    }
-
-    for (const auto &map_item : broker_partition_map) {
-      auto iter = t.PartitionChoiceMap.find(map_item.first);
-
-      if (iter == t.PartitionChoiceMap.end()) {
-        syslog(LOG_ERR, "Bug!!! Broker index missing from PartitionChoiceMap");
-        return false;
-      }
-
-      const auto &choices = iter->second;
-      size_t chunk_index = choices.GetTopicBrokerVecIndex();
-      size_t chunk_size = choices.GetTopicBrokerVecNumItems();
-
-      if (chunk_index >= TopicBrokerVec.size()) {
-        syslog(LOG_ERR, "Bug!!! chunk_index >= TopicBrokerVec.size()");
-        return false;
-      }
-
-      if (chunk_size > (TopicBrokerVec.size() - chunk_index)) {
-        syslog(LOG_ERR,
-            "Bug!!! chunk_size > (TopicBrokerVec.size() - chunk_index)");
-        return false;
-      }
-
-      const int32_t *chunk_begin = &TopicBrokerVec[chunk_index];
-      std::unordered_set<int32_t> partition_id_set(chunk_begin,
-          chunk_begin + chunk_size);
-
-      if (partition_id_set != map_item.second) {
-        syslog(LOG_ERR, "Bug!!! Partition choices referenced by "
-            "PartitionChoiceMap do not match partition IDs from OkPartitions");
-        return false;
-      }
-
-      for (size_t i = 0; i < chunk_size; ++i) {
-        /* For each topic/broker combination, the array of available Kafka
-           partition IDs must be sorted in ascending order, so clients with
-           knowledge of the partition layout can rely on this ordering if they
-           want to send PartitionKey messages that target specific partition
-           IDs. */
-        if ((i > 0) && (chunk_begin[i] <= chunk_begin[i - 1])) {
-          syslog(LOG_ERR, "Bug!!! Unsorted or duplicate partition IDs in "
-              "TopicBrokerVec chunk");
-          return false;
-        }
-
-        ++topic_broker_vec_access[chunk_index + i];
-      }
-    }
+  if (!SanityCheckTopics(in_service_broker_indexes)) {
+    return false;
   }
 
   size_t in_svc_count = 0;
@@ -635,13 +703,6 @@ bool TMetadata::SanityCheck() const {
   if (adjacent_in_svc_count != in_svc_count) {
     syslog(LOG_ERR, "Bug!!! In service brokers should all be grouped at start "
         "of Brokers vector");
-  }
-
-  for (size_t i = 0; i < topic_broker_vec_access.size(); ++i) {
-    if (topic_broker_vec_access[i] != 1) {
-      syslog(LOG_ERR, "Bug!!! TopicBrokerVec item access count is wrong");
-      return false;
-    }
   }
 
   return true;

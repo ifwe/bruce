@@ -365,6 +365,27 @@ namespace Bruce {
     const int32_t *FindPartitionChoices(const std::string &topic,
         size_t broker_index, size_t &num_choices) const;
 
+    bool SanityCheckOkPartitions(const TTopic &t,
+        std::unordered_set<size_t> &in_service_broker_indexes,
+        std::unordered_set<int32_t> &id_set_ok,
+        std::unordered_map<size_t, std::unordered_set<int32_t>>
+            &broker_partition_map) const;
+
+    bool SanityCheckOutOfServicePartitions(const TTopic &t,
+        std::unordered_set<int32_t> &id_set_bad) const;
+
+    bool SanityCheckBrokerPartitionMap(const TTopic &t,
+        const std::unordered_map<size_t, std::unordered_set<int32_t>>
+            &broker_partition_map,
+        std::vector<size_t> &topic_broker_vec_access) const;
+
+    bool SanityCheckOneTopic(const TTopic &t,
+        std::unordered_set<size_t> &in_service_broker_indexes,
+        std::vector<size_t> &topic_broker_vec_access) const;
+
+    bool SanityCheckTopics(
+        std::unordered_set<size_t> &in_service_broker_indexes) const;
+
     /* For testing.  Return true if the sanity test passes, or false otherwise.
      */
     bool SanityCheck() const;
