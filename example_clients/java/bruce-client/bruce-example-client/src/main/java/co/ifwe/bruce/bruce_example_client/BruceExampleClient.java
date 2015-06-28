@@ -35,8 +35,8 @@ public class BruceExampleClient
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
-        String brucePath = "/home/dsp/bruce.socket";
-        String topic = "topic_1";  // Kafka topic
+        String brucePath = "/path/to/bruce/socket";
+        String topic = "some topic";  // Kafka topic
         long timestamp = 12345;  // should be milliseconds since the epoch
         String value = "hello world";
         byte[] valueBytes = value.getBytes(Charset.forName("UTF-8"));
