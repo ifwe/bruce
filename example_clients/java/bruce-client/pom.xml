@@ -2,12 +2,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.tagged.bruce</groupId>
-  <artifactId>example-bruce-client</artifactId>
+  <groupId>co.ifwe.bruce</groupId>
+  <artifactId>bruce-client</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
-  <name>example-bruce-client</name>
+  <name>bruce-client</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -21,10 +21,11 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>uk.co.caprica</groupId>
-      <artifactId>juds</artifactId>
-      <version>0.94.1</version>
-    </dependency>
   </dependencies>
+  <modules>
+  	<module>bruce-client-support</module>
+  	
+  	
+  	<module>bruce-example-client</module>
+  </modules>
 </project>

@@ -17,25 +17,26 @@
     This is an example Java program that sends messages to Bruce.
  */
 
-package com.tagged.bruce.example_bruce_client;
+package co.ifwe.bruce.bruce_example_client;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 
 import com.etsy.net.JUDS;
 import com.etsy.net.UnixDomainSocketClient;
+import co.ifwe.bruce.bruce_client_support.DatagramCreator;
 
 /**
  * Example Bruce client.
  *
  */
-public class ExampleBruceClient 
+public class BruceExampleClient 
 {
     public static void main( String[] args )
     {
         DatagramCreator dgc = new DatagramCreator();
-        String brucePath = "/path/to/bruce/socket";
-        String topic = "some topic";  // Kafka topic
+        String brucePath = "/home/dsp/bruce.socket";
+        String topic = "topic_1";  // Kafka topic
         long timestamp = 12345;  // should be milliseconds since the epoch
         String value = "hello world";
         byte[] valueBytes = value.getBytes(Charset.forName("UTF-8"));

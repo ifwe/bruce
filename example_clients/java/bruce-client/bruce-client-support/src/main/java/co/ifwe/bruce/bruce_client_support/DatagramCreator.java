@@ -14,10 +14,10 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-    This is an example Java class for creating messages to be sent to Bruce.
+    This is a Java class for creating messages to be sent to Bruce.
  */
 
-package com.tagged.bruce.example_bruce_client;
+package co.ifwe.bruce.bruce_client_support;
 
 import java.nio.charset.Charset;
 
