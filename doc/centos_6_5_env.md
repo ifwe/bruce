@@ -58,7 +58,7 @@ following:
    rpm -Uvh libmpc-devel-0.8-3.el6.x86_64.rpm
    yum install rpm-build
    mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}  # or use a directory of your choice
-   git clone https://github.com/tagged/bruce.git
+   git clone https://github.com/ifwe/bruce.git
    cp bruce/centos6/gcc482.spec ~/rpmbuild/SPECS
    wget http://mirrors.kernel.org/gnu/gcc/gcc-4.8.2/gcc-4.8.2.tar.bz2
    cp gcc-4.8.2.tar.bz2 ~/rpmbuild/SOURCES

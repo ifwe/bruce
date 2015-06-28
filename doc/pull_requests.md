@@ -6,7 +6,7 @@ and pull" model for making contributions.  A quick summary of the process is as
 follows:
 
 1. Fork Bruce's GitHub repository.  To fork the repo, click the
-[fork button](http://github.com/tagged/bruce/fork) on the
+[fork button](http://github.com/ifwe/bruce/fork) on the
 [GitHub](http://github.com) web interface.
 
 2. Clone the forked repository to your local machine.

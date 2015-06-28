@@ -7,7 +7,7 @@ Python virtualenv environment before building, as detailed
 [here](centos_6_5_env.md).  The first step is to clone Bruce's Git repository:
 
 ```
-git clone https://github.com/tagged/bruce.git
+git clone https://github.com/ifwe/bruce.git
 ```
 
 ### Building an RPM package
