@@ -129,8 +129,7 @@ def get_version():
         # We were unsuccessful getting the version from a file.  Assume that we
         # are building from a Git repository, and get the version from Git.
         try:
-            p = subprocess.Popen(['git', 'describe', 'master'],
-                                 stdout=subprocess.PIPE)
+            p = subprocess.Popen(['git', 'describe'], stdout=subprocess.PIPE)
             version, err = p.communicate()
         except OSError:
             sys.stderr.write(
