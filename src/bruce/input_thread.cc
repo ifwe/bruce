@@ -27,6 +27,7 @@
 
 #include <poll.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -129,6 +130,13 @@ void TInputThread::OpenUnixSocket() {
   input_socket_address.SetFamily(AF_LOCAL);
   input_socket_address.SetPath(Config.ReceiveSocketName.c_str());
   Bind(InputSocket, input_socket_address);
+
+  /* Set the permission bits on the socket file if they were specified as a
+     command line argument.  If unspecified, the umask determines the
+     permission bits. */
+  if (Config.ReceiveSocketMode.IsKnown()) {
+    IfLt0(chmod(Config.ReceiveSocketName.c_str(), *Config.ReceiveSocketMode));
+  }
 }
 
 bool TInputThread::ShutDownRouterThread() {

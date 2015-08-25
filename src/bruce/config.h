@@ -26,6 +26,9 @@
 #include <string>
 
 #include <netinet/in.h>
+#include <sys/stat.h>
+
+#include <base/opt.h>
 
 namespace Bruce {
 
@@ -40,6 +43,8 @@ namespace Bruce {
     bool LogEcho;
 
     std::string ReceiveSocketName;
+
+    Base::TOpt<mode_t> ReceiveSocketMode;
 
     size_t ProtocolVersion;
 

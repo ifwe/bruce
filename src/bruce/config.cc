@@ -21,10 +21,13 @@
 
 #include <bruce/config.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
 #include <libgen.h>
 #include <syslog.h>
 
@@ -89,6 +92,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
   const std::string prog_name = Basename(argv[0]);
   std::vector<const char *> arg_vec(&argv[0], &argv[0] + argc);
   arg_vec[0] = prog_name.c_str();
+  std::string receive_socket_mode;
 
   try {
     CmdLine cmd("Producer daemon for Apache Kafka", ' ', bruce_build_id);
@@ -107,6 +111,14 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         "receive_socket_name", "Pathname of UNIX domain socket for receiving "
         "messages from web clients", true, config.ReceiveSocketName, "PATH");
     cmd.add(arg_receive_socket_name);
+    ValueArg<decltype(receive_socket_mode)> arg_receive_socket_mode("",
+        "receive_socket_mode", "File permission bits for UNIX domain socket "
+        "for receiving messages from web clients.  If unspecified, the umask "
+        "determines the permission bits.  To specify an octal value, you must "
+        "use a 0 prefix.  For instance, specify 0777 rather than 777 for "
+        "unrestricted access.", false,
+        receive_socket_mode, "MODE");
+    cmd.add(arg_receive_socket_mode);
     ValueArg<decltype(config.ProtocolVersion)> arg_protocol_version("",
         "protocol_version", "Version of Kafka protocol to use.", false,
         config.ProtocolVersion, "VERSION");
@@ -281,6 +293,27 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.LogLevel = StringToLogLevel(arg_log_level.getValue());
     config.LogEcho = arg_log_echo.getValue();
     config.ReceiveSocketName = arg_receive_socket_name.getValue();
+    receive_socket_mode = arg_receive_socket_mode.getValue();
+
+    if (!receive_socket_mode.empty()) {
+      boost::algorithm::trim(receive_socket_mode);
+
+      if (receive_socket_mode.empty()) {
+        throw TArgParseError("Invalid value for --receive_socket_mode");
+      }
+
+      char *pos = nullptr;
+      long n = std::strtol(receive_socket_mode.c_str(), &pos, 0);
+      mode_t mode = static_cast<mode_t>(n);
+
+      if ((*pos != '\0') || (n < 0) || (n == LONG_MAX) ||
+          (static_cast<long>(mode) != n)) {
+        throw TArgParseError("Invalid value for --receive_socket_mode");
+      }
+
+      config.ReceiveSocketMode.MakeKnown(mode);
+    }
+
     config.ProtocolVersion = arg_protocol_version.getValue();
     config.StatusPort = arg_status_port.getValue();
     config.MsgBufferMax = arg_msg_buffer_max.getValue();
@@ -368,6 +401,17 @@ void Bruce::LogConfig(const TConfig &config) {
   syslog(LOG_NOTICE, "Config file: [%s]", config.ConfigPath.c_str());
   syslog(LOG_NOTICE, "UNIX domain datagram input socket [%s]",
          config.ReceiveSocketName.c_str());
+  char socket_mode[32];
+
+  if (config.ReceiveSocketMode.IsKnown()) {
+    std::snprintf(socket_mode, sizeof(socket_mode), "0%o",
+        *config.ReceiveSocketMode);
+  } else {
+    strncpy(socket_mode, "<unspecified>", sizeof(socket_mode));
+  }
+
+  socket_mode[sizeof(socket_mode) - 1] = '\0';
+  syslog(LOG_NOTICE, "UNIX domain datagram input socket mode %s", socket_mode);
   syslog(LOG_NOTICE, "Using Kafka protocol version [%lu]",
          static_cast<unsigned long>(config.ProtocolVersion));
   syslog(LOG_NOTICE, "Listening on status port %u",
