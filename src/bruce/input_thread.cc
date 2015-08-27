@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <exception>
+#include <system_error>
 
 #include <poll.h>
 #include <sys/socket.h>
@@ -129,13 +130,26 @@ void TInputThread::OpenUnixSocket() {
   TAddress input_socket_address;
   input_socket_address.SetFamily(AF_LOCAL);
   input_socket_address.SetPath(Config.ReceiveSocketName.c_str());
-  Bind(InputSocket, input_socket_address);
+
+  try {
+    Bind(InputSocket, input_socket_address);
+  } catch (const std::system_error &x) {
+    syslog(LOG_ERR, "Failed to create datagram socket file: %s", x.what());
+    _exit(EXIT_FAILURE);
+  }
 
   /* Set the permission bits on the socket file if they were specified as a
      command line argument.  If unspecified, the umask determines the
      permission bits. */
   if (Config.ReceiveSocketMode.IsKnown()) {
-    IfLt0(chmod(Config.ReceiveSocketName.c_str(), *Config.ReceiveSocketMode));
+    try {
+      IfLt0(chmod(Config.ReceiveSocketName.c_str(),
+          *Config.ReceiveSocketMode));
+    } catch (const std::system_error &x) {
+      syslog(LOG_ERR, "Failed to set permissions on datagram socket file: %s",
+          x.what());
+      _exit(EXIT_FAILURE);
+    }
   }
 }
 
