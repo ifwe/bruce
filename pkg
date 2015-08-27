@@ -17,7 +17,9 @@
 # -----------------------------------------------------------------------------
 
 usage() {
-    echo Usage: `basename $0` '[--debug] [tar|rpm|rpm_noconfig]' 1>&2
+    echo Usage: `basename $0` '[--debug] [--asan (yes|no)] [tar|rpm|rpm_noconfig]' 1>&2
+    echo 1>&2
+    echo 'Option --asan is ignored if --debug is not specified.'
     exit 1
 }
 
@@ -68,6 +70,7 @@ make_rpm() {
     echo
     cwd=`pwd`
     dbg=$1
+    asan=$2
 
     if [ $dbg -eq 0 ]; then
         pkg_subdir=release
@@ -97,11 +100,13 @@ make_rpm() {
     if [ $dbg -eq 0 ]; then
         sed "s/BRUCE_VERSION/${version}/" < $spec_in | \
                 sed 's/BUILD_TYPE/release/' | \
-                sed 's/BRUCE_PKG_NAME/bruce/' > $base/SPECS/bruce.spec
+                sed 's/BRUCE_PKG_NAME/bruce/' | \
+                sed 's/SANITIZE_ADDRESS/no/' > $base/SPECS/bruce.spec
     else
         sed "s/BRUCE_VERSION/${version}/" < $spec_in | \
                 sed 's/BUILD_TYPE/debug/' | \
-                sed 's/BRUCE_PKG_NAME/bruce_debug/' > $base/SPECS/bruce.spec
+                sed 's/BRUCE_PKG_NAME/bruce_debug/' | \
+                sed "s/SANITIZE_ADDRESS/${asan}/" > $base/SPECS/bruce.spec
     fi
 
     cp out/pkg/tar/${pkg_name}-${version}.tar.gz $base/SOURCES
@@ -126,26 +131,53 @@ make_rpm() {
     echo ------------------------------------------------------------
 }
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-    usage
-fi
-
 debug=0
+asan=yes
+target=
 
-if [ "$1" == '--debug' ]; then
-    debug=1
+while [ $# -gt 0 ]; do
+    key="$1"
+
+    case $key in
+        --debug)
+            if [ ! -z "$target" ]; then
+                usage
+            fi
+
+            debug=1
+            ;;
+        --asan)
+            if [ ! -z "$target" ]; then
+                usage
+            fi
+
+            if [ "$2" == "yes" ] || [ "$2" == "no" ]; then
+                asan=$2
+            else
+                usage
+            fi
+
+            shift
+            ;;
+        *)
+            if [ "$key" == "tar" ] || [ "$key" == "rpm" ] || \
+                    [ "$key" == "rpm_noconfig" ]; then
+                target=$key
+            else
+                usage
+            fi
+            ;;
+    esac
+
     shift
-elif [ "$2" == '--debug' ]; then
-    debug=1
-    $2=$1
-    shift
+done
+
+if [ -z "$target" ]; then
+    usage
 fi
 
-target=$1
-
-if [ "$target" != "tar" ] && [ "$target" != "rpm" ] && \
-        [ "$target" != "rpm_noconfig" ]; then
-    usage
+if [ "$debug" -eq 0 ]; then
+    asan=no
 fi
 
 if [ ! -f "SConstruct" ] || [ ! -d "src" ]; then
@@ -161,5 +193,5 @@ echo
 make_tar $debug
 
 if [ "$target" == "rpm" ] || [ "$target" == "rpm_noconfig" ]; then
-    make_rpm $debug
+    make_rpm $debug $asan
 fi

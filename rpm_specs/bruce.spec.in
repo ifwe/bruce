@@ -5,12 +5,16 @@
 %define debug_package %{nil}
 %endif
 
+# The right hand sides of these definitions get replaced during preprocessing
+# by the 'pkg' script.
+#
 # When building a debug version, 'BUILD_TYPE' gets replaced with 'debug' and
 # 'BRUCE_PKG_NAME' gets replaced with 'bruce_debug'.  When building a release
 # version, 'BUILD_TYPE' gets replaced with 'release' and 'BRUCE_PKG_NAME' gets
 # replaced with 'bruce'.
 %define build_type BUILD_TYPE
 %define bruce_pkg_name BRUCE_PKG_NAME
+%define asan SANITIZE_ADDRESS
 
 Name:		%{bruce_pkg_name}
 Version:	BRUCE_VERSION
@@ -46,10 +50,10 @@ Bruce is a producer daemon for Apache Kafka.
     IMPORT_PATH=
 %endif
 
-./build_all -m %{build_type} -f bruce/bruce $IMPORT_PATH apps
-./build_all -m %{build_type} -f bruce/client/to_bruce $IMPORT_PATH apps
-./build_all -m %{build_type} -f bruce/client/libbruce_client.a $IMPORT_PATH client_libs
-./build_all -m %{build_type} -f bruce/client/libbruce_client.so $IMPORT_PATH client_libs
+./build_all -m %{build_type} --asan %{asan} -f bruce/bruce $IMPORT_PATH apps
+./build_all -m %{build_type} --asan %{asan} -f bruce/client/to_bruce $IMPORT_PATH apps
+./build_all -m %{build_type} --asan %{asan} -f bruce/client/libbruce_client.a $IMPORT_PATH client_libs
+./build_all -m %{build_type} --asan %{asan} -f bruce/client/libbruce_client.so $IMPORT_PATH client_libs
 
 
 %install

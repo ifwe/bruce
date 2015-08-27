@@ -71,6 +71,11 @@ AddOption('--release',
 AddOption('--import_path',
           action='store_true',
           help='Import PATH environment variable into build environment.')
+AddOption('--asan',
+          action='store',
+          help='Enable or disable address sanitizer in debug build ' + \
+               '(ignored for production build).', dest='asan',
+          choices=('yes', 'no'), default='yes')
 
 # Our mode.
 if GetOption('release') is None:
@@ -149,12 +154,15 @@ def set_debug_options():
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
     # libasan on RHEL, Fedora, and CentOS).
-    env.AppendUnique(CCFLAGS=['-g', '-fsanitize=address',
-                              '-fno-omit-frame-pointer',
+    env.AppendUnique(CCFLAGS=['-g', '-fno-omit-frame-pointer',
                               '-fvisibility=hidden'])
     env.AppendUnique(CXXFLAGS=['-D_GLIBCXX_DEBUG',
                                '-D_GLIBCXX_DEBUG_PEDANTIC'])
-    env.AppendUnique(LINKFLAGS=['-fsanitize=address', '-rdynamic'])
+    env.AppendUnique(LINKFLAGS=['-rdynamic'])
+
+    if GetOption('asan') == 'yes':
+        env.AppendUnique(CCFLAGS=['-fsanitize=address'])
+        env.AppendUnique(LINKFLAGS=['-fsanitize=address'])
 
 
 def set_release_options():

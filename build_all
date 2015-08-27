@@ -42,6 +42,10 @@ def parse_args():
             default='debug')
     parser.add_argument('-f', '--filter', help='Specify path filter.',
             action='store', dest='path_filter')
+    parser.add_argument('-s', '--asan',
+            help='Enable or disable address sanitizer in debug build ' + \
+                 '(ignored for production build).',
+            action='store', dest='asan', choices=('yes', 'no'), default='yes')
     args = parser.parse_args()
 
     if args.help:
@@ -109,7 +113,8 @@ def get_scons_path():
     return out.rstrip()
 
 
-def build_targets(targets, path_filter, verbose, mode, import_path, run_tests):
+def build_targets(targets, path_filter, verbose, mode, import_path, asan,
+        run_tests):
     filtered_targets = apply_path_filter(targets, path_filter)
     scons_path = get_scons_path()
 
@@ -133,6 +138,9 @@ def build_targets(targets, path_filter, verbose, mode, import_path, run_tests):
 
         if import_path:
             cmd.append('--import_path')
+
+        if asan == 'no':
+            cmd.append('--asan=no')
 
         if run_tests:
             cmd.append('--test')
@@ -201,26 +209,26 @@ for target in target_set:
         print 'Building apps:'
         print ''
         build_targets(all_apps, args.path_filter, args.verbose, args.mode,
-                      args.import_path, False)
+                      args.import_path, args.asan, False)
         print '============================================================'
     elif target == 'client_libs':
         print '============================================================'
         print 'Building client_libs:'
         print ''
         build_targets(client_libs, args.path_filter, args.verbose, args.mode,
-                      args.import_path, False)
+                      args.import_path, args.asan, False)
         print '============================================================'
     elif target == 'tests':
         print '============================================================'
         print 'Building tests:'
         print ''
         build_targets(get_test_targets(), args.path_filter, args.verbose,
-                      args.mode, args.import_path, False)
+                      args.mode, args.import_path, args.asan, False)
         print '============================================================'
     elif target == 'run_tests':
         print '============================================================'
         print 'Building and running tests:'
         print ''
         build_targets(get_test_targets(), args.path_filter, args.verbose,
-                      args.mode, args.import_path, True)
+                      args.mode, args.import_path, args.asan, True)
         print '============================================================'
