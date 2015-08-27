@@ -96,11 +96,65 @@ its functionality directly into the SCons configuration.
 
 ### Debug Builds
 
-The GNU C++ library provides a
-[debug mode](https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode.html)
-which implements various assertion checks for STL containers.  Bruce makes use
-of this in its debug build. A word of caution is therefore necessary. Suppose
-you have the following piece of code:
+As shown above, if you use the `build` command to build an individual binary,
+it will create a debug version by default if `--release` is not specified.
+Likewise, if you do not specify the `--mode=release` option when running the
+`build_all` script, debug versions of binaries will be built by default.  As
+documented [here](build_install.md#building-an-rpm-package), the `pkg` command
+may be used for building an RPM package.  By default, `pkg` builds a release
+version of Bruce.  To build a debug version, specify `--debug`.
+
+In GCC 4.8, support was added for [AddressSanitizer]
+(http://code.google.com/p/address-sanitizer/), a useful debugging tool.  This
+is enabled by default in debug builds of Bruce.  When running Bruce with the
+address sanitizer, you may notice that it uses a large amount of virtual memory
+(often multiple terabytes).  This is expected behavior.  After running Bruce
+for a while with the address sanitizer, it may exit with the following error
+message:
+
+```
+ERROR: Failed to mmap
+```
+
+If this causes problems, you can build Bruce with the address sanitizer
+disabled.  When building Bruce directly, as described [here]
+(build_install.md#building-bruce-directly), you can disable the address
+sanitizer as follows:
+
+```
+build --asan=no bruce
+```
+
+Likewise, you can invoke `build_all` as follows:
+
+```
+./build_all --asan=no
+```
+
+When building a debug RPM package (as described [here]
+(build_install.md#building-an-rpm-package)), the address sanitizer may be
+disabled as follows:
+
+```
+./pkg --debug --asan no rpm
+```
+
+or
+
+```
+./pkg --debug --asan no rpm_noconfig
+```
+
+Regardless of how you build bruce (via the `build` command, the `build_all`
+script, or the `pkg` script), the address sanitizer is *always* disabled in
+release builds, regardless of any command line options that disable or enable
+the address sanitizer.
+
+The GNU C++ library provides a [debug mode]
+(https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode.html) which
+implements various assertion checks for STL containers.  Bruce makes use of
+this in its debug build. A word of caution is therefore necessary. Suppose you
+have the following piece of code:
 
 ```C++
 /* Do something interesting to an array of int values.  'begin' points to the
@@ -135,46 +189,7 @@ void foo(std::vector<int> &v) {
 Although this is a bit less elegant than the previous implementation, the
 benefits of tools such as debug mode can be great when tracking down problems.
 Therefore please avoid code such as the first version of `foo()` when making
-changes to Bruce.  In GCC 4.8, support was added for
-[AddressSanitizer](http://code.google.com/p/address-sanitizer/), another useful
-debugging tool.  This is enabled by default in debug builds of Bruce.  When
-running Bruce with the address sanitizer, you may notice that it uses a large
-amount of virtual memory (often multiple terabytes).  This is expected
-behavior.  After running Bruce for a while with the address sanitizer, you may
-also notice that it exits with the following error message:
-
-```
-ERROR: Failed to mmap
-```
-
-If this causes problems, you can build Bruce with the address sanitizer
-disabled.  When building Bruce directly, as described [here]
-(build_install.md#building-bruce-directly), you can disable the address
-sanitizer as follows:
-
-```
-build --asan=no bruce
-```
-
-Likewise, you can invoke `build_all` sa follows:
-
-```
-./build_all --asan=no
-```
-
-When building a debug RPM package (as described [here]
-(build_install.md#building-an-rpm-package)), the address sanitizer may be
-disabled as follows:
-
-```
-./pkg --asan no rpm
-```
-
-or
-
-```
-./pkg --asan no rpm_noconfig
-```
+changes to Bruce.
 
 ### Contributing Code
 
