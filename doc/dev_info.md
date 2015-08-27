@@ -137,7 +137,44 @@ benefits of tools such as debug mode can be great when tracking down problems.
 Therefore please avoid code such as the first version of `foo()` when making
 changes to Bruce.  In GCC 4.8, support was added for
 [AddressSanitizer](http://code.google.com/p/address-sanitizer/), another useful
-debugging tool.  This is enabled in debug builds of Bruce.
+debugging tool.  This is enabled by default in debug builds of Bruce.  When
+running Bruce with the address sanitizer, you may notice that it uses a large
+amount of virtual memory (often multiple terabytes).  This is expected
+behavior.  After running Bruce for a while with the address sanitizer, you may
+also notice that it exits with the following error message:
+
+```
+ERROR: Failed to mmap
+```
+
+If this causes problems, you can build Bruce with the address sanitizer
+disabled.  When building Bruce directly, as described [here]
+(build_install.md#building-bruce-directly), you can disable the address
+sanitizer as follows:
+
+```
+build --asan=no bruce
+```
+
+Likewise, you can invoke `build_all` sa follows:
+
+```
+./build_all --asan=no
+```
+
+When building a debug RPM package (as described [here]
+(build_install.md#building-an-rpm-package)), the address sanitizer may be
+disabled as follows:
+
+```
+./pkg --asan no rpm
+```
+
+or
+
+```
+./pkg --asan no rpm_noconfig
+```
 
 ### Contributing Code
 

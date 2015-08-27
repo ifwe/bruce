@@ -61,7 +61,9 @@ environment variable setting from the external environment.  This is needed
 so that your customized PATH setting (as described
 [here](centos_6_5_env.md#building-and-installing-gcc-482)) is seen and the
 newer version of gcc is used.  After performing the above steps, the path to
-the newly built Bruce executable is now `out/release/bruce/bruce`.
+the newly built Bruce executable is now `out/release/bruce/bruce`.  If you omit
+`--release` above, you will create a debug build of Bruce.  Before creating a
+debug build, you should read [this](dev_info.md#debug-builds).
 
 ### Building Bruce's Client Library
 
@@ -80,8 +82,10 @@ cd ../../..
 ```
 
 In the case of CentOS 6, remember to use the `--import_path` option with the
-`build` command.  The newly built library files and client program are now
-located in `out/release/bruce/client`.  If installing them manually, rename
+`build` command.  As above, if you omit the `--release`, then you will create a
+debug build, which is documented [here](dev_info.md#debug-builds).  The newly
+built library files and client program are now located in
+`out/release/bruce/client`.  If installing them manually, rename
 `libbruce_client.so` to `libbruce_client.so.0` when copying it to your system's
 library directory (`/usr/lib64` on CentOS/RedHat, or `/usr/lib` on Ubuntu), and
 remember to run `/sbin/ldconfig` afterwards.  Also remember to install the
@@ -102,6 +106,12 @@ the big comment at the top of
 [bruce/client/bruce_client.h](../src/bruce/client/bruce_client.h).  For example
 C++ code, see
 [bruce/client/to_bruce.cc](../src/bruce/client/to_bruce.cc).
+
+### More Details on Bruce's Build System (including debug builds)
+
+Full details on Bruce's build system are provided [here](dev_info.md),
+including information on [building a debug version of Bruce]
+(dev_info.md#debug-builds).
 
 ### Installing Bruce
 
