@@ -226,6 +226,9 @@ Bruce's optional command line arguments are summarized below:
 
 * `-h --help`: Display help message.
 * `--version`: Display version information and exit.
+* `--receive_socket_mode MODE`: This specifies the file permissions for Bruce's
+UNIX domain datagram socket.  Octal values are prefixed with 0.  For instance,
+`--receive_socket_mode 0777` specifies unrestricted access.
 * `--log_level LEVEL`: This specifies the maximum enabled log level for syslog
 messages.  Allowed values are { LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO,
 LOG_DEBUG }.  The default value is LOG_NOTICE.
@@ -344,6 +347,10 @@ the maximum.  The default value is 8192.
 * `--discard_report_bad_msg_prefix_size N`: Maximum bad message prefix size in
 bytes to write to discard report available from Bruce's web interface.  The
 default value is 256.
+* `--retry_on_unknown_partition`: On receipt of "unknown topic or partition"
+error ACK, reroute message after updating metadata rather than discarding it.
+This is a workaround for Kafka behavior that occurs when relocating a partition
+to a different broker.
 * `--topic_autocreate`: Enable automatic topic creation.  For this to work, the
 brokers must be configured with `auto.create.topics.enable=true`.
 * `--omit_timestamp`: Do not use this option, since it will soon be removed.

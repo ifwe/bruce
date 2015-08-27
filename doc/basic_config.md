@@ -51,6 +51,12 @@ If unspecified, a default value of -1 is used.
 wait for successful replication to occur, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest),
 before returning an error.  If unspecified, a default value of 10000 is used.
+* `--receive_socket_mode MODE` Specifies the file permissions for Bruce's UNIX
+domain datagram socket.  Octal values are prefixed with 0.  For instance,
+`--receive_socket_mode 0777` specifies unrestricted access.
+* `--log_level LOG_ERR|LOG_WARNING|LOG_NOTICE|LOG_INFO|LOG_DEBUG` Specifies log
+level for syslog messages.
+* `--log_echo` Causes syslog messages to be echoed to standard error.
 
 Bruce's config file (`/etc/bruce/bruce_conf.xml` in the above example) is an
 XML document that specifies batching and configuration options, as well as the
