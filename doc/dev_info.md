@@ -130,9 +130,9 @@ Likewise, you can invoke `build_all` as follows:
 ./build_all --asan=no
 ```
 
-When building a debug RPM package (as described [here]
-(build_install.md#building-an-rpm-package)), the address sanitizer may be
-disabled as follows:
+When building an RPM package (as described [here]
+(build_install.md#building-an-rpm-package)), a debug version with the address
+sanitizer disabled may be created as follows:
 
 ```
 ./pkg --debug --asan no rpm
