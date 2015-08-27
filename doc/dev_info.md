@@ -106,11 +106,10 @@ Bruce.  To build a debug version, specify `--debug`.
 
 In GCC 4.8, support was added for [AddressSanitizer]
 (http://code.google.com/p/address-sanitizer/), a useful debugging tool.  This
-is enabled by default in debug builds of Bruce.  When running Bruce with the
-address sanitizer, you may notice that it uses a large amount of virtual memory
-(often multiple terabytes).  This is expected behavior.  After running Bruce
-for a while with the address sanitizer, it may exit with the following error
-message:
+is enabled by default in debug builds.  When running Bruce with the address
+sanitizer, you may notice that it uses a large amount of virtual memory (often
+multiple terabytes).  This is expected behavior.  After running Bruce for a
+while with the address sanitizer, it may exit with the following error message:
 
 ```
 ERROR: Failed to mmap
