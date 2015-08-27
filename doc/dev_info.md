@@ -98,11 +98,11 @@ its functionality directly into the SCons configuration.
 
 As shown above, if you use the `build` command to build an individual binary,
 it will create a debug version by default if `--release` is not specified.
-Likewise, if you do not specify the `--mode=release` option when running the
-`build_all` script, debug versions of binaries will be built by default.  As
-documented [here](build_install.md#building-an-rpm-package), the `pkg` command
-may be used for building an RPM package.  By default, `pkg` builds a release
-version of Bruce.  To build a debug version, specify `--debug`.
+Likewise, if you do not specify `--mode=release` when running the `build_all`
+script, debug versions of binaries will be built by default.  As documented
+[here](build_install.md#building-an-rpm-package), the `pkg` command may be used
+for building an RPM package.  By default, `pkg` builds a release version of
+Bruce.  To build a debug version, specify `--debug`.
 
 In GCC 4.8, support was added for [AddressSanitizer]
 (http://code.google.com/p/address-sanitizer/), a useful debugging tool.  This
