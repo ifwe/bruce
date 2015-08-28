@@ -108,11 +108,6 @@ namespace Bruce {
       return RouterThread.GetAckCount();
     }
 
-    Base::TEventSemaphore &GetMetadataUpdateRequestSem() {
-      assert(this);
-      return RouterThread.GetMetadataUpdateRequestSem();
-    }
-
     protected:
     virtual void Run() override;
 
