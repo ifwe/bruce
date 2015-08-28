@@ -105,7 +105,8 @@ namespace Bruce {
               bool use_old_output_format);
 
     /* Call this to disable logging and shut down the thread that deletes old
-       logfiles. */
+       logfiles.  It is harmless to call this method once or multiple times,
+       even if Init() has never been called. */
     void Shutdown();
 
     /* Write a log entry indicating that 'msg' is being discarded for the

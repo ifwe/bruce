@@ -33,8 +33,6 @@
 #include <bruce/web_request_handler.h>
 #include <server/counter.h>
 #include <server/url_decode.h>
-#include <signal/masker.h>
-#include <signal/set.h>
 
 using namespace Base;
 using namespace Bruce;
@@ -365,9 +363,5 @@ void TWebInterface::DoStartHttpServer() {
     nullptr
   };
 
-  /* We want any threads created by Mongoose to have all signals blocked.
-     Bruce's main thread handles signals. */
-  const Signal::TSet block_all(Signal::TSet::Full);
-  Signal::TMasker masker(*block_all);
   Start(opts);
 }

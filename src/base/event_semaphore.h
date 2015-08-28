@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <cassert>
+#include <system_error>
 
 #include <base/fd.h>
 #include <base/no_copy_semantics.h>
@@ -35,7 +36,7 @@ namespace Base {
     public:
     TEventSemaphore(uint64_t initial_count = 0, bool nonblocking = false);
 
-    const TFd &GetFd() const {
+    const TFd &GetFd() const noexcept {
       assert(this);
       return Fd;
     }
@@ -52,7 +53,7 @@ namespace Base {
        returns true. */
     bool Pop();
 
-    void Push(uint64_t count = 1);
+    void Push(uint64_t count = 1) throw(std::system_error);
 
     private:
     TFd Fd;

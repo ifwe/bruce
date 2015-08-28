@@ -16,35 +16,31 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Input thread for Bruce daemon.  Web clients write messages to a UNIX domain
+   Input thread for Bruce daemon.  Clients write messages to a UNIX domain
    datagram socket created by the input thread.  The input thread reads the
    messages and passes them to the router thread, which maps messages to Kafka
-   brokers.  As messages are successfully sent to brokers, the router thread
-   returns them to the pool that the input thread allocated them from.  The
-   pool enforces a global cap on the total amount of buffered message data.
-   Once the cap is reached, the input thread discards additional messages it
-   reads from the UNIX domain socket.
+   brokers and forwards them to the dispatcher for sending.  As messages are
+   successfully sent to brokers, the dispatcher returns them to the pool that
+   the input thread allocated them from.  The pool enforces a global cap on the
+   total amount of buffered message data.  Once the cap is reached, the input
+   thread discards additional messages it reads from the UNIX domain socket.
 
    The intent is to keep the input thread as simple as possible and delegate
    more complex (and possibly time-consuming) behavior to the router thread and
    other threads managed by the router thread.  The input thread's only
    responsibilities are as follows:
 
-     1.  Read messages from the UNIX domain socket and pass them to the router
-         thread.  Discard messages when the pool memory cap is reached.
+     1.  Read messages from the UNIX domain socket and queue them for
+         processing by the router thread.  Discard messages when the pool
+         memory cap is reached.
 
-     2.  Monitor a file descriptor that becomes readable when a shutdown
-         request is received by the thread that created the input thread.  Once
-         it becomes readable, the input thread performs an orderly shutdown of
-         the router thread and then terminates.
-
-     3.  Monitor a file descriptor that becomes readable when the router thread
-         shuts down due to a fatal error.  In this case the input thread
-         terminates.
+     2.  Monitor a file descriptor that becomes readable when the main thread
+         receives a shutdown request.  Once it becomes readable, the input
+         thread terminates.
 
    It should be easy to visually inspect the input thread's implementation and
-   verify that it will never force web processes writing to the UNIX domain
-   socket to block for a substantial length of time.
+   verify that it will never force clients writing to the UNIX domain socket to
+   block for a substantial length of time.
  */
 
 #pragma once
@@ -63,7 +59,7 @@
 #include <bruce/config.h>
 #include <bruce/msg.h>
 #include <bruce/msg_state_tracker.h>
-#include <bruce/router_thread_api.h>
+#include <bruce/util/gate_put_api.h>
 #include <bruce/util/worker_thread.h>
 #include <capped/pool.h>
 #include <socket/named_unix_socket.h>
@@ -81,11 +77,11 @@ namespace Bruce {
 
     TInputThread(const TConfig &config, Capped::TPool &pool,
         TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
-        TRouterThreadApi &router_thread);
+        Util::TGatePutApi<TMsg::TPtr> &output_queue);
 
     virtual ~TInputThread() noexcept;
 
-    /* Return a file descriptor that becomes readable when the server has
+    /* Return a file descriptor that becomes readable when the input thread has
        finished its initialization and is open for business. */
     const Base::TFd &GetInitWaitFd() const {
       assert(this);
@@ -103,11 +99,6 @@ namespace Bruce {
       return MsgReceivedCount;
     }
 
-    size_t GetAckCount() const {
-      assert(this);
-      return RouterThread.GetAckCount();
-    }
-
     protected:
     virtual void Run() override;
 
@@ -116,11 +107,9 @@ namespace Bruce {
 
     void OpenUnixSocket();
 
-    bool ShutDownRouterThread();
-
     TMsg::TPtr ReadOneMsg();
 
-    bool ForwardMessages();
+    void ForwardMessages();
 
     const TConfig &Config;
 
@@ -149,10 +138,8 @@ namespace Bruce {
     /* We read from the UNIX datagram socket into this buffer. */
     std::vector<uint8_t> InputBuf;
 
-    /* The input thread feeds messages to the router thread for delivery to
-       Kafka brokers.  It is responsible for starting and shutting down the
-       router thread. */
-    TRouterThreadApi &RouterThread;
+    /* Messages are queued here for the router thread. */
+    Util::TGatePutApi<TMsg::TPtr> &OutputQueue;
 
     /* Used for testing. */
     std::atomic<size_t> MsgReceivedCount;

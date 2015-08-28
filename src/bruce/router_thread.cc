@@ -122,31 +122,6 @@ TRouterThread::~TRouterThread() noexcept {
   ShutdownOnDestroy();
 }
 
-const TFd &TRouterThread::GetInitWaitFd() const {
-  assert(this);
-  return InitFinishedSem.GetFd();
-}
-
-TRouterThreadApi::TShutdownStatus TRouterThread::GetShutdownStatus() const {
-  assert(this);
-  return ShutdownStatus;
-}
-
-TRouterThreadApi::TMsgChannel &TRouterThread::GetMsgChannel() {
-  assert(this);
-  return MsgChannel;
-}
-
-size_t TRouterThread::GetAckCount() const {
-  assert(this);
-  return Dispatcher.GetAckCount();
-}
-
-TEventSemaphore &TRouterThread::GetMetadataUpdateRequestSem() {
-  assert(this);
-  return MetadataUpdateRequestSem;
-}
-
 void TRouterThread::Run() {
   assert(this);
   int tid = static_cast<int>(Gettid());

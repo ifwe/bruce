@@ -43,7 +43,7 @@
 #include <bruce/metadata_timestamp.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/test_util/misc_util.h>
-#include <bruce/test_util/mock_router_thread.h>
+#include <bruce/util/gate.h>
 #include <bruce/util/time_util.h>
 #include <capped/blob.h>
 #include <capped/pool.h>
@@ -87,7 +87,7 @@ namespace {
 
     TDebugSetup DebugSetup;
 
-    std::unique_ptr<TMockRouterThread> MockRouterThread;
+    std::unique_ptr<TGate<TMsg::TPtr>> OutputQueue;
 
     std::unique_ptr<TInputThread> InputThread;
 
@@ -141,10 +141,9 @@ namespace {
     Protocol.reset(ChooseProto(Cfg->ProtocolVersion, Cfg->RequiredAcks,
                    static_cast<int32_t>(Cfg->ReplicationTimeout),
                    Cfg->RetryOnUnknownPartition));
-    MockRouterThread.reset(new TMockRouterThread(*Cfg, *Protocol,
-                           AnomalyTracker, MetadataTimestamp));
+    OutputQueue.reset(new TGate<TMsg::TPtr>);
     InputThread.reset(new TInputThread(*Cfg, Pool, MsgStateTracker,
-        AnomalyTracker, *MockRouterThread));
+        AnomalyTracker, *OutputQueue));
   }
 
   static void MakeDg(std::vector<uint8_t> &dg, const std::string &topic,
@@ -181,7 +180,7 @@ namespace {
     const size_t pool_block_size = 256;
 
     TBruceConfig conf(pool_block_size);
-    TMockRouterThread &mock_router_thread = *conf.MockRouterThread;
+    TGate<TMsg::TPtr> &output_queue = *conf.OutputQueue;
     conf.StartBruce();
     TBruceClientSocket sock;
     int ret = sock.Bind(conf.UnixSocketName);
@@ -204,9 +203,8 @@ namespace {
       ASSERT_EQ(ret, BRUCE_OK);
     }
 
-    TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
     std::list<TMsg::TPtr> msg_list;
-    const Base::TFd &msg_available_fd = msg_channel.GetMsgAvailableFd();
+    const Base::TFd &msg_available_fd = output_queue.GetMsgAvailableFd();
 
     while (msg_list.size() < 4) {
       if (!msg_available_fd.IsReadable(30000)) {
@@ -214,7 +212,7 @@ namespace {
         break;
       }
 
-      msg_list.splice(msg_list.end(), msg_channel.Get());
+      msg_list.splice(msg_list.end(), output_queue.Get());
     }
 
     ASSERT_EQ(msg_list.size(), 4U);
@@ -250,7 +248,7 @@ namespace {
 
     TBruceConfig conf(pool_block_size);
     TInputThread &input_thread = *conf.InputThread;
-    TMockRouterThread &mock_router_thread = *conf.MockRouterThread;
+    TGate<TMsg::TPtr> &output_queue = *conf.OutputQueue;
     conf.StartBruce();
     TBruceClientSocket sock;
     int ret = sock.Bind(conf.UnixSocketName);
@@ -278,9 +276,8 @@ namespace {
       ASSERT_EQ(ret, BRUCE_OK);
     }
 
-    TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
     std::list<TMsg::TPtr> msg_list;
-    const Base::TFd &msg_available_fd = msg_channel.GetMsgAvailableFd();
+    const Base::TFd &msg_available_fd = output_queue.GetMsgAvailableFd();
 
     while (msg_list.size() < 4) {
       if (!msg_available_fd.IsReadable(30000)) {
@@ -288,7 +285,7 @@ namespace {
         break;
       }
 
-      msg_list.splice(msg_list.end(), msg_channel.Get());
+      msg_list.splice(msg_list.end(), output_queue.Get());
     }
 
     for (size_t i = 0;
@@ -334,7 +331,7 @@ namespace {
 
     TBruceConfig conf(pool_block_size);
     TInputThread &input_thread = *conf.InputThread;
-    TMockRouterThread &mock_router_thread = *conf.MockRouterThread;
+    TGate<TMsg::TPtr> &output_queue = *conf.OutputQueue;
     conf.StartBruce();
 
     /* This message will get discarded because it's malformed. */
@@ -352,7 +349,6 @@ namespace {
 
     ret = sock.Send(&dg_buf[0], dg_buf.size());
     ASSERT_EQ(ret, BRUCE_OK);
-    TGate<TMsg::TPtr> &msg_channel = mock_router_thread.MsgChannel;
 
     for (size_t i = 0;
          (input_thread.GetMsgReceivedCount() < 1) && (i < 3000);
@@ -361,7 +357,7 @@ namespace {
     }
 
     ASSERT_EQ(input_thread.GetMsgReceivedCount(), 1U);
-    std::list<TMsg::TPtr> msg_list(msg_channel.NonblockingGet());
+    std::list<TMsg::TPtr> msg_list(output_queue.NonblockingGet());
     ASSERT_TRUE(msg_list.empty());
     TAnomalyTracker::TInfo bad_stuff;
     conf.AnomalyTracker.GetInfo(bad_stuff);

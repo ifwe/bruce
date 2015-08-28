@@ -51,7 +51,7 @@ SERVER_COUNTER(InputThreadGotOkMsg);
 
 TInputThread::TInputThread(const TConfig &config, TPool &pool,
     TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
-    TRouterThreadApi &router_thread)
+    Util::TGatePutApi<TMsg::TPtr> &output_queue)
     : Config(config),
       Destroying(false),
       ShutdownStatus(TShutdownStatus::Normal),
@@ -65,7 +65,7 @@ TInputThread::TInputThread(const TConfig &config, TPool &pool,
          truncated. */
       InputBuf(config.MaxInputMsgSize + 1),
 
-      RouterThread(router_thread),
+      OutputQueue(output_queue),
       MsgReceivedCount(0) {
 }
 
@@ -99,18 +99,7 @@ void TInputThread::Run() {
 void TInputThread::DoRun() {
   assert(this);
   ShutdownStatus = TShutdownStatus::Error;
-  syslog(LOG_NOTICE, "Starting router thread");
-
-  /* Don't wait for the router thread to finish its initialization, since that
-     depends on Kafka being in a healthy state.  If the router thread runs into
-     Kafka problems, it will retry until it finishes initialization.  Meanwhile
-     we must monitor the UNIX domain socket so web processes can run normally.
-     Forwarded messages will be queued for the router thread until it finishes
-     its initialization or we run out of buffer space and start logging
-     discards. */
-  RouterThread.Start();
-
-  syslog(LOG_NOTICE, "Started router thread, opening UNIX domain socket");
+  syslog(LOG_NOTICE, "Input thread opening UNIX domain datagram socket");
   OpenUnixSocket();
 
   /* Let the thread that started us know that we finished our initialization
@@ -119,10 +108,8 @@ void TInputThread::DoRun() {
 
   syslog(LOG_NOTICE,
          "Input thread finished initialization, forwarding messages");
-
-  if (ForwardMessages()) {
-    ShutdownStatus = TShutdownStatus::Normal;
-  }
+  ForwardMessages();
+  ShutdownStatus = TShutdownStatus::Normal;
 }
 
 void TInputThread::OpenUnixSocket() {
@@ -153,20 +140,6 @@ void TInputThread::OpenUnixSocket() {
   }
 }
 
-bool TInputThread::ShutDownRouterThread() {
-  assert(this);
-  syslog(LOG_NOTICE, "Input thread sending shutdown request to router thread");
-  RouterThread.RequestShutdown();
-  syslog(LOG_NOTICE, "Input thread waiting for router thread to shut down");
-  RouterThread.Join();
-  bool ok = (RouterThread.GetShutdownStatus() ==
-             TRouterThreadApi::TShutdownStatus::Normal);
-  syslog(LOG_NOTICE,
-         "Input thread got %s termination status from router thread",
-         (ok ? "normal" : "error"));
-  return ok;
-}
-
 TMsg::TPtr TInputThread::ReadOneMsg() {
   assert(this);
   char * const msg_begin = reinterpret_cast<char *>(&InputBuf[0]);
@@ -181,20 +154,15 @@ TMsg::TPtr TInputThread::ReadOneMsg() {
   return std::move(msg);
 }
 
-bool TInputThread::ForwardMessages() {
+void TInputThread::ForwardMessages() {
   assert(this);
-  bool ok_status = false;
-  std::array<struct pollfd, 3> events;
-  struct pollfd &shutdown_wait_event = events[0];
-  struct pollfd &shutdown_request_event = events[1];
-  struct pollfd &input_socket_event = events[2];
-  shutdown_wait_event.fd = RouterThread.GetShutdownWaitFd();
-  shutdown_wait_event.events = POLLIN;
+  std::array<struct pollfd, 2> events;
+  struct pollfd &shutdown_request_event = events[0];
+  struct pollfd &input_socket_event = events[1];
   shutdown_request_event.fd = GetShutdownRequestFd();
   shutdown_request_event.events = POLLIN;
   input_socket_event.fd = InputSocket.GetFd();
   input_socket_event.events = POLLIN;
-  TRouterThreadApi::TMsgChannel &queue = RouterThread.GetMsgChannel();
   TMsg::TPtr msg;
 
   for (; ; ) {
@@ -205,28 +173,13 @@ bool TInputThread::ForwardMessages() {
     int ret = IfLt0(poll(&events[0], events.size(), -1));
     assert(ret > 0);
 
-    if (shutdown_wait_event.revents) {
-      /* Router thread encountered fatal error. */
-      syslog(LOG_ERR,
-             "Input thread shutting down due to fatal router thread error");
-      InputSocket.Reset();
-      RouterThread.Join();
-      assert(RouterThread.GetShutdownStatus() ==
-             TRouterThreadApi::TShutdownStatus::Error);
-      break;
-    }
-
     if (shutdown_request_event.revents) {
-      /* Note: In the case where 'Destroying' is true, the router thread's
-         destructor will shut it down. */
       if (!Destroying) {
         syslog(LOG_NOTICE, "Input thread got shutdown request, closing UNIX "
                "domain socket");
         /* We received a shutdown request from the thread that created us.
-           Close the input socket and perform an orderly shutdown of the router
-           thread. */
+           Close the input socket and terminate. */
         InputSocket.Reset();
-        ok_status = ShutDownRouterThread();
       }
 
       break;
@@ -239,10 +192,8 @@ bool TInputThread::ForwardMessages() {
 
     if (msg) {
       /* Forward message to router thread. */
-      queue.Put(std::move(msg));
+      OutputQueue.Put(std::move(msg));
       InputThreadForwardMsg.Increment();
     }
   }
-
-  return ok_status;
 }

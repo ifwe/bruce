@@ -165,8 +165,8 @@ namespace {
     }
 
     if (!Bruce->GetInitWaitFd().IsReadable(30000)) {
-      std::cerr << "Bruce server failed to create UNIX socket after 30 "
-          << "seconds." << std::endl;
+      std::cerr << "Bruce server failed to initialize after 30 seconds."
+          << std::endl;
       return nullptr;
     }
 

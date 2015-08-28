@@ -48,6 +48,7 @@
 #include <bruce/msg_state_tracker.h>
 #include <bruce/router_thread.h>
 #include <capped/pool.h>
+#include <signal/set.h>
 
 namespace Bruce {
 
@@ -161,12 +162,11 @@ namespace Bruce {
       return StatusPort;
     }
 
-    /* Return a file descriptor that becomes readable when the UNIX domain
-       input socket has been created or the server is shutting down.  Test code
-       calls this. */
+    /* Return a file descriptor that becomes readable when the server has
+       finished initialization or is shutting down.  Test code calls this. */
     const Base::TFd &GetInitWaitFd() const {
       assert(this);
-      return ServerStartedSem.GetFd();
+      return InitWaitSem.GetFd();
     }
 
     /* This is called by test code. */
@@ -182,43 +182,31 @@ namespace Bruce {
     void RequestShutdown();
 
     private:
-    /* Thrown by StartInputThread() on input thread initialization error. */
-    class TInputThreadStartFailure final : public std::exception {
-      public:
-      virtual ~TInputThreadStartFailure() noexcept { }
+    bool GotFatalError() const {
+      assert(this);
+      return InputThreadFatalError || RouterThreadFatalError;
+    }
 
-      virtual const char *what() const noexcept {
-        return "TInputThreadStartFailure";
-      }
-    };  // TInputThreadStartFailure
-
-    /* Thrown by StartInputThread() on input thread shutdown error. */
-    class TInputThreadShutdownFailure final : public std::exception {
-      public:
-      virtual ~TInputThreadShutdownFailure() noexcept { }
-
-      virtual const char *what() const noexcept {
-        return "TInputThreadShutdownFailure";
-      }
-    };  // TInputThreadShutdownFailure
-
-    bool StartInputThread();
-
-    bool ShutDownInputThread();
-
-    bool RespondToShutdownSignal();
-
-    /* Block all signals and keep them blocked (no RAII behavior that would
-       unblock them when some object gets destroyed). */
     void BlockAllSignals();
 
-    bool WaitForShutdownSignal();
+    void StartMsgHandlingThreads();
+
+    bool MsgHandlingInitWait();
+
+    void HandleEvents();
+
+    void Shutdown();
+
+    /* Protects 'ServerList' below. */
+    static std::mutex ServerListMutex;
 
     /* Global list of all TBruceServer objects. */
     static std::list<TBruceServer *> ServerList;
 
-    /* Protects 'ServerList'. */
-    static std::mutex ServerListMutex;
+    /* The main thread handles all signals.  It blocks them all except in
+       specific places where it is ready to handle them.  In such places, this
+       defines the set of masked signals. */
+    const Signal::TSet SigMask;
 
     /* Points to item in 'ServerList' for this TBruceServer object. */
     std::list<TBruceServer *>::iterator MyServerListItem;
@@ -237,6 +225,10 @@ namespace Bruce {
 
     Capped::TPool Pool;
 
+    /* This is declared _before_ the input thread, router thread, and
+       dispatcher so it gets destroyed after them.  Its destructor stops
+       discard file logging, which we only want to do after everything else
+       that might generate discards has been destroyed. */
     TDiscardFileLogger DiscardFileLogger;
 
     TMsgStateTracker MsgStateTracker;
@@ -254,6 +246,10 @@ namespace Bruce {
 
     Debug::TDebugSetup DebugSetup;
 
+    bool InputThreadFatalError;
+
+    bool RouterThreadFatalError;
+
     MsgDispatch::TKafkaDispatcher Dispatcher;
 
     TRouterThread RouterThread;
@@ -268,9 +264,9 @@ namespace Bruce {
      */
     std::atomic_flag ShutdownRequested;
 
-    /* Becomes readable when the UNIX domain input socket has been created.
-       Test code monitors this. */
-    Base::TEventSemaphore ServerStartedSem;
+    /* Becomes readable when the server has finished initialization or is
+       shutting down.  Test code monitors this. */
+    Base::TEventSemaphore InitWaitSem;
 
     /* SIGINT/SIGTERM handler pushes this. */
     Base::TEventSemaphore ShutdownRequestSem;

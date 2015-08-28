@@ -28,6 +28,7 @@
 #include <limits>
 #include <memory>
 #include <set>
+#include <system_error>
 
 #include <poll.h>
 #include <signal.h>
@@ -47,8 +48,6 @@
 #include <bruce/web_interface.h>
 #include <capped/pool.h>
 #include <server/counter.h>
-#include <signal/masker.h>
-#include <signal/set.h>
 #include <socket/address.h>
 #include <socket/option.h>
 
@@ -162,7 +161,8 @@ ComputeBlockCount(size_t max_buffer_kb, size_t block_size) {
 }
 
 TBruceServer::TBruceServer(TServerConfig &&config)
-    : Config(std::move(config.Config)),
+    : SigMask(TSet::Exclude, { SIGINT, SIGTERM }),
+      Config(std::move(config.Config)),
       Conf(std::move(config.Conf)),
       KafkaProtocol(std::move(config.KafkaProtocol)),
       PoolBlockSize(config.PoolBlockSize),
@@ -175,12 +175,14 @@ TBruceServer::TBruceServer(TServerConfig &&config)
       StatusPort(0),
       DebugSetup(Config->DebugDir.c_str(), Config->MsgDebugTimeLimit,
                  Config->MsgDebugByteLimit),
+      InputThreadFatalError(false),
+      RouterThreadFatalError(false),
       Dispatcher(*Config, Conf.GetCompressionConf(), *KafkaProtocol,
           MsgStateTracker, AnomalyTracker, config.BatchConfig, DebugSetup),
       RouterThread(*Config, Conf, *KafkaProtocol, AnomalyTracker,
           MsgStateTracker, config.BatchConfig, DebugSetup, Dispatcher),
       InputThread(*Config, Pool, MsgStateTracker, AnomalyTracker,
-          RouterThread),
+          RouterThread.GetMsgChannel()),
       MetadataTimestamp(RouterThread.GetMetadataTimestamp()),
       ShutdownRequested(ATOMIC_FLAG_INIT) {
   config.BatchConfig.Clear();
@@ -191,19 +193,6 @@ TBruceServer::TBruceServer(TServerConfig &&config)
 
 TBruceServer::~TBruceServer() noexcept {
   assert(this);
-
-  if (InputThread.IsStarted()) {
-    try {
-      ShutDownInputThread();
-    } catch (const std::exception &x) {
-      syslog(LOG_ERR, "Server caught exception while shutting down input "
-             "thread on fatal error: %s", x.what());
-    } catch (...) {
-      syslog(LOG_ERR, "Server caught unknown exception while shutting down "
-             "input thread on fatal error");
-    }
-  }
-
   std::lock_guard<std::mutex> lock(ServerListMutex);
   assert(*MyServerListItem == this);
   ServerList.erase(MyServerListItem);
@@ -219,7 +208,7 @@ void TBruceServer::BindStatusSocket(bool bind_ephemeral) {
                    sizeof(flag)));
 
   /* This will throw if the server is already running (unless we used an
-     ephemeral port, which is what happens when test code runs us). */
+     ephemeral port, which happens when test code runs us). */
   Bind(TmpStatusSocket, status_address);
 
   TAddress sock_name = GetSockName(TmpStatusSocket);
@@ -230,60 +219,97 @@ void TBruceServer::BindStatusSocket(bool bind_ephemeral) {
 int TBruceServer::Run() {
   assert(this);
 
+  /* Regardless of what happens, we must notify test code when we have either
+     finished initialization or are shutting down (possibly due to a fatal
+     exception). */
+  class t_init_wait_notifier final {
+    NO_COPY_SEMANTICS(t_init_wait_notifier);
+
+    public:
+    explicit t_init_wait_notifier(TEventSemaphore &init_wait_sem)
+        : Notified(false),
+        NotifySem(init_wait_sem) {
+    }
+
+    ~t_init_wait_notifier() noexcept {
+      Notify();
+    }
+
+    void Notify() noexcept {
+      if (!Notified) {
+        try {
+          NotifySem.Push();
+          Notified = true;
+        } catch (const std::system_error &x) {
+          syslog(LOG_ERR, "Error notifying on server init finished: %s",
+              x.what());
+        }
+      }
+    }
+
+    private:
+    bool Notified;
+
+    TEventSemaphore &NotifySem;
+  } init_wait_notifier(InitWaitSem);  // t_init_wait_notifier
+
   if (Started) {
     throw std::logic_error("Multiple calls to Run() method not supported");
   }
 
   Started = true;
+
+  /* The main thread handles all signals, and keeps them all blocked except in
+     specific places where it is ready to handle them.  This simplifies signal
+     handling.  It is important that we have all signals blocked when creating
+     threads, since they inherit our signal mask, and we want them to block all
+     signals. */
+  BlockAllSignals();
+
   syslog(LOG_NOTICE, "Server started");
-  const Signal::TSet sigset(TSet::Exclude, { SIGINT, SIGTERM });
-  Signal::TMasker masker(*sigset);
 
-  if (!Config->DiscardLogPath.empty()) {
-    DiscardFileLogger.Init(Config->DiscardLogPath.c_str(),
-        static_cast<uint64_t>(Config->DiscardLogMaxFileSize) * 1024,
-        static_cast<uint64_t>(Config->DiscardLogMaxArchiveSize) * 1024,
-        Config->DiscardLogBadMsgPrefixSize,
-        Config->UseOldOutputFormat);
-  }
+  /* This starts the input and router threads but doesn't wait for them to
+     finish initialization. */
+  StartMsgHandlingThreads();
 
-  syslog(LOG_NOTICE, "Starting input thread");
-
-  try {
-    if (!StartInputThread()) {
-      /* Got shutdown signal during startup.  This is not an error. */
-      return EXIT_SUCCESS;
-    }
-  } catch (const TInputThreadStartFailure &) {
-    syslog(LOG_ERR, "Failure during input thread initialization");
-    return EXIT_FAILURE;
-  } catch (const TInputThreadShutdownFailure &) {
-    syslog(LOG_ERR, "Failure during input thread shutdown");
-    return EXIT_FAILURE;
-  }
-
-  syslog(LOG_NOTICE, "Started input thread, now starting web interface");
-
-  /* Start the Mongoose HTTP server, which is used for status monitoring.  It
-     runs in a separate thread. */
+  /* The destructor shuts down Bruce's web interface if we start it below.  We
+     want this to happen _after_ the message handling threads have shut down.
+   */
   TWebInterface web_interface(StatusPort, MsgStateTracker, AnomalyTracker,
       MetadataTimestamp, RouterThread.GetMetadataUpdateRequestSem(),
       DebugSetup);
-  web_interface.StartHttpServer();
 
-  /* We can close this now, since Mongoose has the port claimed. */
-  TmpStatusSocket.Reset();
+  /* Wait for the input thread to finish initialization, but don't wait for the
+     router thread since Kafka problems can delay its initialization
+     indefinitely.  Even while the router thread is still starting, the input
+     thread can receive datagrams from clients and queue them for routing.  The
+     input thread must be fully functional as soon as possible, and always
+     remain responsive so clients never block while sending messages.  If Kafka
+     problems delay router thread initialization indefinitely, messages will be
+     queued until we run out of buffer space and start logging discards. */
+  if (MsgHandlingInitWait()) {
+    /* Input thread initialization succeeded.  Start the Mongoose HTTP server,
+       which provides Bruce's web interface.  It runs in separate threads. */
+    web_interface.StartHttpServer();
 
-  syslog(LOG_NOTICE, "Started web interface, waiting for shutdown signal");
+    /* We can close this now, since Mongoose has the port claimed. */
+    TmpStatusSocket.Reset();
 
-  /* The server is running.  Now wait for a shutdown signal, or for the server
-     to shut down on its own due to a fatal error. */
-  if (!WaitForShutdownSignal()) {
-    syslog(LOG_ERR, "Input thread terminated on fatal error");
-    return EXIT_FAILURE;  // fatal server error
+    syslog(LOG_NOTICE,
+        "Started web interface, waiting for signals and errors");
+
+    init_wait_notifier.Notify();
+
+    /* Wait for signals and fatal errors.  Return when it is time for the
+       server to shut down.  On return, if InputThreadFatalError or
+       RouterThreadFatalError is true, then a fatal error was detected in a
+       message handling thread.  Otherwise, we received a shutdown signal and
+       no fatal errors were detected. */
+    HandleEvents();
   }
 
-  return RespondToShutdownSignal() ? EXIT_SUCCESS : EXIT_FAILURE;
+  Shutdown();
+  return GotFatalError() ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 void TBruceServer::RequestShutdown() {
@@ -295,93 +321,6 @@ void TBruceServer::RequestShutdown() {
   }
 }
 
-bool TBruceServer::StartInputThread() {
-  assert(this);
-
-  /* shutdown_wait_event.fd will become readable if the server encounters a
-     fatal error on startup. */
-  std::array<struct pollfd, 3> events;
-  struct pollfd &init_wait_event = events[0];
-  struct pollfd &shutdown_wait_event = events[1];
-  struct pollfd &shutdown_request_event = events[2];
-  init_wait_event.fd = InputThread.GetInitWaitFd();
-  init_wait_event.events = POLLIN;
-  init_wait_event.revents = 0;
-  shutdown_wait_event.fd = InputThread.GetShutdownWaitFd();
-  shutdown_wait_event.events = POLLIN;
-  shutdown_wait_event.revents = 0;
-  shutdown_request_event.fd = ShutdownRequestSem.GetFd();
-  shutdown_request_event.events = POLLIN;
-  shutdown_request_event.revents = 0;
-
-  {
-    /* The input thread will inherit our signal mask.  We want it to block
-       everything, so block everything while starting the thread. */
-    const Signal::TSet block_all(Signal::TSet::Full);
-    Signal::TMasker masker(*block_all);
-    InputThread.Start();
-  }
-
-  /* We must be responsive to shutdown signals here. */
-  int ret = poll(&events[0], events.size(), -1);
-  assert(ret);
-
-  if ((ret < 0) && (errno != EINTR)) {
-    IfLt0(ret);  // this will throw
-  }
-
-  {
-    /* We don't want to be interrupted by signals here. */
-    const Signal::TSet block_all(Signal::TSet::Full);
-    Signal::TMasker masker(*block_all);
-
-    /* No matter what happens, make sure test code doesn't get stuck waiting
-       for us. */
-    ServerStartedSem.Push();
-
-    if (ret > 0) {
-      if (shutdown_wait_event.revents) {
-        /* Server encountered fatal error on startup. */
-        InputThread.Join();
-        assert(InputThread.GetShutdownStatus() ==
-               TInputThread::TShutdownStatus::Error);
-        throw TInputThreadStartFailure();
-      }
-
-      if (shutdown_request_event.revents == 0) {
-        assert(init_wait_event.revents);
-        return true;  // input thread started
-      }
-    }
-
-    if (!RespondToShutdownSignal()) {
-      throw TInputThreadShutdownFailure();
-    }
-  }
-
-  return false;  // got shutdown signal
-}
-
-bool TBruceServer::ShutDownInputThread() {
-  assert(this);
-  syslog(LOG_NOTICE, "Shutting down input thread");
-  InputThread.RequestShutdown();
-  InputThread.Join();
-  bool input_thread_ok = (InputThread.GetShutdownStatus() ==
-                          TInputThread::TShutdownStatus::Normal);
-  syslog(LOG_NOTICE, "Server finished: input thread terminated %s",
-            input_thread_ok ? "normally" : "on error");
-  return input_thread_ok;
-}
-
-bool TBruceServer::RespondToShutdownSignal() {
-  assert(this);
-  syslog(LOG_NOTICE, "Got shutdown signal");
-  bool ret = ShutDownInputThread();
-  DiscardFileLogger.Shutdown();
-  return ret;
-}
-
 void TBruceServer::BlockAllSignals() {
   assert(this);
 
@@ -389,73 +328,187 @@ void TBruceServer::BlockAllSignals() {
   pthread_sigmask(SIG_SETMASK, block_all.Get(), nullptr);
 }
 
-bool TBruceServer::WaitForShutdownSignal() {
+void TBruceServer::StartMsgHandlingThreads() {
+  assert(this);
+
+  if (!Config->DiscardLogPath.empty()) {
+    /* We must do this before starting the input thread so all discards are
+       tracked properly when discard file logging is enabled.  This starts a
+       thread when discard file logging is enabled. */
+    DiscardFileLogger.Init(Config->DiscardLogPath.c_str(),
+        static_cast<uint64_t>(Config->DiscardLogMaxFileSize) * 1024,
+        static_cast<uint64_t>(Config->DiscardLogMaxArchiveSize) * 1024,
+        Config->DiscardLogBadMsgPrefixSize,
+        Config->UseOldOutputFormat);
+  }
+
+  /* Start threads without waiting for them to finish initialization. */
+  syslog(LOG_NOTICE, "Starting input thread");
+  InputThread.Start();
+  syslog(LOG_NOTICE, "Starting router thread");
+  RouterThread.Start();
+}
+
+bool TBruceServer::MsgHandlingInitWait() {
+  assert(this);
+  std::array<struct pollfd, 4> events;
+  struct pollfd &input_thread_init = events[0];
+  struct pollfd &input_thread_error = events[1];
+  struct pollfd &router_thread_error = events[2];
+  struct pollfd &shutdown_request = events[3];
+  input_thread_init.fd = InputThread.GetInitWaitFd();
+  input_thread_error.fd = InputThread.GetShutdownWaitFd();
+  router_thread_error.fd = RouterThread.GetShutdownWaitFd();
+  shutdown_request.fd = ShutdownRequestSem.GetFd();
+
+  for (auto &item : events) {
+    item.events = POLLIN;
+    item.revents = 0;
+  }
+
+  int ret = ppoll(&events[0], events.size(), nullptr, SigMask.Get());
+  assert(ret);
+
+  if ((ret < 0) && (errno != EINTR)) {
+    IfLt0(ret);  // this will throw
+  }
+
+  if (input_thread_error.revents) {
+    syslog(LOG_ERR, "Main thread detected input thread termination 1 on fatal "
+        "error");
+    InputThreadFatalError = true;
+  }
+
+  if (router_thread_error.revents) {
+    syslog(LOG_ERR, "Main thread detected router thread termination 1 on "
+        "fatal error");
+    RouterThreadFatalError = true;
+  }
+
+  if (input_thread_error.revents || router_thread_error.revents) {
+    return false;
+  }
+
+  if (shutdown_request.revents || (ret < 0)) {
+    syslog(LOG_NOTICE, "Got shutdown signal while waiting for input thread "
+        "initialization");
+    return false;
+  }
+
+  syslog(LOG_NOTICE, "Main thread detected successful input thread "
+      "initialization");
+  assert(input_thread_init.revents);
+  return true;
+}
+
+void TBruceServer::HandleEvents() {
   assert(this);
 
   /* This is for periodically verifying that we are getting queried for discard
      info. */
-  Base::TTimerFd discard_query_check(
+  TTimerFd discard_query_check_timer(
       1000 * (1 + Config->DiscardReportInterval));
 
-  /* Wait for a shutdown signal, or for the server to shut down on its own due
-     to a fatal error.  Also, periodically verify that we are getting queried
-     for discard info frequently enough.  If not, then the monitoring script
-     that is supposed to get discard info from bruce isn't doing its job. */
-  Base::TFd shutdown_requested_fd = ShutdownRequestSem.GetFd();
-  Base::TFd timer_fd = discard_query_check.GetFd();
-  std::array<struct pollfd, 3> events;
-  struct pollfd &shutdown_requested_event = events[0];
-  struct pollfd &shutdown_wait_event = events[1];
-  struct pollfd &discard_query_check_event = events[2];
-  shutdown_requested_event.fd = shutdown_requested_fd;
-  shutdown_requested_event.events = POLLIN;
-  shutdown_wait_event.fd = InputThread.GetShutdownWaitFd();
-  shutdown_wait_event.events = POLLIN;
-  discard_query_check_event.fd = timer_fd;
-  discard_query_check_event.events = POLLIN;
+  std::array<struct pollfd, 4> events;
+  struct pollfd &discard_query_check = events[0];
+  struct pollfd &input_thread_error = events[1];
+  struct pollfd &router_thread_error = events[2];
+  struct pollfd &shutdown_request = events[3];
+  discard_query_check.fd = discard_query_check_timer.GetFd();
+  discard_query_check.events = POLLIN;
+  input_thread_error.fd = InputThread.GetShutdownWaitFd();
+  input_thread_error.events = POLLIN;
+  router_thread_error.fd = RouterThread.GetShutdownWaitFd();
+  router_thread_error.events = POLLIN;
+  shutdown_request.fd = ShutdownRequestSem.GetFd();
+  shutdown_request.events = POLLIN;
 
   for (; ; ) {
     for (auto &item : events) {
       item.revents = 0;
     }
 
-    int ret = poll(&events[0], events.size(), -1);
+    int ret = ppoll(&events[0], events.size(), nullptr, SigMask.Get());
+    assert(ret);
 
-    /* EINTR indicates we got interrupted by the shutdown signal.  Any other
-       error is fatal. */
     if ((ret < 0) && (errno != EINTR)) {
       IfLt0(ret);  // this will throw
     }
 
-    if (shutdown_wait_event.revents) {
-      /* The server encountered a fatal error.  We no longer need to respond to
-         signals, so block all signals until we exit.  Then we don't have to
-         worry about getting interrupted. */
-      BlockAllSignals();
-
-      InputThread.Join();
-      assert(InputThread.GetShutdownStatus() ==
-             TInputThread::TShutdownStatus::Error);
-      return false;
+    if (input_thread_error.revents) {
+      syslog(LOG_ERR, "Main thread detected input thread termination 2 on "
+          "fatal error");
+      InputThreadFatalError = true;
     }
 
-    if (shutdown_requested_fd.IsReadable()) {
-      /* We got a shutdown signal.  We no longer need to respond to signals, so
-         block all signals until we exit.  Then we don't have to worry about
-         getting interrupted. */
-      BlockAllSignals();
+    if (router_thread_error.revents) {
+      syslog(LOG_ERR, "Main thread detected router thread termination 2 on "
+          "fatal error");
+      RouterThreadFatalError = true;
+    }
+
+    if (input_thread_error.revents || router_thread_error.revents) {
       break;
     }
 
-    if (timer_fd.IsReadable()) {
-      discard_query_check.Pop();
+    if (discard_query_check_timer.GetFd().IsReadable()) {
+      discard_query_check_timer.Pop();
       AnomalyTracker.CheckGetInfoRate();
+    }
+
+    if (shutdown_request.revents || (ret < 0)) {
+      syslog(LOG_NOTICE, "Got shutdown signal while server running");
+      break;
+    }
+
+    assert(discard_query_check.revents);
+  }
+}
+
+void TBruceServer::Shutdown() {
+  assert(this);
+
+  if (InputThreadFatalError) {
+    InputThread.Join();
+    assert(InputThread.GetShutdownStatus() ==
+        TInputThread::TShutdownStatus::Error);
+  } else {
+    syslog(LOG_NOTICE, "Shutting down input thread");
+    InputThread.RequestShutdown();
+    InputThread.Join();
+    bool input_thread_ok = (InputThread.GetShutdownStatus() ==
+        TInputThread::TShutdownStatus::Normal);
+    syslog(LOG_NOTICE, "Input thread terminated %s",
+              input_thread_ok ? "normally" : "on error");
+
+    if (!input_thread_ok) {
+      InputThreadFatalError = true;
     }
   }
 
-  return true;
+  if (RouterThreadFatalError) {
+    RouterThread.Join();
+    assert(RouterThread.GetShutdownStatus() ==
+        TRouterThread::TShutdownStatus::Error);
+  } else {
+    syslog(LOG_NOTICE, "Shutting down router thread");
+    RouterThread.RequestShutdown();
+    RouterThread.Join();
+    bool router_thread_ok = (RouterThread.GetShutdownStatus() ==
+        TRouterThread::TShutdownStatus::Normal);
+    syslog(LOG_NOTICE, "Router thread terminated %s",
+              router_thread_ok ? "normally" : "on error");
+
+    if (!router_thread_ok) {
+      RouterThreadFatalError = true;
+    }
+  }
+
+  /* Let the DiscardFileLogger destructor disable discard file logging.  Then
+     we know it gets disabled only after everything that may generate discards
+     has been destroyed. */
 }
 
-std::list<TBruceServer *> TBruceServer::ServerList;
-
 std::mutex TBruceServer::ServerListMutex;
+
+std::list<TBruceServer *> TBruceServer::ServerList;

@@ -37,6 +37,7 @@
 #include <poll.h>
 
 #include <base/event_semaphore.h>
+#include <base/fd.h>
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
 #include <base/timer_fd.h>
@@ -56,7 +57,6 @@
 #include <bruce/msg_dispatch/kafka_dispatcher_api.h>
 #include <bruce/msg_rate_limiter.h>
 #include <bruce/msg_state_tracker.h>
-#include <bruce/router_thread_api.h>
 #include <bruce/util/bruce_rate_limiter.h>
 #include <bruce/util/gate.h>
 #include <bruce/util/host_and_port.h>
@@ -65,11 +65,15 @@
 
 namespace Bruce {
 
-  class TRouterThread final : public Util::TWorkerThread,
-                              public TRouterThreadApi {
+  class TRouterThread final : public Util::TWorkerThread {
     NO_COPY_SEMANTICS(TRouterThread);
 
     public:
+    enum class TShutdownStatus {
+      Normal,
+      Error
+    };  // TShutdownStatus
+
     TRouterThread(const TConfig &config, const Conf::TConf &conf,
         const KafkaProto::TWireProtocol &kafka_protocol,
         TAnomalyTracker &anomaly_tracker, TMsgStateTracker &msg_state_tracker,
@@ -87,17 +91,25 @@ namespace Bruce {
        thread must immediately be ready to read datagrams from its socket.  In
        the case where the Kafka cluster is temporarily unavailable, router
        thread initialization can take arbitrarily long. */
-    virtual const Base::TFd &GetInitWaitFd() const override;
+    const Base::TFd &GetInitWaitFd() const {
+      assert(this);
+      return InitFinishedSem.GetFd();
+    }
 
-    virtual TShutdownStatus GetShutdownStatus() const override;
+    TShutdownStatus GetShutdownStatus() const {
+      assert(this);
+      return ShutdownStatus;
+    }
 
-    virtual TMsgChannel &GetMsgChannel() override;
+    Util::TGatePutApi<TMsg::TPtr> &GetMsgChannel() {
+      assert(this);
+      return MsgChannel;
+    }
 
-    /* Returns the total number of ACKs received from Kafka.  Used for testing.
-     */
-    virtual size_t GetAckCount() const override;
-
-    virtual Base::TEventSemaphore &GetMetadataUpdateRequestSem() override;
+    Base::TEventSemaphore &GetMetadataUpdateRequestSem() {
+      assert(this);
+      return MetadataUpdateRequestSem;
+    }
 
     const TMetadataTimestamp &GetMetadataTimestamp() const {
       assert(this);
