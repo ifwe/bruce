@@ -34,8 +34,8 @@ using namespace Bruce::InputDg::AnyPartition;
 using namespace Bruce::Util;
 using namespace Capped;
 
-SERVER_COUNTER(InputThreadDiscardAnyPartitionMsgUnsupportedApiVersion);
-SERVER_COUNTER(InputThreadProcessAnyPartitionMsg);
+SERVER_COUNTER(InputAgentDiscardAnyPartitionMsgUnsupportedApiVersion);
+SERVER_COUNTER(InputAgentProcessAnyPartitionMsg);
 
 TMsg::TPtr Bruce::InputDg::AnyPartition::BuildAnyPartitionMsgFromDg(
     const uint8_t *dg_bytes, size_t dg_size, int16_t api_version,
@@ -45,7 +45,7 @@ TMsg::TPtr Bruce::InputDg::AnyPartition::BuildAnyPartitionMsgFromDg(
   assert(dg_bytes);
   assert(versioned_part_begin > dg_bytes);
   assert(versioned_part_end > versioned_part_begin);
-  InputThreadProcessAnyPartitionMsg.Increment();
+  InputAgentProcessAnyPartitionMsg.Increment();
 
   switch (api_version) {
     case 0: {
@@ -60,7 +60,7 @@ TMsg::TPtr Bruce::InputDg::AnyPartition::BuildAnyPartitionMsgFromDg(
 
   anomaly_tracker.TrackUnsupportedMsgVersionDiscard(dg_bytes,
       dg_bytes + dg_size, api_version);
-  InputThreadDiscardAnyPartitionMsgUnsupportedApiVersion.Increment();
+  InputAgentDiscardAnyPartitionMsgUnsupportedApiVersion.Increment();
 
   if (!no_log_discard) {
     static TLogRateLimiter lim(std::chrono::seconds(30));

@@ -19,8 +19,6 @@
    End to end test for bruce daemon using mock Kafka server.
  */
 
-#include <bruce/input_thread.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -54,13 +52,13 @@
 #include <bruce/client/status_codes.h>
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
-#include <bruce/input_thread.h>
 #include <bruce/kafka_proto/choose_proto.h>
 #include <bruce/kafka_proto/v0/wire_proto.h>
 #include <bruce/metadata_timestamp.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/router_thread.h>
 #include <bruce/test_util/mock_kafka_config.h>
+#include <bruce/unix_dg_input_agent.h>
 #include <bruce/util/misc_util.h>
 #include <bruce/util/time_util.h>
 #include <bruce/util/worker_thread.h>

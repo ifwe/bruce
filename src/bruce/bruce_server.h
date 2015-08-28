@@ -41,7 +41,7 @@
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
 #include <bruce/discard_file_logger.h>
-#include <bruce/input_thread.h>
+#include <bruce/unix_dg_input_agent.h>
 #include <bruce/kafka_proto/wire_protocol.h>
 #include <bruce/metadata_timestamp.h>
 #include <bruce/msg_dispatch/kafka_dispatcher.h>
@@ -184,7 +184,7 @@ namespace Bruce {
     private:
     bool GotFatalError() const {
       assert(this);
-      return InputThreadFatalError || RouterThreadFatalError;
+      return UnixDgInputAgentFatalError || RouterThreadFatalError;
     }
 
     void BlockAllSignals();
@@ -246,7 +246,7 @@ namespace Bruce {
 
     Debug::TDebugSetup DebugSetup;
 
-    bool InputThreadFatalError;
+    bool UnixDgInputAgentFatalError;
 
     bool RouterThreadFatalError;
 
@@ -254,7 +254,7 @@ namespace Bruce {
 
     TRouterThread RouterThread;
 
-    TInputThread InputThread;
+    TUnixDgInputAgent UnixDgInputAgent;
 
     const TMetadataTimestamp &MetadataTimestamp;
 

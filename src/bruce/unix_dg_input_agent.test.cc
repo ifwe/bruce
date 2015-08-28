@@ -1,4 +1,4 @@
-/* <bruce/input_thread.test.cc>
+/* <bruce/unix_dg_input_agent.test.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,10 +16,10 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Unit test for <bruce/input_thread.h>
+   Unit test for <bruce/unix_dg_input_agent.h>
  */
 
-#include <bruce/input_thread.h>
+#include <bruce/unix_dg_input_agent.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -37,7 +37,6 @@
 #include <bruce/config.h>
 #include <bruce/debug/debug_setup.h>
 #include <bruce/discard_file_logger.h>
-#include <bruce/input_thread.h>
 #include <bruce/kafka_proto/choose_proto.h>
 #include <bruce/kafka_proto/wire_protocol.h>
 #include <bruce/metadata_timestamp.h>
@@ -89,7 +88,7 @@ namespace {
 
     std::unique_ptr<TGate<TMsg::TPtr>> OutputQueue;
 
-    std::unique_ptr<TInputThread> InputThread;
+    std::unique_ptr<TUnixDgInputAgent> UnixDgInputAgent;
 
     explicit TBruceConfig(size_t pool_block_size);
 
@@ -99,18 +98,18 @@ namespace {
 
     void StartBruce() {
       if (!BruceStarted) {
-        TInputThread &input_thread = *InputThread;
-        input_thread.Start();
-        input_thread.GetInitWaitFd().IsReadable(-1);
+        TUnixDgInputAgent &unix_dg_input_agent = *UnixDgInputAgent;
+        unix_dg_input_agent.Start();
+        unix_dg_input_agent.GetInitWaitFd().IsReadable(-1);
         BruceStarted = true;
       }
     }
 
     void StopBruce() {
       if (BruceStarted) {
-        TInputThread &input_thread = *InputThread;
-        input_thread.RequestShutdown();
-        input_thread.Join();
+        TUnixDgInputAgent &unix_dg_input_agent = *UnixDgInputAgent;
+        unix_dg_input_agent.RequestShutdown();
+        unix_dg_input_agent.Join();
         BruceStarted = false;
       }
     }
@@ -142,7 +141,7 @@ namespace {
                    static_cast<int32_t>(Cfg->ReplicationTimeout),
                    Cfg->RetryOnUnknownPartition));
     OutputQueue.reset(new TGate<TMsg::TPtr>);
-    InputThread.reset(new TInputThread(*Cfg, Pool, MsgStateTracker,
+    UnixDgInputAgent.reset(new TUnixDgInputAgent(*Cfg, Pool, MsgStateTracker,
         AnomalyTracker, *OutputQueue));
   }
 
@@ -158,13 +157,13 @@ namespace {
     ASSERT_EQ(ret, BRUCE_OK);
   }
 
-  /* The fixture for testing class TInputThread. */
-  class TInputThreadTest : public ::testing::Test {
+  /* The fixture for testing class TUnixDgInputAgent. */
+  class TUnixDgInputAgentTest : public ::testing::Test {
     protected:
-    TInputThreadTest() {
+    TUnixDgInputAgentTest() {
     }
 
-    virtual ~TInputThreadTest() {
+    virtual ~TUnixDgInputAgentTest() {
     }
 
     virtual void SetUp() {
@@ -172,9 +171,9 @@ namespace {
 
     virtual void TearDown() {
     }
-  };  // TInputThreadTest
+  };  // TUnixDgInputAgentTest
 
-  TEST_F(TInputThreadTest, SuccessfulForwarding) {
+  TEST_F(TUnixDgInputAgentTest, SuccessfulForwarding) {
     /* If this value is set too large, message(s) will be discarded and the
        test will fail. */
     const size_t pool_block_size = 256;
@@ -241,13 +240,13 @@ namespace {
     msg_list.clear();
   }
 
-  TEST_F(TInputThreadTest, NoBufferSpaceDiscard) {
+  TEST_F(TUnixDgInputAgentTest, NoBufferSpaceDiscard) {
     /* This setting must be chosen properly, since it determines how many
        messages will be discarded. */
     const size_t pool_block_size = 256;
 
     TBruceConfig conf(pool_block_size);
-    TInputThread &input_thread = *conf.InputThread;
+    TUnixDgInputAgent &unix_dg_input_agent = *conf.UnixDgInputAgent;
     TGate<TMsg::TPtr> &output_queue = *conf.OutputQueue;
     conf.StartBruce();
     TBruceClientSocket sock;
@@ -289,12 +288,12 @@ namespace {
     }
 
     for (size_t i = 0;
-         (input_thread.GetMsgReceivedCount() < 5) && (i < 3000);
+         (unix_dg_input_agent.GetMsgReceivedCount() < 5) && (i < 3000);
          ++i) {
       SleepMilliseconds(10);
     }
 
-    ASSERT_EQ(input_thread.GetMsgReceivedCount(), 5U);
+    ASSERT_EQ(unix_dg_input_agent.GetMsgReceivedCount(), 5U);
     ASSERT_EQ(msg_list.size(), 4U);
     size_t i = 0;
 
@@ -324,13 +323,13 @@ namespace {
     msg_list.clear();
   }
 
-  TEST_F(TInputThreadTest, MalformedMessageDiscards) {
+  TEST_F(TUnixDgInputAgentTest, MalformedMessageDiscards) {
     /* If this value is set too large, message(s) will be discarded and the
        test will fail. */
     const size_t pool_block_size = 256;
 
     TBruceConfig conf(pool_block_size);
-    TInputThread &input_thread = *conf.InputThread;
+    TUnixDgInputAgent &unix_dg_input_agent = *conf.UnixDgInputAgent;
     TGate<TMsg::TPtr> &output_queue = *conf.OutputQueue;
     conf.StartBruce();
 
@@ -351,12 +350,12 @@ namespace {
     ASSERT_EQ(ret, BRUCE_OK);
 
     for (size_t i = 0;
-         (input_thread.GetMsgReceivedCount() < 1) && (i < 3000);
+         (unix_dg_input_agent.GetMsgReceivedCount() < 1) && (i < 3000);
          ++i) {
       SleepMilliseconds(10);
     }
 
-    ASSERT_EQ(input_thread.GetMsgReceivedCount(), 1U);
+    ASSERT_EQ(unix_dg_input_agent.GetMsgReceivedCount(), 1U);
     std::list<TMsg::TPtr> msg_list(output_queue.NonblockingGet());
     ASSERT_TRUE(msg_list.empty());
     TAnomalyTracker::TInfo bad_stuff;

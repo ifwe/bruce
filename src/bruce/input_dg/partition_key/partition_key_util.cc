@@ -34,8 +34,8 @@ using namespace Bruce::InputDg::PartitionKey;
 using namespace Bruce::Util;
 using namespace Capped;
 
-SERVER_COUNTER(InputThreadDiscardPartitionKeyMsgUnsupportedApiVersion);
-SERVER_COUNTER(InputThreadProcessPartitionKeyMsg);
+SERVER_COUNTER(InputAgentDiscardPartitionKeyMsgUnsupportedApiVersion);
+SERVER_COUNTER(InputAgentProcessPartitionKeyMsg);
 
 TMsg::TPtr Bruce::InputDg::PartitionKey::BuildPartitionKeyMsgFromDg(
     const uint8_t *dg_bytes, size_t dg_size, int16_t api_version,
@@ -45,7 +45,7 @@ TMsg::TPtr Bruce::InputDg::PartitionKey::BuildPartitionKeyMsgFromDg(
   assert(dg_bytes);
   assert(versioned_part_begin > dg_bytes);
   assert(versioned_part_end > versioned_part_begin);
-  InputThreadProcessPartitionKeyMsg.Increment();
+  InputAgentProcessPartitionKeyMsg.Increment();
 
   switch (api_version) {
     case 0: {
@@ -60,7 +60,7 @@ TMsg::TPtr Bruce::InputDg::PartitionKey::BuildPartitionKeyMsgFromDg(
 
   anomaly_tracker.TrackUnsupportedMsgVersionDiscard(dg_bytes,
       dg_bytes + dg_size, api_version);
-  InputThreadDiscardPartitionKeyMsgUnsupportedApiVersion.Increment();
+  InputAgentDiscardPartitionKeyMsgUnsupportedApiVersion.Increment();
 
   if (!no_log_discard) {
     static TLogRateLimiter lim(std::chrono::seconds(30));

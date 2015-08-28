@@ -37,8 +37,8 @@ using namespace Bruce::InputDg;
 using namespace Bruce::Util;
 using namespace Capped;
 
-SERVER_COUNTER(InputThreadDiscardMsgMalformed);
-SERVER_COUNTER(InputThreadDiscardMsgNoMem);
+SERVER_COUNTER(InputAgentDiscardMsgMalformed);
+SERVER_COUNTER(InputAgentDiscardMsgNoMem);
 
 void Bruce::InputDg::DiscardMalformedMsg(const uint8_t *msg_begin,
     size_t msg_size, TAnomalyTracker &anomaly_tracker, bool no_log_discard) {
@@ -51,7 +51,7 @@ void Bruce::InputDg::DiscardMalformedMsg(const uint8_t *msg_begin,
   }
 
   anomaly_tracker.TrackMalformedMsgDiscard(msg_begin, msg_begin + msg_size);
-  InputThreadDiscardMsgMalformed.Increment();
+  InputAgentDiscardMsgMalformed.Increment();
 }
 
 void Bruce::InputDg::DiscardMsgNoMem(TMsg::TTimestamp timestamp,
@@ -66,7 +66,7 @@ void Bruce::InputDg::DiscardMsgNoMem(TMsg::TTimestamp timestamp,
   assert(value_end >= value_begin);
   anomaly_tracker.TrackNoMemDiscard(timestamp, topic_begin, topic_end,
       key_begin, key_end, value_begin, value_end);
-  InputThreadDiscardMsgNoMem.Increment();
+  InputAgentDiscardMsgNoMem.Increment();
 
   if (!no_log_discard) {
     static TLogRateLimiter lim(std::chrono::seconds(30));

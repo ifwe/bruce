@@ -1,4 +1,4 @@
-/* <bruce/input_thread.h>
+/* <bruce/unix_dg_input_agent.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -66,15 +66,15 @@
 
 namespace Bruce {
 
-  class TInputThread final : public Util::TWorkerThread {
-    NO_COPY_SEMANTICS(TInputThread);
+  class TUnixDgInputAgent final : public Util::TWorkerThread {
+    NO_COPY_SEMANTICS(TUnixDgInputAgent);
 
     public:
-    TInputThread(const TConfig &config, Capped::TPool &pool,
+    TUnixDgInputAgent(const TConfig &config, Capped::TPool &pool,
         TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
         Util::TGatePutApi<TMsg::TPtr> &output_queue);
 
-    virtual ~TInputThread() noexcept;
+    virtual ~TUnixDgInputAgent() noexcept;
 
     /* Return a file descriptor that becomes readable when the input thread has
        finished its initialization and is open for business. */
@@ -138,6 +138,6 @@ namespace Bruce {
 
     /* Used for testing. */
     std::atomic<size_t> MsgReceivedCount;
-  };  // TInputThread
+  };  // TUnixDgInputAgent
 
 }  // Bruce

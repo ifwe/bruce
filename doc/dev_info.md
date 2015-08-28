@@ -32,10 +32,10 @@ repository).  For instance, the built `bruce` executable will be
 
 Source files ending in `.test.cc` are unit tests, which can be executed as
 standalone executables.  For instance, in the above example if we typed
-`build input_thread.test`, this would build the unit test for Bruce's input
-thread, which would then appear as executable file
-`out/debug/bruce/input_thread.test`.  If you type
-`build --test input_thread.test`, that will build the unit test and then
+`build unix_dg_input_agent.test`, this would build the unit test for Bruce's
+UNIX datagram input agent, which would then appear as executable file
+`out/debug/bruce/unix_dg_input_agent.test`.  If you type
+`build --test unix_dg_input_agent.test`, that will build the unit test and then
 immediately execute it.  Before building or running any unit tests, you must
 have the Google Test Framework installed, as documented [here](gtest.md).
 

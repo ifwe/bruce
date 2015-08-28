@@ -1,4 +1,4 @@
-/* <bruce/input_thread.cc>
+/* <bruce/unix_dg_input_agent.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,10 +16,10 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Implements <bruce/input_thread.h>.
+   Implements <bruce/unix_dg_input_agent.h>.
  */
 
-#include <bruce/input_thread.h>
+#include <bruce/unix_dg_input_agent.h>
 
 #include <algorithm>
 #include <array>
@@ -46,10 +46,10 @@ using namespace Bruce::Util;
 using namespace Capped;
 using namespace Socket;
 
-SERVER_COUNTER(InputThreadForwardMsg);
-SERVER_COUNTER(InputThreadGotOkMsg);
+SERVER_COUNTER(UnixDgInputAgentForwardMsg);
+SERVER_COUNTER(UnixDgInputAgentGotOkMsg);
 
-TInputThread::TInputThread(const TConfig &config, TPool &pool,
+TUnixDgInputAgent::TUnixDgInputAgent(const TConfig &config, TPool &pool,
     TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
     Util::TGatePutApi<TMsg::TPtr> &output_queue)
     : Config(config),
@@ -69,7 +69,7 @@ TInputThread::TInputThread(const TConfig &config, TPool &pool,
       MsgReceivedCount(0) {
 }
 
-TInputThread::~TInputThread() noexcept {
+TUnixDgInputAgent::~TUnixDgInputAgent() noexcept {
   /* This will shut down the thread if something unexpected happens.  Setting
      the 'Destroying' flag tells the thread to shut down immediately when it
      gets the shutdown request. */
@@ -77,7 +77,7 @@ TInputThread::~TInputThread() noexcept {
   ShutdownOnDestroy();
 }
 
-void TInputThread::Run() {
+void TUnixDgInputAgent::Run() {
   assert(this);
   int tid = static_cast<int>(Gettid());
   syslog(LOG_NOTICE, "Input thread %d started", tid);
@@ -96,7 +96,7 @@ void TInputThread::Run() {
       OkShutdown ? "normally" : "on error");
 }
 
-void TInputThread::DoRun() {
+void TUnixDgInputAgent::DoRun() {
   assert(this);
   OkShutdown = false;
   syslog(LOG_NOTICE, "Input thread opening UNIX domain datagram socket");
@@ -112,7 +112,7 @@ void TInputThread::DoRun() {
   OkShutdown = true;
 }
 
-void TInputThread::OpenUnixSocket() {
+void TUnixDgInputAgent::OpenUnixSocket() {
   assert(this);
   TAddress input_socket_address;
   input_socket_address.SetFamily(AF_LOCAL);
@@ -140,7 +140,7 @@ void TInputThread::OpenUnixSocket() {
   }
 }
 
-TMsg::TPtr TInputThread::ReadOneMsg() {
+TMsg::TPtr TUnixDgInputAgent::ReadOneMsg() {
   assert(this);
   char * const msg_begin = reinterpret_cast<char *>(&InputBuf[0]);
   ssize_t result = IfLt0(recv(InputSocket, msg_begin, InputBuf.size(), 0));
@@ -148,13 +148,13 @@ TMsg::TPtr TInputThread::ReadOneMsg() {
       AnomalyTracker, MsgStateTracker);
 
   if (msg) {
-    InputThreadGotOkMsg.Increment();
+    UnixDgInputAgentGotOkMsg.Increment();
   }
 
   return std::move(msg);
 }
 
-void TInputThread::ForwardMessages() {
+void TUnixDgInputAgent::ForwardMessages() {
   assert(this);
   std::array<struct pollfd, 2> events;
   struct pollfd &shutdown_request_event = events[0];
@@ -193,7 +193,7 @@ void TInputThread::ForwardMessages() {
     if (msg) {
       /* Forward message to router thread. */
       OutputQueue.Put(std::move(msg));
-      InputThreadForwardMsg.Increment();
+      UnixDgInputAgentForwardMsg.Increment();
     }
   }
 }

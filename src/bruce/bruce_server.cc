@@ -175,13 +175,13 @@ TBruceServer::TBruceServer(TServerConfig &&config)
       StatusPort(0),
       DebugSetup(Config->DebugDir.c_str(), Config->MsgDebugTimeLimit,
                  Config->MsgDebugByteLimit),
-      InputThreadFatalError(false),
+      UnixDgInputAgentFatalError(false),
       RouterThreadFatalError(false),
       Dispatcher(*Config, Conf.GetCompressionConf(), *KafkaProtocol,
           MsgStateTracker, AnomalyTracker, config.BatchConfig, DebugSetup),
       RouterThread(*Config, Conf, *KafkaProtocol, AnomalyTracker,
           MsgStateTracker, config.BatchConfig, DebugSetup, Dispatcher),
-      InputThread(*Config, Pool, MsgStateTracker, AnomalyTracker,
+      UnixDgInputAgent(*Config, Pool, MsgStateTracker, AnomalyTracker,
           RouterThread.GetMsgChannel()),
       MetadataTimestamp(RouterThread.GetMetadataTimestamp()),
       ShutdownRequested(ATOMIC_FLAG_INIT) {
@@ -301,7 +301,7 @@ int TBruceServer::Run() {
     init_wait_notifier.Notify();
 
     /* Wait for signals and fatal errors.  Return when it is time for the
-       server to shut down.  On return, if InputThreadFatalError or
+       server to shut down.  On return, if UnixDgInputAgentFatalError or
        RouterThreadFatalError is true, then a fatal error was detected in a
        message handling thread.  Otherwise, we received a shutdown signal and
        no fatal errors were detected. */
@@ -344,7 +344,7 @@ void TBruceServer::StartMsgHandlingThreads() {
 
   /* Start threads without waiting for them to finish initialization. */
   syslog(LOG_NOTICE, "Starting input thread");
-  InputThread.Start();
+  UnixDgInputAgent.Start();
   syslog(LOG_NOTICE, "Starting router thread");
   RouterThread.Start();
 }
@@ -352,12 +352,12 @@ void TBruceServer::StartMsgHandlingThreads() {
 bool TBruceServer::MsgHandlingInitWait() {
   assert(this);
   std::array<struct pollfd, 4> events;
-  struct pollfd &input_thread_init = events[0];
-  struct pollfd &input_thread_error = events[1];
+  struct pollfd &unix_dg_input_agent_init = events[0];
+  struct pollfd &unix_dg_input_agent_error = events[1];
   struct pollfd &router_thread_error = events[2];
   struct pollfd &shutdown_request = events[3];
-  input_thread_init.fd = InputThread.GetInitWaitFd();
-  input_thread_error.fd = InputThread.GetShutdownWaitFd();
+  unix_dg_input_agent_init.fd = UnixDgInputAgent.GetInitWaitFd();
+  unix_dg_input_agent_error.fd = UnixDgInputAgent.GetShutdownWaitFd();
   router_thread_error.fd = RouterThread.GetShutdownWaitFd();
   shutdown_request.fd = ShutdownRequestSem.GetFd();
 
@@ -373,10 +373,10 @@ bool TBruceServer::MsgHandlingInitWait() {
     IfLt0(ret);  // this will throw
   }
 
-  if (input_thread_error.revents) {
+  if (unix_dg_input_agent_error.revents) {
     syslog(LOG_ERR, "Main thread detected input thread termination 1 on fatal "
         "error");
-    InputThreadFatalError = true;
+    UnixDgInputAgentFatalError = true;
   }
 
   if (router_thread_error.revents) {
@@ -385,7 +385,7 @@ bool TBruceServer::MsgHandlingInitWait() {
     RouterThreadFatalError = true;
   }
 
-  if (input_thread_error.revents || router_thread_error.revents) {
+  if (unix_dg_input_agent_error.revents || router_thread_error.revents) {
     return false;
   }
 
@@ -397,7 +397,7 @@ bool TBruceServer::MsgHandlingInitWait() {
 
   syslog(LOG_NOTICE, "Main thread detected successful input thread "
       "initialization");
-  assert(input_thread_init.revents);
+  assert(unix_dg_input_agent_init.revents);
   return true;
 }
 
@@ -411,13 +411,13 @@ void TBruceServer::HandleEvents() {
 
   std::array<struct pollfd, 4> events;
   struct pollfd &discard_query_check = events[0];
-  struct pollfd &input_thread_error = events[1];
+  struct pollfd &unix_dg_input_agent_error = events[1];
   struct pollfd &router_thread_error = events[2];
   struct pollfd &shutdown_request = events[3];
   discard_query_check.fd = discard_query_check_timer.GetFd();
   discard_query_check.events = POLLIN;
-  input_thread_error.fd = InputThread.GetShutdownWaitFd();
-  input_thread_error.events = POLLIN;
+  unix_dg_input_agent_error.fd = UnixDgInputAgent.GetShutdownWaitFd();
+  unix_dg_input_agent_error.events = POLLIN;
   router_thread_error.fd = RouterThread.GetShutdownWaitFd();
   router_thread_error.events = POLLIN;
   shutdown_request.fd = ShutdownRequestSem.GetFd();
@@ -435,10 +435,10 @@ void TBruceServer::HandleEvents() {
       IfLt0(ret);  // this will throw
     }
 
-    if (input_thread_error.revents) {
+    if (unix_dg_input_agent_error.revents) {
       syslog(LOG_ERR, "Main thread detected input thread termination 2 on "
           "fatal error");
-      InputThreadFatalError = true;
+      UnixDgInputAgentFatalError = true;
     }
 
     if (router_thread_error.revents) {
@@ -447,7 +447,7 @@ void TBruceServer::HandleEvents() {
       RouterThreadFatalError = true;
     }
 
-    if (input_thread_error.revents || router_thread_error.revents) {
+    if (unix_dg_input_agent_error.revents || router_thread_error.revents) {
       break;
     }
 
@@ -468,19 +468,19 @@ void TBruceServer::HandleEvents() {
 void TBruceServer::Shutdown() {
   assert(this);
 
-  if (InputThreadFatalError) {
-    InputThread.Join();
-    assert(!InputThread.ShutdownWasOk());
+  if (UnixDgInputAgentFatalError) {
+    UnixDgInputAgent.Join();
+    assert(!UnixDgInputAgent.ShutdownWasOk());
   } else {
     syslog(LOG_NOTICE, "Shutting down input thread");
-    InputThread.RequestShutdown();
-    InputThread.Join();
-    bool input_thread_ok = InputThread.ShutdownWasOk();
+    UnixDgInputAgent.RequestShutdown();
+    UnixDgInputAgent.Join();
+    bool unix_dg_input_agent_ok = UnixDgInputAgent.ShutdownWasOk();
     syslog(LOG_NOTICE, "Input thread terminated %s",
-              input_thread_ok ? "normally" : "on error");
+              unix_dg_input_agent_ok ? "normally" : "on error");
 
-    if (!input_thread_ok) {
-      InputThreadFatalError = true;
+    if (!unix_dg_input_agent_ok) {
+      UnixDgInputAgentFatalError = true;
     }
   }
 

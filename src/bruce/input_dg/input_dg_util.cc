@@ -46,12 +46,12 @@ using namespace Bruce::InputDg::PartitionKey;
 using namespace Bruce::Util;
 using namespace Capped;
 
-SERVER_COUNTER(InputThreadDiscardMsgUnsupportedApiKey);
-SERVER_COUNTER(InputThreadDiscardMsgUnsupportedVersion);
-SERVER_COUNTER(InputThreadDiscardOldOldFormatMsgMalformed);
-SERVER_COUNTER(InputThreadDiscardOldOldFormatMsgNoMem);
-SERVER_COUNTER(InputThreadProcessOldFormatMsg);
-SERVER_COUNTER(InputThreadProcessOldOldFormatMsg);
+SERVER_COUNTER(InputAgentDiscardMsgUnsupportedApiKey);
+SERVER_COUNTER(InputAgentDiscardMsgUnsupportedVersion);
+SERVER_COUNTER(InputAgentDiscardOldOldFormatMsgMalformed);
+SERVER_COUNTER(InputAgentDiscardOldOldFormatMsgNoMem);
+SERVER_COUNTER(InputAgentProcessOldFormatMsg);
+SERVER_COUNTER(InputAgentProcessOldOldFormatMsg);
 
 static void DiscardMsgWithNoTopic(const char *msg_begin, size_t msg_size,
     TAnomalyTracker &anomaly_tracker, bool no_log_discard) {
@@ -66,7 +66,7 @@ static void DiscardMsgWithNoTopic(const char *msg_begin, size_t msg_size,
   anomaly_tracker.TrackMalformedMsgDiscard(
       reinterpret_cast<const uint8_t *>(msg_begin),
       reinterpret_cast<const uint8_t *>(msg_begin) + msg_size);
-  InputThreadDiscardOldOldFormatMsgMalformed.Increment();
+  InputAgentDiscardOldOldFormatMsgMalformed.Increment();
 }
 
 static void DiscardOldOldFormatMsgNoMem(const char *msg_begin, char *topic_end,
@@ -92,14 +92,14 @@ static void DiscardOldOldFormatMsgNoMem(const char *msg_begin, char *topic_end,
 
   anomaly_tracker.TrackNoMemDiscard(GetEpochMilliseconds(), msg_begin,
       topic_end, nullptr, nullptr, body_begin, body_end);
-  InputThreadDiscardOldOldFormatMsgNoMem.Increment();
+  InputAgentDiscardOldOldFormatMsgNoMem.Increment();
 }
 
 static TMsg::TPtr BuildMsgFromOldOldFormatDg(const char *msg_start,
     size_t msg_size, const TConfig &config, Capped::TPool &pool,
     TAnomalyTracker &anomaly_tracker, TMsgStateTracker &msg_state_tracker) {
   assert(msg_start);
-  InputThreadProcessOldOldFormatMsg.Increment();
+  InputAgentProcessOldOldFormatMsg.Increment();
 
   /* Dirty hack: This function is going away soon, so I'm being sloppy. */
   char *msg_begin = const_cast<char *>(msg_start);
@@ -153,7 +153,7 @@ static TMsg::TPtr BuildMsgFromOldFormatDg(const void *dg, size_t dg_size,
     Capped::TPool &pool, TAnomalyTracker &anomaly_tracker,
     TMsgStateTracker &msg_state_tracker, bool no_log_discard) {
   assert(dg);
-  InputThreadProcessOldFormatMsg.Increment();
+  InputAgentProcessOldFormatMsg.Increment();
   const uint8_t *dg_bytes = reinterpret_cast<const uint8_t *>(dg);
   size_t fixed_part_size = INPUT_DG_SZ_FIELD_SIZE +
       INPUT_DG_OLD_VER_FIELD_SIZE;
@@ -184,7 +184,7 @@ static TMsg::TPtr BuildMsgFromOldFormatDg(const void *dg, size_t dg_size,
 
   anomaly_tracker.TrackUnsupportedMsgVersionDiscard(dg_bytes,
       dg_bytes + dg_size, ver);
-  InputThreadDiscardMsgUnsupportedVersion.Increment();
+  InputAgentDiscardMsgUnsupportedVersion.Increment();
   return TMsg::TPtr();
 }
 
@@ -257,6 +257,6 @@ TMsg::TPtr Bruce::InputDg::BuildMsgFromDg(const void *dg, size_t dg_size,
 
   anomaly_tracker.TrackUnsupportedApiKeyDiscard(dg_bytes, dg_bytes + dg_size,
       api_key);
-  InputThreadDiscardMsgUnsupportedApiKey.Increment();
+  InputAgentDiscardMsgUnsupportedApiKey.Increment();
   return TMsg::TPtr();
 }
