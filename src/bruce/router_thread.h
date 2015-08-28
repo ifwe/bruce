@@ -69,11 +69,6 @@ namespace Bruce {
     NO_COPY_SEMANTICS(TRouterThread);
 
     public:
-    enum class TShutdownStatus {
-      Normal,
-      Error
-    };  // TShutdownStatus
-
     TRouterThread(const TConfig &config, const Conf::TConf &conf,
         const KafkaProto::TWireProtocol &kafka_protocol,
         TAnomalyTracker &anomaly_tracker, TMsgStateTracker &msg_state_tracker,
@@ -96,9 +91,9 @@ namespace Bruce {
       return InitFinishedSem.GetFd();
     }
 
-    TShutdownStatus GetShutdownStatus() const {
+    bool ShutdownWasOk() const {
       assert(this);
-      return ShutdownStatus;
+      return OkShutdown;
     }
 
     Util::TGatePutApi<TMsg::TPtr> &GetMsgChannel() {
@@ -223,7 +218,7 @@ namespace Bruce {
 
     bool Init();
 
-    void GetDispatcherShutdownStatus();
+    void CheckDispatcherShutdown();
 
     bool ReplaceMetadataOnRefresh(std::shared_ptr<TMetadata> &&meta);
 
@@ -324,7 +319,7 @@ namespace Bruce {
 
     /* After the router thread has shut down, this indicates whether it shut
        down normally or with an error. */
-    TShutdownStatus ShutdownStatus;
+    bool OkShutdown;
 
     /* The router thread receives messages from the input thread through this
        channel. */

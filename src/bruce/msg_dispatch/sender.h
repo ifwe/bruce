@@ -54,8 +54,6 @@ namespace Bruce {
       NO_COPY_SEMANTICS(TSender);
 
       public:
-      using TShutdownStatus = TDispatcherShutdownStatus;
-
       TSender(size_t my_broker_index, TDispatcherSharedState &ds,
               TConnectionSharedState &cs);
 
@@ -93,9 +91,9 @@ namespace Bruce {
 
       void WaitForShutdownAck();
 
-      TShutdownStatus GetShutdownStatus() const {
+      bool ShutdownWasOk() const {
         assert(this);
-        return ShutdownStatus;
+        return OkShutdown;
       }
 
       void ExtractMsgs();
@@ -188,7 +186,7 @@ namespace Bruce {
          (but may continue executing until shutdown finished). */
       Base::TEventSemaphore ShutdownAck;
 
-      TShutdownStatus ShutdownStatus;
+      bool OkShutdown;
 
       /* This becomes known when we are about to start writing a produce
          request into our send buffer.  It becomes unknown when we have

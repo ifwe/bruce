@@ -100,7 +100,7 @@ TReceiver::TReceiver(size_t my_broker_index, TDispatcherSharedState &ds,
       PauseInProgress(false),
       SendThreadTerminated(false),
       Destroying(false),
-      ShutdownStatus(TShutdownStatus::Normal),
+      OkShutdown(true),
       DebugLogger(ds.DebugSetup, TDebugSetup::TLogId::MSG_GOT_ACK,
                   !ds.Config.OmitTimestamp, ds.Config.UseOldOutputFormat) {
 }
@@ -189,7 +189,7 @@ void TReceiver::ExtractMsgs() {
 
   Metadata.reset();
   assert(!Destroying);
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
 }
 
 void TReceiver::Run() {
@@ -221,8 +221,7 @@ void TReceiver::Run() {
 
   syslog(LOG_NOTICE, "Receive thread %d (index %lu broker %ld) finished %s",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
-         broker_id, (ShutdownStatus == TShutdownStatus::Normal) ?
-                    "normally" : "on error");
+         broker_id, OkShutdown ? "normally" : "on error");
   Ds.MarkThreadFinished();
   ReceiverFinishRun.Increment();
 }
@@ -914,7 +913,7 @@ bool TReceiver::HandleSockReadReady() {
 
 void TReceiver::DoRun() {
   assert(this);
-  ShutdownStatus = TShutdownStatus::Error;
+  OkShutdown = false;
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
 
   if (!WaitForConnect()) {
@@ -923,7 +922,7 @@ void TReceiver::DoRun() {
 
   do {
     if (SendThreadTerminated && AckWaitQueue.empty()) {
-      ShutdownStatus = TShutdownStatus::Normal;
+      OkShutdown = true;
       syslog(LOG_NOTICE, "Receive thread %d (index %lu broker %ld) finishing "
              "after emptying its queue on shutdown",
              static_cast<int>(Gettid()),
@@ -957,7 +956,7 @@ void TReceiver::DoRun() {
 
       if (OptInProgressShutdown.IsKnown() &&
           (finish_time >= OptInProgressShutdown->Deadline)) {
-        ShutdownStatus = TShutdownStatus::Normal;
+        OkShutdown = true;
         syslog(LOG_NOTICE, "Receive thread %d (index %lu broker %ld) "
                "finishing on shutdown time limit expiration",
                static_cast<int>(Gettid()),

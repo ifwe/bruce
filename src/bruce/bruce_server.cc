@@ -470,14 +470,12 @@ void TBruceServer::Shutdown() {
 
   if (InputThreadFatalError) {
     InputThread.Join();
-    assert(InputThread.GetShutdownStatus() ==
-        TInputThread::TShutdownStatus::Error);
+    assert(!InputThread.ShutdownWasOk());
   } else {
     syslog(LOG_NOTICE, "Shutting down input thread");
     InputThread.RequestShutdown();
     InputThread.Join();
-    bool input_thread_ok = (InputThread.GetShutdownStatus() ==
-        TInputThread::TShutdownStatus::Normal);
+    bool input_thread_ok = InputThread.ShutdownWasOk();
     syslog(LOG_NOTICE, "Input thread terminated %s",
               input_thread_ok ? "normally" : "on error");
 
@@ -488,14 +486,12 @@ void TBruceServer::Shutdown() {
 
   if (RouterThreadFatalError) {
     RouterThread.Join();
-    assert(RouterThread.GetShutdownStatus() ==
-        TRouterThread::TShutdownStatus::Error);
+    assert(!RouterThread.ShutdownWasOk());
   } else {
     syslog(LOG_NOTICE, "Shutting down router thread");
     RouterThread.RequestShutdown();
     RouterThread.Join();
-    bool router_thread_ok = (RouterThread.GetShutdownStatus() ==
-        TRouterThread::TShutdownStatus::Normal);
+    bool router_thread_ok = RouterThread.ShutdownWasOk();
     syslog(LOG_NOTICE, "Router thread terminated %s",
               router_thread_ok ? "normally" : "on error");
 

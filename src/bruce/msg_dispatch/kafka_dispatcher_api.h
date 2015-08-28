@@ -44,8 +44,6 @@ namespace Bruce {
       public:
       using TState = TDispatcherState;
 
-      using TShutdownStatus = TDispatcherShutdownStatus;
-
       virtual ~TKafkaDispatcherApi() noexcept { }
 
       virtual TState GetState() const = 0;
@@ -126,7 +124,7 @@ namespace Bruce {
 
       /* Get status after shutdown finished.  This can be called once JoinAll()
          has been called. */
-      virtual TShutdownStatus GetShutdownStatus() const = 0;
+      virtual bool ShutdownWasOk() const = 0;
 
       /* After shutdown is finished, get all messages waiting for an ACK from
          the given broker. */

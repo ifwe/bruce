@@ -70,11 +70,6 @@ namespace Bruce {
     NO_COPY_SEMANTICS(TInputThread);
 
     public:
-    enum class TShutdownStatus {
-      Normal,
-      Error
-    };  // TShutdownStatus
-
     TInputThread(const TConfig &config, Capped::TPool &pool,
         TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
         Util::TGatePutApi<TMsg::TPtr> &output_queue);
@@ -88,9 +83,9 @@ namespace Bruce {
       return InitFinishedSem.GetFd();
     }
 
-    TShutdownStatus GetShutdownStatus() const {
+    bool ShutdownWasOk() const {
       assert(this);
-      return ShutdownStatus;
+      return OkShutdown;
     }
 
     /* Used for testing. */
@@ -121,7 +116,7 @@ namespace Bruce {
 
     /* After the input thread terminates, this indicates whether it terminated
        normally or with an error. */
-    TShutdownStatus ShutdownStatus;
+    bool OkShutdown;
 
     /* Blocks for TBlob objects containing message data get allocated from
        here. */

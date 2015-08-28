@@ -52,11 +52,6 @@ namespace Bruce {
       Stopped
     };  // TDispatcherState
 
-    enum class TDispatcherShutdownStatus {
-      Normal,
-      Error
-    };  // TDispatcherShutdownStatus
-
   }  // MsgDispatch
 
 }  // Bruce

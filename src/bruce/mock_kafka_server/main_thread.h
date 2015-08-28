@@ -45,13 +45,8 @@ namespace Bruce {
       NO_COPY_SEMANTICS(TMainThread);
 
       public:
-      enum class TShutdownStatus {
-        Normal,
-        Error
-      };  // TShutdownStatus
-
       explicit TMainThread(const TConfig &config)
-          : ShutdownStatus(TShutdownStatus::Normal),
+          : OkShutdown(true),
             Server(config, true, true) {
       }
 
@@ -66,9 +61,9 @@ namespace Bruce {
         return InitFinishedSem.GetFd();
       }
 
-      TShutdownStatus GetShutdownStatus() const {
+      bool ShutdownWasOk() const {
         assert(this);
-        return ShutdownStatus;
+        return OkShutdown;
       }
 
       in_port_t GetCmdPort() const {
@@ -112,7 +107,7 @@ namespace Bruce {
       private:
       /* Indicates whether the mock Kafka server terminated normally or with an
          error.  */
-      TShutdownStatus ShutdownStatus;
+      bool OkShutdown;
 
       /* This becomes readable when the input thread has finished its
          initialization and is open for business. */

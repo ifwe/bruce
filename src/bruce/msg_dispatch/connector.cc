@@ -37,7 +37,7 @@ SERVER_COUNTER(ConnectorStartSlowShutdown);
 TConnector::TConnector(size_t my_broker_index, TDispatcherSharedState &ds)
     : Sender(my_broker_index, ds, Cs),
       Receiver(my_broker_index, ds, Cs, Sender.GetShutdownWaitFd()),
-      ShutdownStatus(TShutdownStatus::Normal) {
+      OkShutdown(true) {
 }
 
 void TConnector::Start(const std::shared_ptr<TMetadata> &md) {
@@ -50,7 +50,7 @@ void TConnector::Start(const std::shared_ptr<TMetadata> &md) {
   assert(!Sender.GetShutdownWaitFd().IsReadable());
   assert(!Receiver.GetShutdownWaitFd().IsReadable());
   assert(!Cs.ConnectFinished.GetFd().IsReadable());
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
   ConnectorStart.Increment();
   Sender.SetMetadata(md);
   Sender.Start();
@@ -83,10 +83,7 @@ void TConnector::JoinAll() {
   ConnectorStartJoinAll.Increment();
   Sender.Join();
   Receiver.Join();
-  ShutdownStatus =
-      ((Sender.GetShutdownStatus() != TShutdownStatus::Normal) ||
-       (Receiver.GetShutdownStatus() != TShutdownStatus::Normal)) ?
-      TShutdownStatus::Error : TShutdownStatus::Normal;
+  OkShutdown = Sender.ShutdownWasOk() && Receiver.ShutdownWasOk();
 
   /* The order of the remaining steps matters because we want to avoid getting
      messages unnecessarily out of order. */

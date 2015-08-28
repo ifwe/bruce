@@ -137,15 +137,14 @@ void TMockKafkaDispatcher::JoinAll() {
 
 }
 
-TKafkaDispatcherApi::TShutdownStatus
-    TMockKafkaDispatcher::GetShutdownStatus() const {
+bool TMockKafkaDispatcher::ShutdownWasOk() const {
   assert(this);
 
 
 
 
 
-  return TShutdownStatus::Normal;
+  return true;
 }
 
 std::list<std::list<TMsg::TPtr>>

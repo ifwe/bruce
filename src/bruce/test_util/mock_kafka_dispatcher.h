@@ -83,7 +83,7 @@ namespace Bruce {
 
       virtual void JoinAll() override;
 
-      virtual TShutdownStatus GetShutdownStatus() const override;
+      virtual bool ShutdownWasOk() const override;
 
       virtual std::list<std::list<TMsg::TPtr>>
       GetAckWaitQueueAfterShutdown(size_t broker_index) override;

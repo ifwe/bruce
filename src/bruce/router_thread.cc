@@ -105,7 +105,7 @@ TRouterThread::TRouterThread(const TConfig &config, const TConf &conf,
       DebugSetup(debug_setup),
       Destroying(false),
       NeedToContinueShutdown(false),
-      ShutdownStatus(TShutdownStatus::Normal),
+      OkShutdown(true),
       MetadataFetcher(kafka_protocol),
       KnownBrokers(conf.GetInitialBrokers()),
       PerTopicBatcher(batch_config.GetPerTopicConfig()),
@@ -140,7 +140,7 @@ void TRouterThread::Run() {
   }
 
   syslog(LOG_NOTICE, "Router thread %d finished %s", tid,
-      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "on error");
+      OkShutdown ? "normally" : "on error");
 }
 
 size_t TRouterThread::ComputeRetryDelay(size_t mean_delay, size_t div) {
@@ -815,12 +815,11 @@ bool TRouterThread::Init() {
   return true;
 }
 
-void TRouterThread::GetDispatcherShutdownStatus() {
+void TRouterThread::CheckDispatcherShutdown() {
   assert(this);
   Dispatcher.JoinAll();
 
-  if (Dispatcher.GetShutdownStatus() ==
-      TKafkaDispatcherApi::TShutdownStatus::Normal) {
+  if (Dispatcher.ShutdownWasOk()) {
     syslog(LOG_INFO, "Dispatcher terminated normally");
   } else {
     syslog(LOG_ERR, "Dispatcher terminated on error");
@@ -848,7 +847,7 @@ bool TRouterThread::ReplaceMetadataOnRefresh(
   }
 
   syslog(LOG_NOTICE, "Waiting for dispatcher shutdown to finish");
-  GetDispatcherShutdownStatus();
+  CheckDispatcherShutdown();
   syslog(LOG_NOTICE, "Router thread finished waiting for dispatcher shutdown "
          "on metadata refresh");
 
@@ -1159,11 +1158,11 @@ void TRouterThread::InitMainLoopPollArray() {
 
 void TRouterThread::DoRun() {
   assert(this);
-  ShutdownStatus = TShutdownStatus::Error;
+  OkShutdown = false;
 
   if (!Init()) {
     /* Got shutdown signal during initialization.  This is not an error. */
-    ShutdownStatus = TShutdownStatus::Normal;
+    OkShutdown = true;
     return;
   }
 
@@ -1214,7 +1213,7 @@ void TRouterThread::DoRun() {
 
   Discard(PerTopicBatcher.GetAllBatches(),
           TAnomalyTracker::TDiscardReason::ServerShutdown);
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
 }
 
 void TRouterThread::HandleShutdownFinished() {
@@ -1228,7 +1227,7 @@ void TRouterThread::HandleShutdownFinished() {
            "notification from dispatcher");
   }
 
-  GetDispatcherShutdownStatus();
+  CheckDispatcherShutdown();
   std::list<std::list<TMsg::TPtr>> to_discard = EmptyDispatcher();
 
   for (const std::list<TMsg::TPtr> &msg_list : to_discard) {
@@ -1353,7 +1352,7 @@ bool TRouterThread::HandlePause() {
   syslog(LOG_NOTICE, "Router thread shutting down dispatcher on pause");
   Dispatcher.StartFastShutdown();
   syslog(LOG_NOTICE, "Router thread waiting for dispatcher shutdown");
-  GetDispatcherShutdownStatus();
+  CheckDispatcherShutdown();
   bool shutdown_previously_started = ShutdownStartTime.IsKnown();
   syslog(LOG_NOTICE, "Router thread getting metadata in response to pause");
   std::shared_ptr<TMetadata> meta = GetMetadata();

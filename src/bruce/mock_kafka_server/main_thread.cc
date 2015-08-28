@@ -50,14 +50,14 @@ void TMainThread::RequestShutdown() {
 
 void TMainThread::Run() {
   assert(this);
-  ShutdownStatus = TShutdownStatus::Error;
+  OkShutdown = false;
 
   try {
     if (Server.Init() == EXIT_SUCCESS) {
       InitFinishedSem.Push();
 
       if (Server.Run() == EXIT_SUCCESS) {
-        ShutdownStatus = TShutdownStatus::Normal;
+        OkShutdown = true;
       } else {
         std::cerr << "mock Kafka server shutting down on error" << std::endl;
       }

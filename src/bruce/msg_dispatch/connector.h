@@ -44,8 +44,6 @@ namespace Bruce {
       NO_COPY_SEMANTICS(TConnector);
 
       public:
-      using TShutdownStatus = TDispatcherShutdownStatus;
-
       TConnector(size_t my_broker_index, TDispatcherSharedState &ds);
 
       void Start(const std::shared_ptr<TMetadata> &md);
@@ -76,9 +74,9 @@ namespace Bruce {
 
       void JoinAll();
 
-      TShutdownStatus GetShutdownStatus() const {
+      bool ShutdownWasOk() const {
         assert(this);
-        return ShutdownStatus;
+        return OkShutdown;
       }
 
       std::list<std::list<TMsg::TPtr>> GetAckWaitQueueAfterShutdown() {
@@ -100,7 +98,7 @@ namespace Bruce {
       /* Thread receives produce responses from broker. */
       TReceiver Receiver;
 
-      TShutdownStatus ShutdownStatus;
+      bool OkShutdown;
     };  // TConnector
 
   }  // MsgDispatch

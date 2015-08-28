@@ -55,7 +55,7 @@ TKafkaDispatcher::TKafkaDispatcher(const TConfig &config,
     : Ds(config, compression_conf, kafka_protocol, msg_state_tracker,
          anomaly_tracker, debug_setup, batch_config),
       State(TState::Stopped),
-      ShutdownStatus(TShutdownStatus::Normal) {
+      OkShutdown(true) {
 }
 
 TKafkaDispatcherApi::TState TKafkaDispatcher::GetState() const {
@@ -76,7 +76,7 @@ void TKafkaDispatcher::Start(const std::shared_ptr<TMetadata> &md) {
   assert(!Ds.GetShutdownWaitFd().IsReadable());
   assert(Ds.GetRunningThreadCount() == 0);
   StartKafkaDispatcher.Increment();
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
   const std::vector<TMetadata::TBroker> &brokers = md->GetBrokers();
   size_t num_in_service = md->NumInServiceBrokers();
 
@@ -257,18 +257,18 @@ void TKafkaDispatcher::JoinAll() {
   assert(State != TState::Stopped);
   StartDispatcherJoinAll.Increment();
   syslog(LOG_NOTICE, "Waiting for dispatcher shutdown status");
-  TShutdownStatus shutdown_status = TShutdownStatus::Normal;
+  bool ok_shutdown = true;
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
     c->JoinAll();
 
-    if (c->GetShutdownStatus() != TShutdownStatus::Normal) {
-      shutdown_status = TShutdownStatus::Error;
+    if (!c->ShutdownWasOk()) {
+      ok_shutdown = false;
     }
   }
 
-  ShutdownStatus = shutdown_status;
+  OkShutdown = ok_shutdown;
   Ds.PauseButton.Reset();
   assert(Ds.GetShutdownWaitFd().IsReadable());
   Ds.ResetThreadFinishedState();
@@ -277,10 +277,9 @@ void TKafkaDispatcher::JoinAll() {
   State = TState::Stopped;
 }
 
-TKafkaDispatcherApi::TShutdownStatus
-TKafkaDispatcher::GetShutdownStatus() const {
+bool TKafkaDispatcher::ShutdownWasOk() const {
   assert(this);
-  return ShutdownStatus;
+  return OkShutdown;
 }
 
 std::list<std::list<TMsg::TPtr>>

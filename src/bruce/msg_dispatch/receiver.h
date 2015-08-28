@@ -53,8 +53,6 @@ namespace Bruce {
       NO_COPY_SEMANTICS(TReceiver);
 
       public:
-      using TShutdownStatus = TDispatcherShutdownStatus;
-
       TReceiver(size_t my_broker_index, TDispatcherSharedState &ds,
                 TConnectionSharedState &cs,
                 const Base::TFd &sender_shutdown_wait);
@@ -74,9 +72,9 @@ namespace Bruce {
 
       void WaitForShutdownAck();
 
-      TShutdownStatus GetShutdownStatus() const {
+      bool ShutdownWasOk() const {
         assert(this);
-        return ShutdownStatus;
+        return OkShutdown;
       }
 
       void ExtractMsgs();
@@ -189,7 +187,7 @@ namespace Bruce {
          (but may continue executing until shutdown finished). */
       Base::TEventSemaphore ShutdownAck;
 
-      TShutdownStatus ShutdownStatus;
+      bool OkShutdown;
 
       Debug::TDebugLogger DebugLogger;
     };  // TReceiver

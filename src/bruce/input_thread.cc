@@ -54,7 +54,7 @@ TInputThread::TInputThread(const TConfig &config, TPool &pool,
     Util::TGatePutApi<TMsg::TPtr> &output_queue)
     : Config(config),
       Destroying(false),
-      ShutdownStatus(TShutdownStatus::Normal),
+      OkShutdown(true),
       Pool(pool),
       MsgStateTracker(msg_state_tracker),
       AnomalyTracker(anomaly_tracker),
@@ -93,12 +93,12 @@ void TInputThread::Run() {
   }
 
   syslog(LOG_NOTICE, "Input thread %d finished %s", tid,
-      (ShutdownStatus == TShutdownStatus::Normal) ? "normally" : "on error");
+      OkShutdown ? "normally" : "on error");
 }
 
 void TInputThread::DoRun() {
   assert(this);
-  ShutdownStatus = TShutdownStatus::Error;
+  OkShutdown = false;
   syslog(LOG_NOTICE, "Input thread opening UNIX domain datagram socket");
   OpenUnixSocket();
 
@@ -109,7 +109,7 @@ void TInputThread::DoRun() {
   syslog(LOG_NOTICE,
          "Input thread finished initialization, forwarding messages");
   ForwardMessages();
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
 }
 
 void TInputThread::OpenUnixSocket() {

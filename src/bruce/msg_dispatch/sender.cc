@@ -80,7 +80,7 @@ TSender::TSender(size_t my_broker_index, TDispatcherSharedState &ds,
                      !ds.Config.OmitTimestamp, ds.Config.UseOldOutputFormat),
       PauseInProgress(false),
       Destroying(false),
-      ShutdownStatus(TShutdownStatus::Normal) {
+      OkShutdown(true) {
 }
 
 TSender::~TSender() noexcept {
@@ -162,7 +162,7 @@ void TSender::ExtractMsgs() {
   sw.splice(sw.end(), RequestFactory.GetAll());
   Metadata.reset();
   assert(!Destroying);
-  ShutdownStatus = TShutdownStatus::Normal;
+  OkShutdown = true;
   Cs.SendWaitAfterShutdown.splice(Cs.SendWaitAfterShutdown.end(),
                                   InputQueue.Reset());
 
@@ -200,8 +200,7 @@ void TSender::Run() {
 
   syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finished %s",
          static_cast<int>(Gettid()), static_cast<unsigned long>(MyBrokerIndex),
-         broker_id, (ShutdownStatus == TShutdownStatus::Normal) ?
-                    "normally" : "on error");
+         broker_id, OkShutdown ? "normally" : "on error");
   Ds.MarkThreadFinished();
   SenderFinishRun.Increment();
 }
@@ -583,7 +582,7 @@ TSender::TSockOpResult TSender::HandleSockWriteReady() {
 
 void TSender::DoRun() {
   assert(this);
-  ShutdownStatus = TShutdownStatus::Error;
+  OkShutdown = false;
   long broker_id = Metadata->GetBrokers()[MyBrokerIndex].GetId();
 
   if (!ConnectToBroker()) {
@@ -592,7 +591,7 @@ void TSender::DoRun() {
 
   for (; ; ) {
     if (OptInProgressShutdown.IsKnown() && RequestFactory.IsEmpty()) {
-      ShutdownStatus = TShutdownStatus::Normal;
+      OkShutdown = true;
       syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing "
              "after emptying its queue on shutdown", static_cast<int>(Gettid()),
              static_cast<unsigned long>(MyBrokerIndex), broker_id);
@@ -605,7 +604,7 @@ void TSender::DoRun() {
 
     if (shutdown_timeout == 0) {
       /* Stop doing work immediately even if FDs are ready. */
-      ShutdownStatus = TShutdownStatus::Normal;
+      OkShutdown = true;
       syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing on "
              "shutdown time limit expiration 1", static_cast<int>(Gettid()),
              static_cast<unsigned long>(MyBrokerIndex), broker_id);
@@ -634,7 +633,7 @@ void TSender::DoRun() {
 
       if (OptInProgressShutdown.IsKnown() &&
           (finish_time >= OptInProgressShutdown->Deadline)) {
-        ShutdownStatus = TShutdownStatus::Normal;
+        OkShutdown = true;
         syslog(LOG_NOTICE, "Send thread %d (index %lu broker %ld) finishing "
                "on shutdown time limit expiration 2",
                static_cast<int>(Gettid()),
@@ -648,7 +647,7 @@ void TSender::DoRun() {
 
     if (MainLoopPollArray[TMainLoopPollItem::ShutdownRequest].revents) {
       if (!HandleShutdownRequest(false)) {
-        ShutdownStatus = TShutdownStatus::Normal;
+        OkShutdown = true;
         break;
       }
 
@@ -657,7 +656,7 @@ void TSender::DoRun() {
 
     if (MainLoopPollArray[TMainLoopPollItem::PauseButton].revents) {
       HandlePauseDetected(false);
-      ShutdownStatus = TShutdownStatus::Normal;
+      OkShutdown = true;
       break;
     }
 
@@ -675,7 +674,7 @@ void TSender::DoRun() {
 
       if (result != TSockOpResult::OkContinue) {
         if (result != TSockOpResult::Error) {
-          ShutdownStatus = TShutdownStatus::Normal;
+          OkShutdown = true;
         }
 
         break;
