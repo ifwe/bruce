@@ -58,10 +58,10 @@
 #include <bruce/msg_rate_limiter.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/util/bruce_rate_limiter.h>
-#include <bruce/util/gate.h>
 #include <bruce/util/host_and_port.h>
 #include <bruce/util/poll_array.h>
 #include <thread/fd_managed_thread.h>
+#include <thread/gate.h>
 
 namespace Bruce {
 
@@ -96,7 +96,7 @@ namespace Bruce {
       return OkShutdown;
     }
 
-    Util::TGatePutApi<TMsg::TPtr> &GetMsgChannel() {
+    Thread::TGatePutApi<TMsg::TPtr> &GetMsgChannel() {
       assert(this);
       return MsgChannel;
     }
@@ -323,7 +323,7 @@ namespace Bruce {
 
     /* The router thread receives messages from the input thread through this
        channel. */
-    Util::TGate<TMsg::TPtr> MsgChannel;
+    Thread::TGate<TMsg::TPtr> MsgChannel;
 
     /* Object responsible for getting metadata requests from brokers. */
     TMetadataFetcher MetadataFetcher;

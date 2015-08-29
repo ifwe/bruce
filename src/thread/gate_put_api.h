@@ -1,4 +1,4 @@
-/* <bruce/util/gate_get_api.h>
+/* <thread/gate_put_api.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   "Get" API for TGate mechanism.
+   "Put" API for TGate mechanism.
  */
 
 #pragma once
@@ -25,26 +25,20 @@
 
 #include <base/no_copy_semantics.h>
 
-namespace Bruce {
+namespace Thread {
 
-  namespace Util {
+  template <typename TMsgType>
+  class TGatePutApi {
+    NO_COPY_SEMANTICS(TGatePutApi);
 
-    template <typename TMsgType>
-    class TGateGetApi {
-      NO_COPY_SEMANTICS(TGateGetApi);
+    public:
+    TGatePutApi() = default;
 
-      public:
-      TGateGetApi() = default;
+    virtual ~TGatePutApi() noexcept { }
 
-      virtual ~TGateGetApi() noexcept { }
+    virtual void Put(std::list<TMsgType> &&put_list) = 0;
 
-      virtual std::list<TMsgType> Get() = 0;
+    virtual void Put(TMsgType &&put_item) = 0;
+  };  // TGatePutApi
 
-      virtual std::list<TMsgType> NonblockingGet() = 0;
-
-      virtual const Base::TFd &GetMsgAvailableFd() const = 0;
-    };  // TGateGetApi
-
-  }  // Util
-
-}  // Bruce
+}  // Thread

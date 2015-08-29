@@ -1,4 +1,4 @@
-/* <bruce/util/gate.test.cc>
+/* <thread/gate.test.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,10 +16,10 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Unit test for <bruce/util/gate.h>
+   Unit test for <thread/gate.h>
  */
 
-#include <bruce/util/gate.h>
+#include <thread/gate.h>
 
 #include <algorithm>
 #include <string>
@@ -27,8 +27,7 @@
 #include <gtest/gtest.h>
 
 using namespace Base;
-using namespace Bruce;
-using namespace Bruce::Util;
+using namespace Thread;
 
 namespace {
 

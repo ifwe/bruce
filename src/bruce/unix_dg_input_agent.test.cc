@@ -43,10 +43,10 @@
 #include <bruce/metadata_timestamp.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/test_util/misc_util.h>
-#include <bruce/util/gate.h>
 #include <capped/blob.h>
 #include <capped/pool.h>
 #include <capped/reader.h>
+#include <thread/gate.h>
 
 #include <gtest/gtest.h>
 
@@ -56,8 +56,8 @@ using namespace Bruce::Client;
 using namespace Bruce::Debug;
 using namespace Bruce::KafkaProto;
 using namespace Bruce::TestUtil;
-using namespace Bruce::Util;
 using namespace Capped;
+using namespace Thread;
 
 namespace {
 

@@ -30,7 +30,7 @@
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
 #include <bruce/conf/compression_type.h>
-#include <bruce/util/gate.h>
+#include <thread/gate.h>
 
 namespace Bruce {
 
@@ -139,7 +139,7 @@ namespace Bruce {
       }
 
       private:
-      using TQueue = Bruce::Util::TGate<TRequestInfo>;
+      using TQueue = Thread::TGate<TRequestInfo>;
 
       TQueue Queue;
     };  // TReceivedRequestTracker

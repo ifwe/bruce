@@ -45,13 +45,14 @@ using namespace Bruce;
 using namespace Bruce::Util;
 using namespace Capped;
 using namespace Socket;
+using namespace Thread;
 
 SERVER_COUNTER(UnixDgInputAgentForwardMsg);
 SERVER_COUNTER(UnixDgInputAgentGotOkMsg);
 
 TUnixDgInputAgent::TUnixDgInputAgent(const TConfig &config, TPool &pool,
     TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
-    Util::TGatePutApi<TMsg::TPtr> &output_queue)
+    TGatePutApi<TMsg::TPtr> &output_queue)
     : Config(config),
       Destroying(false),
       OkShutdown(true),

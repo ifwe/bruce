@@ -30,7 +30,7 @@
 #include <base/no_copy_semantics.h>
 #include <bruce/msg.h>
 #include <bruce/msg_dispatch/common.h>
-#include <bruce/util/gate.h>
+#include <thread/gate.h>
 
 namespace Bruce {
 
@@ -50,10 +50,10 @@ namespace Bruce {
       Base::TEventSemaphore ConnectFinished;
 
       /* Sent messages waiting to be claimed by receive thread. */
-      Util::TGate<TProduceRequest> SendFinishedQueue;
+      Thread::TGate<TProduceRequest> SendFinishedQueue;
 
       /* Messages waiting to be claimed by send thread for resend. */
-      Util::TGate<std::list<TMsg::TPtr>> ResendQueue;
+      Thread::TGate<std::list<TMsg::TPtr>> ResendQueue;
 
       /* After both the send thread and the receive thread are shutdown, all
          messages waiting to be sent are moved to this list.  */

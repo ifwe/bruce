@@ -59,10 +59,10 @@
 #include <bruce/config.h>
 #include <bruce/msg.h>
 #include <bruce/msg_state_tracker.h>
-#include <bruce/util/gate_put_api.h>
 #include <capped/pool.h>
 #include <socket/named_unix_socket.h>
 #include <thread/fd_managed_thread.h>
+#include <thread/gate_put_api.h>
 
 namespace Bruce {
 
@@ -72,7 +72,7 @@ namespace Bruce {
     public:
     TUnixDgInputAgent(const TConfig &config, Capped::TPool &pool,
         TMsgStateTracker &msg_state_tracker, TAnomalyTracker &anomaly_tracker,
-        Util::TGatePutApi<TMsg::TPtr> &output_queue);
+        Thread::TGatePutApi<TMsg::TPtr> &output_queue);
 
     virtual ~TUnixDgInputAgent() noexcept;
 
@@ -134,7 +134,7 @@ namespace Bruce {
     std::vector<uint8_t> InputBuf;
 
     /* Messages are queued here for the router thread. */
-    Util::TGatePutApi<TMsg::TPtr> &OutputQueue;
+    Thread::TGatePutApi<TMsg::TPtr> &OutputQueue;
 
     /* Used for testing. */
     std::atomic<size_t> MsgReceivedCount;
