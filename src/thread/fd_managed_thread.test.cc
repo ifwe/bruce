@@ -1,4 +1,4 @@
-/* <bruce/util/worker_thread.test.cc>
+/* <thread/fd_managed_thread.test.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,10 +16,10 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Unit test for <bruce/util/worker_thread.h>.
+   Unit test for <thread/fd_managed_thread.h>.
  */
 
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 #include <stdexcept>
 
@@ -28,18 +28,17 @@
 #include <gtest/gtest.h>
 
 using namespace Base;
-using namespace Bruce;
-using namespace Bruce::Util;
+using namespace Thread;
 
 namespace {
 
-  /* The fixture for testing class TWorkerThread. */
-  class TWorkerThreadTest : public ::testing::Test {
+  /* The fixture for testing class TFdManagedThread. */
+  class TFdManagedThreadTest : public ::testing::Test {
     protected:
-    TWorkerThreadTest() {
+    TFdManagedThreadTest() {
     }
 
-    virtual ~TWorkerThreadTest() {
+    virtual ~TFdManagedThreadTest() {
     }
 
     virtual void SetUp() {
@@ -47,9 +46,9 @@ namespace {
 
     virtual void TearDown() {
     }
-  };  // TWorkerThreadTest
+  };  // TFdManagedThreadTest
 
-  class TTestWorker1 final : public TWorkerThread {
+  class TTestWorker1 final : public TFdManagedThread {
     public:
     explicit TTestWorker1(bool &flag)
         : Flag(flag) {
@@ -69,7 +68,7 @@ namespace {
     Flag = true;
   }
 
-  class TTestWorker2 final : public TWorkerThread {
+  class TTestWorker2 final : public TFdManagedThread {
     public:
     explicit TTestWorker2(bool &flag)
         : Flag(flag) {
@@ -95,7 +94,7 @@ namespace {
     Flag = true;
   }
 
-  class TTestWorker3 final : public TWorkerThread {
+  class TTestWorker3 final : public TFdManagedThread {
     public:
     TTestWorker3(bool &flag, bool throw_std_exception)
         : Flag(flag),
@@ -130,7 +129,7 @@ namespace {
     throw "random junk";
   }
 
-  TEST_F(TWorkerThreadTest, Test1) {
+  TEST_F(TFdManagedThreadTest, Test1) {
     bool thread_executed = false;
     TTestWorker1 worker(thread_executed);
     ASSERT_FALSE(thread_executed);
@@ -155,7 +154,7 @@ namespace {
     ASSERT_TRUE(thread_executed);
   }
 
-  TEST_F(TWorkerThreadTest, Test2) {
+  TEST_F(TFdManagedThreadTest, Test2) {
     bool flag = false;
     TTestWorker2 worker(flag);
     worker.Start();
@@ -186,7 +185,7 @@ namespace {
     ASSERT_TRUE(flag);
   }
 
-  TEST_F(TWorkerThreadTest, Test3) {
+  TEST_F(TFdManagedThreadTest, Test3) {
     bool flag = false;
     TTestWorker3 worker(flag, true);
     worker.Start();
@@ -201,7 +200,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TWorkerThread::TThreadThrewStdException &x) {
+    } catch (const TFdManagedThread::TThreadThrewStdException &x) {
       threw = true;
     }
 
@@ -221,7 +220,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TWorkerThread::TThreadThrewStdException &x) {
+    } catch (const TFdManagedThread::TThreadThrewStdException &x) {
       threw = true;
     }
 
@@ -229,7 +228,7 @@ namespace {
     ASSERT_TRUE(threw);
   }
 
-  TEST_F(TWorkerThreadTest, Test4) {
+  TEST_F(TFdManagedThreadTest, Test4) {
     bool flag = false;
     TTestWorker3 worker(flag, false);
     worker.Start();
@@ -244,7 +243,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TWorkerThread::TThreadThrewUnknownException &x) {
+    } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
       threw = true;
     }
 
@@ -264,7 +263,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TWorkerThread::TThreadThrewUnknownException &x) {
+    } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
       threw = true;
     }
 
@@ -272,7 +271,7 @@ namespace {
     ASSERT_TRUE(threw);
   }
 
-  TEST_F(TWorkerThreadTest, Test5) {
+  TEST_F(TFdManagedThreadTest, Test5) {
     bool flag = false;
     TTestWorker1 worker(flag);
     ASSERT_FALSE(flag);
@@ -281,7 +280,7 @@ namespace {
 
     try {
       worker.Start();
-    } catch (const TWorkerThread::TThreadAlreadyStarted &x) {
+    } catch (const TFdManagedThread::TThreadAlreadyStarted &x) {
       threw = true;
     }
 
@@ -297,7 +296,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TWorkerThread::TCannotJoinNonexistentThread &x) {
+    } catch (const TFdManagedThread::TCannotJoinNonexistentThread &x) {
       threw = true;
     }
 
@@ -306,7 +305,7 @@ namespace {
 
     try {
       worker.RequestShutdown();
-    } catch (const TWorkerThread::TThreadAlreadyShutDown &x) {
+    } catch (const TFdManagedThread::TThreadAlreadyShutDown &x) {
       threw = true;
     }
 

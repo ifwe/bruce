@@ -61,11 +61,11 @@
 #include <bruce/util/gate.h>
 #include <bruce/util/host_and_port.h>
 #include <bruce/util/poll_array.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
-  class TRouterThread final : public Util::TWorkerThread {
+  class TRouterThread final : public Thread::TFdManagedThread {
     NO_COPY_SEMANTICS(TRouterThread);
 
     public:

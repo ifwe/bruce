@@ -60,13 +60,13 @@
 #include <bruce/msg.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/util/gate_put_api.h>
-#include <bruce/util/worker_thread.h>
 #include <capped/pool.h>
 #include <socket/named_unix_socket.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
-  class TUnixDgInputAgent final : public Util::TWorkerThread {
+  class TUnixDgInputAgent final : public Thread::TFdManagedThread {
     NO_COPY_SEMANTICS(TUnixDgInputAgent);
 
     public:

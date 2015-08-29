@@ -35,7 +35,7 @@
 #include <base/no_copy_semantics.h>
 #include <base/thrower.h>
 #include <bruce/msg.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
@@ -189,7 +189,7 @@ namespace Bruce {
     private:
     /* Thread for deleting old logfiles gets awakened each time a new logfile
        is started. */
-    class TArchiveCleaner final : public Util::TWorkerThread {
+    class TArchiveCleaner final : public Thread::TFdManagedThread {
       NO_COPY_SEMANTICS(TArchiveCleaner);
 
       public:

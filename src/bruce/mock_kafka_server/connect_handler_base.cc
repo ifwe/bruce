@@ -25,15 +25,15 @@
 
 #include <syslog.h>
 
-#include <bruce/util/worker_thread.h>
 #include <signal/masker.h>
 #include <signal/set.h>
+#include <thread/fd_managed_thread.h>
 
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::MockKafkaServer;
-using namespace Bruce::Util;
 using namespace Signal;
+using namespace Thread;
 
 void TConnectHandlerBase::OnShutdown() {
   assert(this);
@@ -109,9 +109,9 @@ void TConnectHandlerBase::DeleteThreadState(int shutdown_wait_fd) {
 
   try {
     iter->second.Worker->Join();
-  } catch (const TWorkerThread::TThreadThrewStdException &x) {
+  } catch (const TFdManagedThread::TThreadThrewStdException &x) {
     syslog(LOG_ERR, "%s", x.what());
-  } catch (const TWorkerThread::TThreadThrewUnknownException &x) {
+  } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
     syslog(LOG_ERR, "%s", x.what());
   }
 

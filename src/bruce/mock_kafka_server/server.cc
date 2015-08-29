@@ -30,15 +30,16 @@
 
 #include <base/debug_log.h>
 #include <bruce/util/exceptions.h>
-#include <bruce/util/worker_thread.h>
 #include <socket/address.h>
+#include <thread/fd_managed_thread.h>
 
 using namespace Base;
 using namespace Bruce;
-using namespace Bruce::MockKafkaServer;
 using namespace Bruce::Util;
+using namespace Bruce::MockKafkaServer;
 using namespace Fiber;
 using namespace Socket;
+using namespace Thread;
 
 int TServer::Init() {
   assert(this);
@@ -144,9 +145,9 @@ void TServer::ShutDownWorkers() {
   for (auto item : state_map) {
     try {
       item.second.Worker->Join();
-    } catch (const TWorkerThread::TThreadThrewStdException &x) {
+    } catch (const TFdManagedThread::TThreadThrewStdException &x) {
       syslog(LOG_ERR, "%s", x.what());
-    } catch (const TWorkerThread::TThreadThrewUnknownException &x) {
+    } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
       syslog(LOG_ERR, "%s", x.what());
     }
   }

@@ -44,13 +44,13 @@
 #include <bruce/msg_dispatch/produce_request_factory.h>
 #include <bruce/util/poll_array.h>
 #include <bruce/util/time_util.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
   namespace MsgDispatch {
 
-    class TSender final : public Util::TWorkerThread {
+    class TSender final : public Thread::TFdManagedThread {
       NO_COPY_SEMANTICS(TSender);
 
       public:

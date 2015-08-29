@@ -43,13 +43,13 @@
 #include <bruce/msg_dispatch/connection_shared_state.h>
 #include <bruce/msg_dispatch/dispatcher_shared_state.h>
 #include <bruce/util/poll_array.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
   namespace MsgDispatch {
 
-    class TReceiver final : public Util::TWorkerThread {
+    class TReceiver final : public Thread::TFdManagedThread {
       NO_COPY_SEMANTICS(TReceiver);
 
       public:

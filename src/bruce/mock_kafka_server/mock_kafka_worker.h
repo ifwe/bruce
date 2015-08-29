@@ -25,13 +25,13 @@
 
 #include <base/fd.h>
 #include <base/no_copy_semantics.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
   namespace MockKafkaServer {
 
-    class TMockKafkaWorker : public Bruce::Util::TWorkerThread {
+    class TMockKafkaWorker : public Thread::TFdManagedThread {
       NO_COPY_SEMANTICS(TMockKafkaWorker);
 
       public:

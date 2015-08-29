@@ -61,8 +61,8 @@
 #include <bruce/unix_dg_input_agent.h>
 #include <bruce/util/misc_util.h>
 #include <bruce/util/time_util.h>
-#include <bruce/util/worker_thread.h>
 #include <capped/pool.h>
+#include <thread/fd_managed_thread.h>
 
 #include <gtest/gtest.h>
 
@@ -77,10 +77,11 @@ using namespace Bruce::MockKafkaServer;
 using namespace Bruce::TestUtil;
 using namespace Bruce::Util;
 using namespace Capped;
+using namespace Thread;
 
 namespace {
 
-  class TBruceTestServer final : public TWorkerThread {
+  class TBruceTestServer final : public TFdManagedThread {
     NO_COPY_SEMANTICS(TBruceTestServer);
 
     public:
@@ -109,9 +110,9 @@ namespace {
       return UnixSocketName;
     }
 
-    /* This must not be called until Start() method of TWorkerThread base class
-       has been called.  Returns pointer to bruce server object, or nullptr on
-       bruce server initialization failure. */
+    /* This must not be called until Start() method of TFdManagedThread base
+       class has been called.  Returns pointer to bruce server object, or
+       nullptr on bruce server initialization failure. */
     TBruceServer *GetBruce();
 
     virtual void RequestShutdown() override;
@@ -193,13 +194,13 @@ namespace {
        must take action. */
 
     /* We must do this because the server thread isn't paying attention to the
-       FD returned by TWorkerThread::GetShutdownRequestFd(). */
+       FD returned by TFdManagedThread::GetShutdownRequestFd(). */
     Bruce->RequestShutdown();
 
     /* In this case, we don't really need to call this method, but calling it
        does no harm, and it follows the usual pattern for dealing with
-       TWorkerThread objects. */
-    TWorkerThread::RequestShutdown();
+       TFdManagedThread objects. */
+    TFdManagedThread::RequestShutdown();
   }
 
   void TBruceTestServer::Run() {

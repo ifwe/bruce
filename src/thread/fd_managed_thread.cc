@@ -1,4 +1,4 @@
-/* <bruce/util/worker_thread.cc>
+/* <thread/fd_managed_thread.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -16,29 +16,28 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Implements <bruce/util/worker_thread.h>.
+   Implements <thread/fd_managed_thread.h>.
  */
 
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 #include <functional>
 
 using namespace Base;
-using namespace Bruce;
-using namespace Bruce::Util;
+using namespace Thread;
 
-std::string TWorkerThread::TThreadThrewStdException::MakeWhatMsg(
+std::string TFdManagedThread::TThreadThrewStdException::MakeWhatMsg(
     const char *msg) {
   std::string result("Worker thread threw standard exception: ");
   result += msg;
   return result;
 }
 
-TWorkerThread::TWorkerThread()
+TFdManagedThread::TFdManagedThread()
     : ThreadThrewUnknownException(false) {
 }
 
-TWorkerThread::~TWorkerThread() noexcept {
+TFdManagedThread::~TFdManagedThread() noexcept {
   assert(this);
 
   /* This should have already been called by a subclass destructor.  Calling it
@@ -47,7 +46,7 @@ TWorkerThread::~TWorkerThread() noexcept {
   ShutdownOnDestroy();
 }
 
-void TWorkerThread::Start() {
+void TFdManagedThread::Start() {
   assert(this);
 
   if (OptThread.IsKnown()) {
@@ -60,15 +59,15 @@ void TWorkerThread::Start() {
   assert(OptThrownByThread.IsUnknown());
 
   /* Start the thread running. */
-  OptThread.MakeKnown(std::bind(&TWorkerThread::RunAndTerminate, this));
+  OptThread.MakeKnown(std::bind(&TFdManagedThread::RunAndTerminate, this));
 }
 
-bool TWorkerThread::IsStarted() const {
+bool TFdManagedThread::IsStarted() const {
   assert(this);
   return OptThread.IsKnown();
 }
 
-void TWorkerThread::RequestShutdown() {
+void TFdManagedThread::RequestShutdown() {
   assert(this);
 
   if (OptThread.IsUnknown()) {
@@ -78,12 +77,12 @@ void TWorkerThread::RequestShutdown() {
   ShutdownRequestedSem.Push();
 }
 
-const TFd &TWorkerThread::GetShutdownWaitFd() const {
+const TFd &TFdManagedThread::GetShutdownWaitFd() const {
   assert(this);
   return ShutdownFinishedSem.GetFd();
 }
 
-void TWorkerThread::Join() {
+void TFdManagedThread::Join() {
   assert(this);
 
   if (OptThread.IsUnknown()) {
@@ -109,7 +108,7 @@ void TWorkerThread::Join() {
   }
 }
 
-void TWorkerThread::ShutdownOnDestroy() {
+void TFdManagedThread::ShutdownOnDestroy() {
   assert(this);
 
   if (OptThread.IsKnown()) {
@@ -129,7 +128,7 @@ void TWorkerThread::ShutdownOnDestroy() {
   assert(OptThrownByThread.IsUnknown());
 }
 
-void TWorkerThread::RunAndTerminate() {
+void TFdManagedThread::RunAndTerminate() {
   assert(this);
 
   try {

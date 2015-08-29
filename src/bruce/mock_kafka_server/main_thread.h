@@ -32,7 +32,7 @@
 #include <bruce/mock_kafka_server/config.h>
 #include <bruce/mock_kafka_server/received_request_tracker.h>
 #include <bruce/mock_kafka_server/server.h>
-#include <bruce/util/worker_thread.h>
+#include <thread/fd_managed_thread.h>
 
 namespace Bruce {
 
@@ -41,7 +41,7 @@ namespace Bruce {
     /* This class implements the main thread for the mock Kafka server when
        integrated into unit tests for bruce.  It is not used for the standalone
        mock Kafka server executable. */
-    class TMainThread final : public Bruce::Util::TWorkerThread {
+    class TMainThread final : public Thread::TFdManagedThread {
       NO_COPY_SEMANTICS(TMainThread);
 
       public:

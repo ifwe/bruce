@@ -48,7 +48,7 @@ void TMainThread::RequestShutdown() {
    */
   IfLt0(pthread_kill(GetThread().native_handle(), SIGINT));
 
-  TWorkerThread::RequestShutdown();
+  TFdManagedThread::RequestShutdown();
 }
 
 void TMainThread::Run() {
