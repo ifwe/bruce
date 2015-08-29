@@ -32,6 +32,7 @@
 #include <base/event_semaphore.h>
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
+#include <base/time_util.h>
 #include <bruce/debug/debug_logger.h>
 #include <bruce/kafka_proto/produce_request_writer_api.h>
 #include <bruce/metadata.h>
@@ -43,7 +44,6 @@
 #include <bruce/msg_dispatch/dispatcher_shared_state.h>
 #include <bruce/msg_dispatch/produce_request_factory.h>
 #include <bruce/util/poll_array.h>
-#include <bruce/util/time_util.h>
 #include <thread/fd_managed_thread.h>
 
 namespace Bruce {
@@ -69,19 +69,19 @@ namespace Bruce {
 
       void Dispatch(TMsg::TPtr &&msg) {
         assert(this);
-        InputQueue.Put(Util::GetEpochMilliseconds(), std::move(msg));
+        InputQueue.Put(Base::GetEpochMilliseconds(), std::move(msg));
         assert(!msg);
       }
 
       void DispatchNow(TMsg::TPtr &&msg) {
         assert(this);
-        InputQueue.PutNow(Util::GetEpochMilliseconds(), std::move(msg));
+        InputQueue.PutNow(Base::GetEpochMilliseconds(), std::move(msg));
         assert(!msg);
       }
 
       void DispatchNow(std::list<std::list<TMsg::TPtr>> &&batch) {
         assert(this);
-        InputQueue.PutNow(Util::GetEpochMilliseconds(), std::move(batch));
+        InputQueue.PutNow(Base::GetEpochMilliseconds(), std::move(batch));
         assert(batch.empty());
       }
 

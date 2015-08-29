@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <base/field_access.h>
+#include <base/time_util.h>
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
 #include <bruce/client/bruce_client.h>
@@ -43,7 +44,6 @@
 #include <bruce/msg_state_tracker.h>
 #include <bruce/test_util/misc_util.h>
 #include <bruce/util/gate.h>
-#include <bruce/util/time_util.h>
 #include <capped/blob.h>
 #include <capped/pool.h>
 #include <capped/reader.h>

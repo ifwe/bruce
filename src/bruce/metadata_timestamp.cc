@@ -23,10 +23,10 @@
 
 #include <cassert>
 
-#include <bruce/util/time_util.h>
+#include <base/time_util.h>
 
+using namespace Base;
 using namespace Bruce;
-using namespace Bruce::Util;
 
 void TMetadataTimestamp::RecordUpdate(bool modified) {
   assert(this);

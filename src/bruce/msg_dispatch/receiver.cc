@@ -34,6 +34,7 @@
 #include <base/error_utils.h>
 #include <base/gettid.h>
 #include <base/no_default_case.h>
+#include <base/time_util.h>
 #include <bruce/msg_state_tracker.h>
 #include <bruce/util/msg_util.h>
 #include <bruce/util/system_error_codes.h>

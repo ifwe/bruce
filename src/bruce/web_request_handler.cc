@@ -31,15 +31,14 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <base/time_util.h>
 #include <bruce/build_id.h>
-#include <bruce/util/time_util.h>
 #include <server/counter.h>
 #include <third_party/base64/base64.h>
 
 using namespace Base;
 using namespace Bruce;
 using namespace Bruce::Debug;
-using namespace Bruce::Util;
 using namespace Server;
 
 /* Size of string buffer to use for converting time_t (seconds since epoch)

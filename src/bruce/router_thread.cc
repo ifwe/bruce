@@ -34,6 +34,7 @@
 #include <base/gettid.h>
 #include <base/io_utils.h>
 #include <base/no_default_case.h>
+#include <base/time_util.h>
 #include <bruce/util/connect_to_host.h>
 #include <bruce/util/system_error_codes.h>
 #include <bruce/util/time_util.h>

@@ -1,4 +1,4 @@
-/* <bruce/util/time_util.h>
+/* <base/time_util.h>
 
    ----------------------------------------------------------------------------
    Copyright 2013-2014 if(we)
@@ -36,40 +36,22 @@
 #include <base/rate_limiter.h>
 #include <base/thrower.h>
 
-namespace Bruce {
+namespace Base {
 
-  namespace Util {
+  void SleepMilliseconds(size_t milliseconds);
 
-    class TLogRateLimiter final {
-      NO_COPY_SEMANTICS(TLogRateLimiter);
+  void SleepMicroseconds(size_t microseconds);
 
-      public:
-      using TClock = std::chrono::steady_clock;
+  /* Return the number of seconds since the epoch.  Fractional seconds are
+     truncated. */
+  uint64_t GetEpochSeconds();
 
-      using TTimePoint = TClock::time_point;
+  /* Return the number of milliseconds since the epoch.  Fractional
+     milliseconds are truncated. */
+  uint64_t GetEpochMilliseconds();
 
-      using TDuration = TTimePoint::duration;
+  /* Return the number of milliseconds since some unspecified point in the
+     past.  Uses clock_gettime() with clock type of CLOCK_MONOTONIC_RAW. */
+  uint64_t GetMonotonicRawMilliseconds();
 
-      private:
-      using TLimiter = Base::TRateLimiter<TTimePoint, TDuration>;
-
-      public:
-      explicit TLogRateLimiter(TDuration min_interval)
-          : Limiter(&TClock::now, min_interval) {
-      }
-
-      bool Test() {
-        assert(this);
-        std::lock_guard<std::mutex> lock(Mutex);
-        return Limiter.Test();
-      }
-
-      private:
-      std::mutex Mutex;
-
-      TLimiter Limiter;
-    };  // TLogRateLimiter
-
-  }  // Util
-
-}  // Bruce
+}  // Base

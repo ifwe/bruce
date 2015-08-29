@@ -27,10 +27,10 @@
 
 #include <syslog.h>
 
-#include <bruce/util/time_util.h>
+#include <base/time_util.h>
 
+using namespace Base;
 using namespace Bruce;
-using namespace Bruce::Util;
 
 bool TMetadata::TBroker::operator==(const TBroker &that) const {
   assert(this);

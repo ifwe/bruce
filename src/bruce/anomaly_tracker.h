@@ -37,6 +37,7 @@
 #include <time.h>
 
 #include <base/no_copy_semantics.h>
+#include <base/time_util.h>
 #include <bruce/discard_file_logger.h>
 #include <bruce/msg.h>
 #include <bruce/util/time_util.h>
@@ -201,7 +202,7 @@ namespace Bruce {
        for unit tests). */
     explicit TAnomalyTracker(TDiscardFileLogger &discard_file_logger,
         size_t report_interval, size_t max_msg_prefix_len,
-        TClockFn clock_fn = &Util::GetEpochSeconds)
+        TClockFn clock_fn = &Base::GetEpochSeconds)
         : DiscardFileLogger(discard_file_logger),
           ReportInterval(report_interval),
           ClockFn(clock_fn),

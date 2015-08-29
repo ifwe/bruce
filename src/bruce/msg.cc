@@ -25,6 +25,7 @@
 
 #include <syslog.h>
 
+#include <base/time_util.h>
 #include <bruce/util/time_util.h>
 #include <capped/writer.h>
 #include <server/counter.h>

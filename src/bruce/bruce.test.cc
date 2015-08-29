@@ -43,6 +43,7 @@
 #include <base/field_access.h>
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
+#include <base/time_util.h>
 #include <base/tmp_file.h>
 #include <base/tmp_file_name.h>
 #include <bruce/anomaly_tracker.h>
@@ -60,7 +61,6 @@
 #include <bruce/test_util/mock_kafka_config.h>
 #include <bruce/unix_dg_input_agent.h>
 #include <bruce/util/misc_util.h>
-#include <bruce/util/time_util.h>
 #include <capped/pool.h>
 #include <thread/fd_managed_thread.h>
 

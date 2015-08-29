@@ -44,8 +44,8 @@
 #include <base/error_utils.h>
 #include <base/gettid.h>
 #include <base/no_default_case.h>
+#include <base/time_util.h>
 #include <bruce/util/msg_util.h>
-#include <bruce/util/time_util.h>
 #include <third_party/base64/base64.h>
 
 using namespace Base;

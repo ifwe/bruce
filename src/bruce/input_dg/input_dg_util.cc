@@ -29,6 +29,7 @@
 #include <syslog.h>
 
 #include <base/field_access.h>
+#include <base/time_util.h>
 #include <bruce/input_dg/any_partition/any_partition_util.h>
 #include <bruce/input_dg/input_dg_common.h>
 #include <bruce/input_dg/input_dg_constants.h>
@@ -39,6 +40,7 @@
 #include <capped/memory_cap_reached.h>
 #include <server/counter.h>
 
+using namespace Base;
 using namespace Bruce;
 using namespace Bruce::InputDg;
 using namespace Bruce::InputDg::AnyPartition;

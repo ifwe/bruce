@@ -39,13 +39,13 @@
 #include <base/field_access.h>
 #include <base/no_default_case.h>
 #include <base/time.h>
+#include <base/time_util.h>
 #include <bruce/build_id.h>
 #include <bruce/client/bruce_client.h>
 #include <bruce/client/bruce_client_socket.h>
 #include <bruce/client/status_codes.h>
 #include <bruce/input_dg/old_v0_input_dg_writer.h>
 #include <bruce/util/arg_parse_error.h>
-#include <bruce/util/time_util.h>
 #include <tclap/CmdLine.h>
 
 using namespace Base;
