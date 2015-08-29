@@ -28,20 +28,49 @@
 #include <thread>
 
 #include <base/event_semaphore.h>
+#include <base/fd.h>
 #include <base/no_copy_semantics.h>
 #include <base/opt.h>
 #include <base/thrower.h>
-#include <bruce/util/worker_thread_api.h>
 
 namespace Bruce {
 
   namespace Util {
 
     /* This base class provides a uniform API for starting a worker thread */
-    class TWorkerThread : virtual public TWorkerThreadApi {
+    class TWorkerThread {
       NO_COPY_SEMANTICS(TWorkerThread);
 
       public:
+      DEFINE_ERROR(TThreadAlreadyStarted, std::runtime_error,
+          "Worker thread is already started");
+
+      DEFINE_ERROR(TThreadAlreadyShutDown, std::runtime_error,
+          "Cannot request shutdown on nonexistent worker thread");
+
+      DEFINE_ERROR(TThreadThrewUnknownException, std::runtime_error,
+          "Worker thread threw unknown exception");
+
+      DEFINE_ERROR(TCannotJoinNonexistentThread, std::runtime_error,
+          "Cannot join nonexistent worker thread");
+
+      class TThreadThrewStdException final : public std::runtime_error {
+        public:
+        TThreadThrewStdException(const char *what_msg)
+            : std::runtime_error(MakeWhatMsg(what_msg)) {
+        }
+
+        TThreadThrewStdException(const TThreadThrewStdException &) = default;
+
+        virtual ~TThreadThrewStdException() noexcept { }
+
+        TThreadThrewStdException &
+        operator=(const TThreadThrewStdException &) = default;
+
+        private:
+        static std::string MakeWhatMsg(const char *msg);
+      };  // TThreadThrewStdException
+
       /* The destructor will terminate the thread if necessary.  However, in
          most cases it is probably better to shut down the thread manually
          before destructor invocation. */
@@ -50,21 +79,24 @@ namespace Bruce {
       /* Launch the worker thread and return immediately while the thread runs.
          Once the thread has finished running and Join() has been called, this
          method may be called again to start a new thread. */
-      virtual void Start() override;
+      void Start();
 
       /* Return true iff. Start() has been called and Join() has not yet been
          called. */
-      virtual bool IsStarted() const override;
+      bool IsStarted() const;
 
-      /* Notify the thread to shut itself down. */
-      virtual void RequestShutdown() override;
+      /* Notify the thread to shut itself down.
+
+         TODO: Make this nonvirtual.
+       */
+      virtual void RequestShutdown();
 
       /* Return a file descriptor that becomes readable once the thread is
          about to terminate.  If desired, the caller can use a mechanism such
          as select(), poll(), or epoll() to wait for the descritpor to become
          readable.  Once the descriptor becomes readable, the Join() method
          must still be called. */
-      virtual const Base::TFd &GetShutdownWaitFd() const override;
+      const Base::TFd &GetShutdownWaitFd() const;
 
       /* After calling RequestShutdown(), call this method to wait for the
          thread to terminate.  To avoid blocking for an extended period, one
@@ -76,7 +108,7 @@ namespace Bruce {
          of some other type to escape from the Run() method, this method will
          throw TThreadThrewUnknownException _after_ the thread has terminated.
        */
-      virtual void Join() override;
+      void Join();
 
       const std::thread &GetThread() const {
         assert(this);

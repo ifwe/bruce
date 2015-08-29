@@ -27,6 +27,13 @@ using namespace Base;
 using namespace Bruce;
 using namespace Bruce::Util;
 
+std::string TWorkerThread::TThreadThrewStdException::MakeWhatMsg(
+    const char *msg) {
+  std::string result("Worker thread threw standard exception: ");
+  result += msg;
+  return result;
+}
+
 TWorkerThread::TWorkerThread()
     : ThreadThrewUnknownException(false) {
 }
