@@ -95,7 +95,7 @@ namespace Thread {
 
     /* Notify the thread to shut itself down.
 
-       TODO: Make this nonvirtual. */
+       TODO: Make this nonvirtual.  Curently unit test code overrides it. */
     virtual void RequestShutdown();
 
     /* Return a file descriptor that becomes readable once the thread is about
