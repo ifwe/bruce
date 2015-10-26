@@ -11,4 +11,5 @@ written by former Tagged/if(we) employees who worked on the
 [Joshua Ball](https://github.com/sciolizer).
 The former Stig Team has since formed its own company, OrlyAtomics, which was
 acquired by [Mesosphere](https://mesosphere.com).  Additional contributors
-include [Omid Aladini](https://github.com/omidaladini).
+include [Ben Diamant](https://github.com/bendpx) and
+[Omid Aladini](https://github.com/omidaladini).
