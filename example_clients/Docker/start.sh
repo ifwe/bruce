@@ -1,0 +1,1 @@
+/opt/bruce/bin/bruce --daemon --log_echo --log_level LOG_DEBUG --msg_buffer_max 65536 --discard_log_path /root/discard_msgs.txt --receive_socket_name /root/bruce.socket --config_path /etc/bruce/bruce_conf.xml
