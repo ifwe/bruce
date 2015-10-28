@@ -116,7 +116,7 @@ namespace Bruce {
       TSetup();
 
       /* Read info from 'setup_file_path' and store it in 'out'.
-         The setup file format looks like this:
+         Here is a simple example illustrating the setup file format:
 
            ports 10000 3
            port 10001 read_delay 5000:100 ack_delay 6000:50
