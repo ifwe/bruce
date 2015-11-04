@@ -16,7 +16,27 @@
 /* limitations under the License.
 /*-----------------------------------------------------------------------------
 
-This is an example NodeJS Client that sends messages to Bruce. */
+This is an example NodeJS Client that sends messages to Bruce.  It requires the
+unix-dgram module, as shown here:
+
+    https://github.com/bnoordhuis/node-unix-dgram
+    https://www.npmjs.com/package/unix-dgram
+
+To install unix-dgram, you need to be running at least version 0.10.38 of
+Node.js.  One way to install a recent enough version of Node.js is by using nvm
+(see https://github.com/creationix/nvm) as described here:
+
+    https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-a-centos-7-server
+
+Then you can install unix-dgram as follows:
+
+    npm install unix-dgram
+
+and run this client script as follows:
+
+    node send_to_bruce.js
+
+*/
 
 
 var unix = require('unix-dgram');
@@ -196,21 +216,26 @@ var msg_value = 'hello world';
 var partition_key = 12345;
 
 //Create AnyPartition message
-var anyPartitionMessage = Bruce.createAnyPartitionMsg(topic, Date.now(), msg_key, msg_value);
+var anyPartitionMessage = Bruce.createAnyPartitionMsg(topic, Date.now(),
+        msg_key, msg_value);
 
 //Create PartitionKey message
-var partitionMessage = Bruce.createPartitionKeyMsg(partition_key, topic, Date.now(), msg_key, msg_value);
+var partitionKeyMessage = Bruce.createPartitionKeyMsg(partition_key, topic,
+        Date.now(), msg_key, msg_value);
 
 var error = null;
 var client = unix.createSocket('unix_dgram');
 
 client.on('error', function (err) {
-    console.error('error while connecting to bruce socket, closing connection', err);
+    console.error('error while connecting to bruce socket, closing connection',
+            err);
     process.exit(0);
 });
 
 client.on('connect', function () {
     client.send(anyPartitionMessage);
+    client.send(partitionKeyMessage);
     client.close();
 });
+
 client.connect(bruce_path);
