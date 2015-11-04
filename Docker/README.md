@@ -9,7 +9,7 @@ To run bruce as docker all you need to do is:
  2. Run the docker with shared volume to other dockers
  3. Launch your Application's docker (the ones using Bruce) with shared volume to the socket file
 
-### build the dokerfile
+### build the dockerfile
 
 ``` docker build -t <host you docker repo>/bruce:latest . ```
 
