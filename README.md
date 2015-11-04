@@ -33,6 +33,7 @@ currently available:
 * [Python](example_clients/python)
 * [Ruby](example_clients/ruby)
 * [PHP](example_clients/php)
+* [Node.js](example_clients/nodejs)
 * [Perl](example_clients/perl)
 * [Shell scripting](example_clients/shell_scripting)
 
