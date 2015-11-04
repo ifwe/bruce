@@ -39,8 +39,9 @@ currently available:
 
 Code contributions for clients in other programming languages are much
 appreciated.  Technical details on how to send messages to Bruce are provided
-[here](doc/sending_messages.md).  Bruce runs on Linux, and has been tested on
-CentOS versions 7 and 6.5, and Ubuntu versions 14.04.1 LTS and 13.10.  Bruce
+[here](doc/sending_messages.md).  Support for [running Bruce inside a Docker
+container](Docker) is also available.  Bruce runs on Linux, and has been tested
+on CentOS versions 7 and 6.5, and Ubuntu versions 14.04.1 LTS and 13.10.  Bruce
 requires at least version 0.8 of Kafka.
 
 ## Setting Up a Build Environment
