@@ -200,7 +200,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TFdManagedThread::TThreadThrewStdException &x) {
+    } catch (const TFdManagedThread::TThreadThrewStdException &) {
       threw = true;
     }
 
@@ -220,7 +220,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TFdManagedThread::TThreadThrewStdException &x) {
+    } catch (const TFdManagedThread::TThreadThrewStdException &) {
       threw = true;
     }
 
@@ -243,7 +243,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
+    } catch (const TFdManagedThread::TThreadThrewUnknownException &) {
       threw = true;
     }
 
@@ -263,7 +263,7 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TFdManagedThread::TThreadThrewUnknownException &x) {
+    } catch (const TFdManagedThread::TThreadThrewUnknownException &) {
       threw = true;
     }
 
@@ -280,8 +280,8 @@ namespace {
 
     try {
       worker.Start();
-    } catch (const TFdManagedThread::TThreadAlreadyStarted &x) {
-      threw = true;
+    } catch (const std::logic_error &) {
+      threw = true;  // worker already started
     }
 
     ASSERT_TRUE(threw);
@@ -296,8 +296,8 @@ namespace {
 
     try {
       worker.Join();
-    } catch (const TFdManagedThread::TCannotJoinNonexistentThread &x) {
-      threw = true;
+    } catch (const std::logic_error &) {
+      threw = true;  // cannot join nonexistent thread
     }
 
     ASSERT_TRUE(threw);
@@ -305,8 +305,8 @@ namespace {
 
     try {
       worker.RequestShutdown();
-    } catch (const TFdManagedThread::TThreadAlreadyShutDown &x) {
-      threw = true;
+    } catch (const std::logic_error &) {
+      threw = true;  // worker already shut down
     }
 
     ASSERT_TRUE(threw);

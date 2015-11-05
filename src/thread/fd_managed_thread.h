@@ -50,17 +50,8 @@ namespace Thread {
     NO_COPY_SEMANTICS(TFdManagedThread);
 
     public:
-    DEFINE_ERROR(TThreadAlreadyStarted, std::runtime_error,
-        "Worker thread is already started");
-
-    DEFINE_ERROR(TThreadAlreadyShutDown, std::runtime_error,
-        "Cannot request shutdown on nonexistent worker thread");
-
     DEFINE_ERROR(TThreadThrewUnknownException, std::runtime_error,
         "Worker thread threw unknown exception");
-
-    DEFINE_ERROR(TCannotJoinNonexistentThread, std::runtime_error,
-        "Cannot join nonexistent worker thread");
 
     class TThreadThrewStdException final : public std::runtime_error {
       public:

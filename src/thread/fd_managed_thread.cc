@@ -50,7 +50,7 @@ void TFdManagedThread::Start() {
   assert(this);
 
   if (OptThread.IsKnown()) {
-    THROW_ERROR(TThreadAlreadyStarted);
+    throw std::logic_error("Worker thread is already started");
   }
 
   assert(!ShutdownRequestedSem.GetFd().IsReadable());
@@ -71,7 +71,8 @@ void TFdManagedThread::RequestShutdown() {
   assert(this);
 
   if (OptThread.IsUnknown()) {
-    THROW_ERROR(TThreadAlreadyShutDown);
+    throw std::logic_error(
+        "Cannot request shutdown on nonexistent worker thread");
   }
 
   ShutdownRequestedSem.Push();
@@ -86,7 +87,7 @@ void TFdManagedThread::Join() {
   assert(this);
 
   if (OptThread.IsUnknown()) {
-    THROW_ERROR(TCannotJoinNonexistentThread);
+    throw std::logic_error("Cannot join nonexistent worker thread");
   }
 
   ShutdownFinishedSem.Pop();
