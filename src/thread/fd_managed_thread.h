@@ -109,14 +109,14 @@ namespace Thread {
 
     const std::thread &GetThread() const {
       assert(this);
-      assert(OptThread.IsKnown());
-      return *OptThread;
+      assert(Thread.joinable());
+      return Thread;
     }
 
     std::thread &GetThread() {
       assert(this);
-      assert(OptThread.IsKnown());
-      return *OptThread;
+      assert(Thread.joinable());
+      return Thread;
     }
 
     protected:
@@ -162,7 +162,7 @@ namespace Thread {
 
     Base::TEventSemaphore ShutdownFinishedSem;
 
-    Base::TOpt<std::thread> OptThread;
+    std::thread Thread;
 
     bool ThreadThrewUnknownException;
 

@@ -49,7 +49,7 @@ TFdManagedThread::~TFdManagedThread() noexcept {
 void TFdManagedThread::Start() {
   assert(this);
 
-  if (OptThread.IsKnown()) {
+  if (Thread.joinable()) {
     throw std::logic_error("Worker thread is already started");
   }
 
@@ -59,18 +59,18 @@ void TFdManagedThread::Start() {
   assert(OptThrownByThread.IsUnknown());
 
   /* Start the thread running. */
-  OptThread.MakeKnown(std::bind(&TFdManagedThread::RunAndTerminate, this));
+  Thread = std::thread(std::bind(&TFdManagedThread::RunAndTerminate, this));
 }
 
 bool TFdManagedThread::IsStarted() const {
   assert(this);
-  return OptThread.IsKnown();
+  return Thread.joinable();
 }
 
 void TFdManagedThread::RequestShutdown() {
   assert(this);
 
-  if (OptThread.IsUnknown()) {
+  if (!Thread.joinable()) {
     throw std::logic_error(
         "Cannot request shutdown on nonexistent worker thread");
   }
@@ -86,13 +86,12 @@ const TFd &TFdManagedThread::GetShutdownWaitFd() const {
 void TFdManagedThread::Join() {
   assert(this);
 
-  if (OptThread.IsUnknown()) {
+  if (!Thread.joinable()) {
     throw std::logic_error("Cannot join nonexistent worker thread");
   }
 
   ShutdownFinishedSem.Pop();
-  OptThread->join();
-  OptThread.Reset();
+  Thread.join();
   assert(!ShutdownFinishedSem.GetFd().IsReadable());
   ShutdownRequestedSem.Reset();
 
@@ -112,7 +111,7 @@ void TFdManagedThread::Join() {
 void TFdManagedThread::ShutdownOnDestroy() {
   assert(this);
 
-  if (OptThread.IsKnown()) {
+  if (Thread.joinable()) {
     ShutdownRequestedSem.Push();
 
     try {
@@ -124,7 +123,7 @@ void TFdManagedThread::ShutdownOnDestroy() {
 
   assert(!ShutdownRequestedSem.GetFd().IsReadable());
   assert(!ShutdownFinishedSem.GetFd().IsReadable());
-  assert(OptThread.IsUnknown());
+  assert(!Thread.joinable());
   assert(!ThreadThrewUnknownException);
   assert(OptThrownByThread.IsUnknown());
 }
