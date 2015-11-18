@@ -52,7 +52,7 @@ step is to
 which Bruce uses for its unit tests.  The remaining steps differ depending on
 which Linux distribution you are using.  Currently, instructions are available
 for [CentOS 7](doc/centos_7_env.md), [CentOS 6.5](doc/centos_6_5_env.md),
-and [Ubuntu (14.04.1 LTS and 13.10)](doc/ubuntu_14_and_13_env.md).
+and [Ubuntu (15.04 LTS, 14.04.1 LTS, and 13.10)](doc/ubuntu_13-15_env.md).
 
 ## Building and Installing Bruce
 

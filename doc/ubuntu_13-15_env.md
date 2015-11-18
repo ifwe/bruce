@@ -17,9 +17,9 @@ Now proceed to
 
 -----
 
-ubuntu_14_and_13_env.md: Copyright 2014 if(we), Inc.
+ubuntu_13-15_env.md: Copyright 2014 if(we), Inc.
 
-ubuntu_14_and_13_env.md is licensed under a Creative Commons
+ubuntu_13-15_env.md is licensed under a Creative Commons
 Attribution-ShareAlike 4.0 International License.
 
 You should have received a copy of the license along with this work. If not,
