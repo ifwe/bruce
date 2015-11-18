@@ -84,10 +84,12 @@ namespace {
   };
   
   string TToken::Ops;
-  
+
+#if 0
   ostream &operator<<(ostream &strm, const TToken &that) {
     return strm << "TToken(" << that.Dummy << ')';
   }
+#endif
 
   /* The fixture for testing class TOpt. */
   class TOptTest : public ::testing::Test {
