@@ -13,6 +13,8 @@ yum install snappy-devel
 yum install boost-devel
 ```
 
+Additionally, the [Google Test Framework](gtest.md) is needed.
+
 ### Building and Installing gcc 4.8.2
 
 For simplicity, the following instructions assume that you are running on an

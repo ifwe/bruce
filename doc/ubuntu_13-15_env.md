@@ -12,7 +12,7 @@ sudo apt-get install git
 sudo apt-get install g++
 ```
 
-Now proceed to
+Then set up the [Google Test Framework](gtest.md).  Now proceed to
 [build, install, and configure Bruce](../README.md#building-and-installing-bruce).
 
 -----
