@@ -21,7 +21,6 @@
 
 #include <capped/pool.h>
 
-#include <cstdlib>
 #include <new>
 #include <utility>
 
@@ -36,7 +35,7 @@ TPool::TPool(size_t block_size, size_t block_count, TSync sync_policy)
       Guarded(sync_policy != TSync::Unguarded), FirstFreeBlock(nullptr) {
   /* Allocate enough storage space for all our blocks. */
   size_t size = BlockSize * BlockCount;
-  Storage = static_cast<char *>(malloc(size));
+  Storage = new char[size];
 
   /* Walk across the storage space, forming a linked list of free blocks. */
   for (char *ptr = Storage; ptr < Storage + size; ptr += BlockSize) {
@@ -46,7 +45,7 @@ TPool::TPool(size_t block_size, size_t block_count, TSync sync_policy)
 
 TPool::~TPool() noexcept {
   assert(this);
-  free(Storage);
+  delete [] Storage;
 }
 
 void *TPool::Alloc() {

@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <memory>
 
 #include <signal.h>
 #include <sys/types.h>
@@ -73,18 +74,26 @@ static int BruceMain(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  TBruceServer bruce(std::move(*bruce_config));
-  bruce_config.Reset();
+  std::unique_ptr<TBruceServer> bruce;
 
+  try {
+    bruce.reset(new TBruceServer(std::move(*bruce_config)));
+  } catch (const std::bad_alloc &) {
+    syslog(LOG_ERR, "Failed to allocate memory during server initialization.  "
+        "Try specifying a smaller value for the --msg_buffer_max option.");
+    return EXIT_FAILURE;
+  }
+
+  bruce_config.Reset();
   Signal::THandlerInstaller
       sigint_installer(SIGINT, &TBruceServer::HandleShutdownSignal);
   Signal::THandlerInstaller
       sigterm_installer(SIGTERM, &TBruceServer::HandleShutdownSignal);
 
   /* Fail early if server is already running. */
-  bruce.BindStatusSocket(false);
+  bruce->BindStatusSocket(false);
 
-  LogConfig(bruce.GetConfig());
+  LogConfig(bruce->GetConfig());
 
   if (large_sendbuf_required) {
     syslog(LOG_WARNING, "Clients sending maximum-sized UNIX domain datagrams "
@@ -92,8 +101,8 @@ static int BruceMain(int argc, char *argv[]) {
   }
 
   syslog(LOG_NOTICE, "Pool block size is %lu bytes",
-         static_cast<unsigned long>(bruce.GetPoolBlockSize()));
-  return bruce.Run();
+         static_cast<unsigned long>(bruce->GetPoolBlockSize()));
+  return bruce->Run();
 }
 
 int main(int argc, char *argv[]) {
