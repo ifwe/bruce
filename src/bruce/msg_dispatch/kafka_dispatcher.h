@@ -90,7 +90,7 @@ namespace Bruce {
       virtual bool ShutdownWasOk() const override;
 
       virtual std::list<std::list<TMsg::TPtr>>
-      GetAckWaitQueueAfterShutdown(size_t broker_index) override;
+      GetNoAckQueueAfterShutdown(size_t broker_index) override;
 
       virtual std::list<std::list<TMsg::TPtr>>
       GetSendWaitQueueAfterShutdown(size_t broker_index) override;

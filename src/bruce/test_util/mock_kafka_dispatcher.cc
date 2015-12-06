@@ -148,7 +148,7 @@ bool TMockKafkaDispatcher::ShutdownWasOk() const {
 }
 
 std::list<std::list<TMsg::TPtr>>
-TMockKafkaDispatcher::GetAckWaitQueueAfterShutdown(size_t /*broker_index*/) {
+TMockKafkaDispatcher::GetNoAckQueueAfterShutdown(size_t /*broker_index*/) {
   assert(this);
 
 

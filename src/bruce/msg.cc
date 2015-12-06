@@ -97,7 +97,6 @@ TMsg::TMsg(TRoutingType routing_type, int32_t partition_key,
       Topic(reinterpret_cast<const char *>(topic_begin),
             reinterpret_cast<const char *>(topic_end)),
       Partition(0),
-      ErrorAckReceived(false),
       KeyAndValue(MakeKeyAndValue(key, key_size, value, value_size, pool)),
       KeySize(key_size),
       BodyTruncated(body_truncated) {

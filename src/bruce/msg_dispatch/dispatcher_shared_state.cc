@@ -96,10 +96,7 @@ void TDispatcherSharedState::MarkAllThreadsRunning(
   assert(this);
   assert(RunningThreadCount.load() == 0);
   assert(!ShutdownFinished.GetFd().IsReadable());
-
-  /* There is a send thread and a receive thread for each in service broker, so
-     multiply by 2. */
-  std::atomic_store(&RunningThreadCount, 2 * in_service_broker_count);
+  std::atomic_store(&RunningThreadCount, in_service_broker_count);
 }
 
 void TDispatcherSharedState::MarkThreadFinished() {

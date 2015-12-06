@@ -42,7 +42,7 @@ TProduceResponseReader::TProduceResponseReader() {
   Clear();
 }
 
-void TProduceResponseReader::Clear() {
+void TProduceResponseReader::Clear() noexcept {
   assert(this);
   Begin = nullptr;
   End = nullptr;

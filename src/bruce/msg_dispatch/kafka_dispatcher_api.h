@@ -126,10 +126,10 @@ namespace Bruce {
          has been called. */
       virtual bool ShutdownWasOk() const = 0;
 
-      /* After shutdown is finished, get all messages waiting for an ACK from
-         the given broker. */
+      /* After shutdown is finished, get all messages that didn't get an ACK
+         from the given broker. */
       virtual std::list<std::list<TMsg::TPtr>>
-      GetAckWaitQueueAfterShutdown(size_t broker_index) = 0;
+      GetNoAckQueueAfterShutdown(size_t broker_index) = 0;
 
       /* After shutdown is finished, get all messages waiting to be sent to the
          given broker. */

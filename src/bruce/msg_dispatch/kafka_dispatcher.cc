@@ -102,10 +102,11 @@ void TKafkaDispatcher::Start(const std::shared_ptr<TMetadata> &md) {
     std::unique_ptr<TConnector> &broker_ptr = Connectors[i];
     assert(!broker_ptr);
     broker_ptr.reset(new TConnector(i, Ds));
-    syslog(LOG_NOTICE, "Starting send and receive threads for broker index "
-           "%lu (Kafka ID %lu)", static_cast<unsigned long>(i),
+    syslog(LOG_NOTICE, "Starting connector thread for broker index %lu (Kafka "
+           "ID %lu)", static_cast<unsigned long>(i),
            static_cast<unsigned long>(brokers[i].GetId()));
-    broker_ptr->Start(md);
+    broker_ptr->SetMetadata(md);
+    broker_ptr->Start();
   }
 
   for (size_t i = Connectors.size(); i < brokers.size(); ++i) {
@@ -218,7 +219,7 @@ void TKafkaDispatcher::StartSlowShutdown(uint64_t start_time) {
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
-    c->WaitForShutdownAcks();
+    c->WaitForShutdownAck();
   }
 
   State = TState::ShuttingDown;
@@ -236,7 +237,7 @@ void TKafkaDispatcher::StartFastShutdown() {
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
-    c->WaitForShutdownAcks();
+    c->WaitForShutdownAck();
   }
 
   State = TState::ShuttingDown;
@@ -256,12 +257,13 @@ void TKafkaDispatcher::JoinAll() {
   assert(this);
   assert(State != TState::Stopped);
   StartDispatcherJoinAll.Increment();
-  syslog(LOG_NOTICE, "Waiting for dispatcher shutdown status");
+  syslog(LOG_NOTICE, "Start waiting for dispatcher shutdown status");
   bool ok_shutdown = true;
 
   for (std::unique_ptr<TConnector> &c : Connectors) {
     assert(c);
-    c->JoinAll();
+    c->Join();
+    c->CleanupAfterJoin();
 
     if (!c->ShutdownWasOk()) {
       ok_shutdown = false;
@@ -283,7 +285,7 @@ bool TKafkaDispatcher::ShutdownWasOk() const {
 }
 
 std::list<std::list<TMsg::TPtr>>
-TKafkaDispatcher::GetAckWaitQueueAfterShutdown(size_t broker_index) {
+TKafkaDispatcher::GetNoAckQueueAfterShutdown(size_t broker_index) {
   assert(this);
   assert(State == TState::Stopped);
 
@@ -298,7 +300,7 @@ TKafkaDispatcher::GetAckWaitQueueAfterShutdown(size_t broker_index) {
   }
 
   assert(Connectors[broker_index]);
-  return Connectors[broker_index]->GetAckWaitQueueAfterShutdown();
+  return Connectors[broker_index]->GetNoAckQueueAfterShutdown();
 }
 
 std::list<std::list<TMsg::TPtr>>

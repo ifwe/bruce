@@ -61,7 +61,7 @@ namespace Bruce {
 
         virtual ~TProduceResponseReader() noexcept { }
 
-        virtual void Clear() override;
+        virtual void Clear() noexcept override;
 
         virtual void SetResponse(const void *response,
             size_t response_size) override;

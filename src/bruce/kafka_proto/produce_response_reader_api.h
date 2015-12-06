@@ -47,7 +47,7 @@ namespace Bruce {
 
       virtual ~TProduceResponseReaderApi() noexcept { }
 
-      virtual void Clear() = 0;
+      virtual void Clear() noexcept = 0;
 
       virtual void SetResponse(const void *response, size_t response_size) = 0;
 

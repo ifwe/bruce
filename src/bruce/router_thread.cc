@@ -911,29 +911,25 @@ std::list<std::list<TMsg::TPtr>> TRouterThread::EmptyDispatcher() {
   std::list<std::list<TMsg::TPtr>> tmp;
 
   for (size_t i = 0; i < broker_count; ++i) {
-    tmp = Dispatcher.GetAckWaitQueueAfterShutdown(i);
+    tmp = Dispatcher.GetNoAckQueueAfterShutdown(i);
 
     for (const std::list<TMsg::TPtr> &msg_list : tmp) {
       for (const TMsg::TPtr &msg : msg_list) {
-        if (msg->GetErrorAckReceived()) {
-          msg->SetErrorAckReceived(false);
-        } else {
-          /* We are resending a message that we previously sent but didn't get
-             an ACK for.  Track this event, since it may cause a duplicate
-             message. */
+        /* We are resending a message that we previously sent but didn't get an
+           ACK for.  Track this event, since it may cause a duplicate message.
+         */
 
-          if (!Config.NoLogDiscard) {
-            static TLogRateLimiter lim(std::chrono::seconds(30));
+        if (!Config.NoLogDiscard) {
+          static TLogRateLimiter lim(std::chrono::seconds(30));
 
-            if (lim.Test()) {
-              syslog(LOG_WARNING, "Possible duplicate message (topic: [%s])",
-                     msg->GetTopic().c_str());
-            }
+          if (lim.Test()) {
+            syslog(LOG_WARNING, "Possible duplicate message (topic: [%s])",
+                   msg->GetTopic().c_str());
           }
-
-          AnomalyTracker.TrackDuplicate(msg);
-          PossibleDuplicateMsg.Increment();
         }
+
+        AnomalyTracker.TrackDuplicate(msg);
+        PossibleDuplicateMsg.Increment();
       }
     }
 

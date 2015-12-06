@@ -118,16 +118,6 @@ namespace Bruce {
       Partition = partition;
     }
 
-    bool GetErrorAckReceived() const {
-      assert(this);
-      return ErrorAckReceived;
-    }
-
-    void SetErrorAckReceived(bool value) {
-      assert(this);
-      ErrorAckReceived = value;
-    }
-
     /* Accessor method for the message body. */
     const Capped::TBlob &GetKeyAndValue() const {
       assert(this);
@@ -233,8 +223,6 @@ namespace Bruce {
 
     /* The Kafka partition (within the specified topic) to deliver to. */
     int32_t Partition;
-
-    bool ErrorAckReceived;
 
     /* The key and value stored as a single sequence of bytes.  The value
        immediately follows the key. */
