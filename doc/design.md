@@ -8,7 +8,7 @@ monitoring interface creates additional threads.  The input thread creates
 Bruce's input socket, monitors it for messages from clients, and passes the
 messages to the router thread.  The router thread starts and manages the
 dispatcher threads, receives messages from the input thread, and routes them to
-the dispatcher threads for delivery to the Kafka brokers.
+dispatcher threads for delivery to the Kafka brokers.
 
 ### Input Thread
 
