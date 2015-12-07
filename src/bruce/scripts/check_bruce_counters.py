@@ -593,18 +593,16 @@ def CheckDelta(deltas, counter_name, max_ok_value, nagios_code,
 def CheckSocketErrorDeltas(deltas, old_nagios_code):
     new_nagios_code = old_nagios_code
     counter_names = [ 'ConnectFailOnTryGetMetadata',
+                      'ConnectorConnectFail',
+                      'ConnectorSocketBrokerClose',
+                      'ConnectorSocketError',
+                      'ConnectorSocketTimeout',
                       'MetadataResponseRead1LostTcpConnection',
                       'MetadataResponseRead1TimedOut',
                       'MetadataResponseRead2LostTcpConnection',
                       'MetadataResponseRead2TimedOut',
                       'MetadataResponseRead2UnexpectedEnd',
                       'ReadMetadataResponse2Fail',
-                      'ReceiverSocketBrokerClose',
-                      'ReceiverSocketError',
-                      'ReceiverSocketTimeout',
-                      'SenderConnectFail',
-                      'SenderSocketError',
-                      'SenderSocketTimeout',
                       'SendMetadataRequestFail',
                       'SendMetadataRequestLostTcpConnection',
                       'SendMetadataRequestTimedOut'
@@ -739,6 +737,8 @@ def AnalyzeDeltas(deltas):
                              nagios_code)
     nagios_code = CheckDelta(deltas, 'MsgSetCompressionError', 0, EC_WARNING,
                              nagios_code)
+    nagios_code = CheckDelta(deltas, 'ConnectorTruncateLongTimeout', 0,
+                             EC_WARNING, nagios_code)
 
     # Check counters indicating socket-related errors.  These are summed
     # together and compared against thresholds for Warning and Critical.
