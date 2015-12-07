@@ -20,13 +20,19 @@ above-mentioned design section.
     <batching>
         <namedConfigs>
             <config name="low_latency">
-                <!-- The "value" attribute of any of the 3 elements below can
-                     be set to "disable".  However, at least one of them must
-                     have its value set to something other than "disable". -->
+                <!-- Here we define thresholds that trigger completion of a
+                     batch when exceeded.  The "value" attribute of any of the
+                     3 elements below can be set to "disable".  However, at
+                     least one of them must have its value set to something
+                     other than "disable". -->
 
                 <!-- Set 500 milliseconds max batching delay.  Here, you must
                      specify integer values directly rather than using syntax
-                     such as "10k". -->
+                     such as "10k".  Specifying "disable" for this setting is
+                     not recommended, since it can cause Bruce to batch a
+                     message indefinitely if not enough other messages arrive
+                     to exceed one of the other two batching thresholds below.
+                  -->
                 <time value="500" />
 
                 <!-- No limit on message count.  You can specify a value here
