@@ -33,8 +33,8 @@ languages are much appreciated.
 ### Message Types
 
 Bruce supports two input message types: *AnyPartition* messages
-and *PartitionKey* messages.  The difference between them is how a partition is
-chosen for topics with multiple partitions.
+and *PartitionKey* messages.  They differ in how a partition is chosen for
+topics with multiple partitions.
 
 If you wish to give Bruce full control over partition selection, then send an
 AnyPartition message.  Bruce will distrubute AnyPartition messages across the
