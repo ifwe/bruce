@@ -27,11 +27,9 @@ using namespace Bruce;
 using namespace Bruce::KafkaProto;
 
 TWireProtocol *Bruce::KafkaProto::ChooseProto(size_t protocol_version,
-    int16_t required_acks, int32_t replication_timeout,
-    bool retry_on_unknown_partition) {
+    int16_t required_acks, int32_t replication_timeout) {
   if (protocol_version == 0) {
-    return new V0::TWireProto(required_acks, replication_timeout,
-                              retry_on_unknown_partition);
+    return new V0::TWireProto(required_acks, replication_timeout);
   }
 
   return nullptr;  // unsupported protocol version

@@ -353,10 +353,6 @@ the maximum.  The default value is 8192.
 * `--discard_report_bad_msg_prefix_size N`: Maximum bad message prefix size in
 bytes to write to discard report available from Bruce's web interface.  The
 default value is 256.
-* `--retry_on_unknown_partition`: On receipt of "unknown topic or partition"
-error ACK, reroute message after updating metadata rather than discarding it.
-This is a workaround for Kafka behavior that occurs when relocating a partition
-to a different broker.
 * `--topic_autocreate`: Enable automatic topic creation.  For this to work, the
 brokers must be configured with `auto.create.topics.enable=true`.
 * `--omit_timestamp`: Do not use this option, since it will soon be removed.

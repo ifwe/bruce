@@ -1073,7 +1073,7 @@ namespace {
   }
 
   TEST_F(TBruceTest, CompressionTest) {
-    TWireProto proto(0, 0, false);
+    TWireProto proto(0, 0);
     std::string topic("scooby_doo");
     std::vector<std::string> kafka_config;
     CreateKafkaConfig(topic.c_str(), kafka_config);

@@ -138,8 +138,7 @@ namespace {
     Args.push_back(nullptr);
     Cfg.reset(new TConfig(Args.size() - 1, const_cast<char **>(&Args[0])));
     Protocol.reset(ChooseProto(Cfg->ProtocolVersion, Cfg->RequiredAcks,
-                   static_cast<int32_t>(Cfg->ReplicationTimeout),
-                   Cfg->RetryOnUnknownPartition));
+                   static_cast<int32_t>(Cfg->ReplicationTimeout)));
     OutputQueue.reset(new TGate<TMsg::TPtr>);
     UnixDgInputAgent.reset(new TUnixDgInputAgent(*Cfg, Pool, MsgStateTracker,
         AnomalyTracker, *OutputQueue));

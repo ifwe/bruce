@@ -119,8 +119,7 @@ TBruceServer::CreateConfig(int argc, char **argv, bool &large_sendbuf_required,
 
   std::unique_ptr<const TWireProtocol> protocol(
       ChooseProto(cfg->ProtocolVersion, cfg->RequiredAcks,
-          static_cast<int32_t>(cfg->ReplicationTimeout),
-          cfg->RetryOnUnknownPartition));
+          static_cast<int32_t>(cfg->ReplicationTimeout)));
 
   if (!protocol) {
     THROW_ERROR(TUnsupportedProtocolVersion);

@@ -31,7 +31,7 @@ namespace Bruce {
   namespace KafkaProto {
 
     TWireProtocol *ChooseProto(size_t protocol_version, int16_t required_acks,
-        int32_t replication_timeout, bool retry_on_unknown_partition);
+        int32_t replication_timeout);
 
   }  // KafkaProto
 

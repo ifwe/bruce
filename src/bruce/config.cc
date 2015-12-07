@@ -272,12 +272,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     SwitchArg arg_topic_autocreate("", "topic_autocreate", "Enable support "
         "for automatic topic creation.  The Kafka brokers must also be "
         "configured to support this.", cmd, config.TopicAutocreate);
-    SwitchArg arg_retry_on_unknown_partition("", "retry_on_unknown_partition",
-        "On receipt of \"unknown topic or partition\" error ACK, reroute "
-        "message after updating metadata rather than discarding it.  This is "
-        "a workaround for Kafka behavior that occurs when relocating a "
-        "partition to a different broker.", cmd,
-        config.RetryOnUnknownPartition);
     SwitchArg arg_use_old_input_format("", "use_old_input_format", "Expect "
         "input UNIX datagrams to adhere to old format.  Do not use this "
         "option, since it will soon be removed.  Its purpose is to provide "
@@ -351,7 +345,6 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     config.DiscardReportBadMsgPrefixSize =
         arg_discard_report_bad_msg_prefix_size.getValue();
     config.TopicAutocreate = arg_topic_autocreate.getValue();
-    config.RetryOnUnknownPartition = arg_retry_on_unknown_partition.getValue();
     config.UseOldInputFormat = arg_use_old_input_format.getValue();
     config.UseOldOutputFormat = arg_use_old_output_format.getValue();
   } catch (const ArgException &x) {
@@ -390,7 +383,6 @@ TConfig::TConfig(int argc, char *argv[])
       DiscardLogBadMsgPrefixSize(256),
       DiscardReportBadMsgPrefixSize(256),
       TopicAutocreate(false),
-      RetryOnUnknownPartition(false),
       UseOldInputFormat(false),
       UseOldOutputFormat(false) {
   ParseArgs(argc, argv, *this);
@@ -484,9 +476,6 @@ void Bruce::LogConfig(const TConfig &config) {
   syslog(LOG_NOTICE, config.TopicAutocreate ?
          "Automatic topic creation enabled" :
          "Automatic topic creation disabled");
-  syslog(LOG_NOTICE, config.RetryOnUnknownPartition ?
-         "Retry on unknown partition enabled" :
-         "Retry on unknown partition disabled");
   syslog(LOG_NOTICE, "Using %s input datagram format",
          config.UseOldInputFormat ? "old" : "new");
   syslog(LOG_NOTICE, "Using %s output format",

@@ -41,9 +41,8 @@ namespace Bruce {
         NO_COPY_SEMANTICS(TWireProto);
 
         public:
-        TWireProto(int16_t required_acks, int32_t replication_timeout,
-            bool retry_on_unknown_partition)
-            : TWireProtocol(ComputeConstants(retry_on_unknown_partition)),
+        TWireProto(int16_t required_acks, int32_t replication_timeout)
+            : TWireProtocol(ComputeConstants()),
               RequiredAcks(required_acks),
               ReplicationTimeout(replication_timeout) {
         }
@@ -105,7 +104,7 @@ namespace Bruce {
           OffsetMetadataTooLargeCode = 12
         };
 
-        static TConstants ComputeConstants(bool retry_on_unknown_partition);
+        static TConstants ComputeConstants();
 
         int16_t RequiredAcks;
 

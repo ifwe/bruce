@@ -113,7 +113,7 @@ error ACK:
 | Unknown                    |   -1 | Discard             |
 | OffsetOutOfRange           |    1 | Discard             |
 | InvalidMessage             |    2 | Resend              |
-| UnknownTopicOrPartition    |    3 | Discard and Pause   |
+| UnknownTopicOrPartition    |    3 | Pause               |
 | InvalidMessageSize         |    4 | Discard             |
 | LeaderNotAvailable         |    5 | Pause               |
 | NotLeaderForPartition      |    6 | Pause               |
@@ -125,9 +125,10 @@ error ACK:
 | OffsetMetadataTooLargeCode |   12 | Discard             |
 | (all other values)         |    ? | Discard             |
 
-Feedback from the Kafka community regarding these choices is welcomed.  If a
-different response for a given error code would be more appropriate, changes
-can easily be made.
+In the case of *UnknownTopicOrPartition*, the router thread will discard the
+message set during rerouting if the topic no longer exists.  Feedback from the
+Kafka community regarding these choices is welcomed.  If a different response
+for a given error code would be more appropriate, changes can easily be made.
 
 Additionally, socket-related errors cause a *Pause* response.  In other words,
 a pause is initiated and any messages that could not be sent or did not receive
