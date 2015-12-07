@@ -33,8 +33,8 @@ languages are much appreciated.
 ### Message Types
 
 Bruce supports two input message types: *AnyPartition* messages
-and *PartitionKey* messages.  The difference between these two message types is
-how a partition is chosen for topics with multiple partitions.
+and *PartitionKey* messages.  The difference between them is how a partition is
+chosen for topics with multiple partitions.
 
 If you wish to give Bruce full control over partition selection, then send an
 AnyPartition message.  Bruce will distrubute AnyPartition messages across the
@@ -43,31 +43,38 @@ balance the load.
 
 The PartitionKey message type provides the sender with greater control over
 which partition a message is sent to.  When sending this type of message, you
-specify a 32-bit partition key.  Bruce then chooses a partition by applying a
-mod function to the key and using it as an index into an array of available
-partitions.  For instance, suppose that messages for topic T can be sent to
-partitions 1, 3, and 5.  Then Bruce's available partition array for T will look
-like this:
+specify a 32-bit partition key.  To avoid confusion, note that the partition
+key discussed here is conceptually unrelated to the optional message key
+defined by the
+[Kafka protocol](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)
+and further described in
+[this proposal](https://cwiki.apache.org/confluence/display/KAFKA/Keyed+Messages+Proposal).
+The partition keys we describe here are known to Bruce, but not to the Kafka
+brokers.  Bruce chooses a partition by applying a mod function to the partition
+key and using it as an index into an array of partitions.  For instance,
+suppose that topic T has partitions 0, 1, and 2.  Then Bruce's partition array
+for T will look like this:
 
 ```
-{1, 3, 5}
+[0, 1, 2]
 ```
 
 For key K, Bruce then chooses (K % 3) as the array index of the partition to
 use.  For instance, if K is 6, then array index 0 will be chosen.  Since
-partition ID 1 is at position 0, a message with key K will be sent to partition
-1.  In practice, this might be useful in a scenario where messages are
+partition ID 0 is at position 0, a message with key K will be sent to partition
+0.  In practice, this might be useful in a scenario where messages are
 associated with users of a web site, and all messages associated with a given
-user need to be sent to the same partition.  In this case, a hash of the user
-ID can be used as a partition key.  The above-mentioned partition array is
+user must be sent to the same partition.  In this case, a hash of the user ID
+can be used as a partition key.  The above-mentioned partition array is
 guaranteed to be sorted in ascending order.  Therefore, a sender with full
 knowledge of the partition layout for a given topic can use the partition key
-mechanism to directly choose a partition.  However, one word of caution is
-necessary.  If a partition becomes temporarily unavailable, then Bruce will
-fetch new metadata, and the array of available partitions will change.  For
-instance, if partition 3 in the above example becomes unavailable, then the
-array of available partitions becomes `{1, 5}`, and the mapping function from
-partition key to partition therefore changes.
+mechanism to directly choose a partition.  Now suppose that partition 0 becomes
+temporarily unavailable.  In the case where a message with key K maps to
+partition 0, Bruce will realize that partition 0 is unavailable and choose the
+next available partition.  For instance, if partition 1 is available, then
+messages that would normally be sent to partition 0 will temporarily be sent to
+partition 1.  Once partition 0 becomes available again, Bruce will resume
+sending these messages to partition 0.
 
 ### Message Formats
 
@@ -124,7 +131,10 @@ since the epoch (January 1 1970 12:00am UTC).
 * `KeySize`: This is the size in bytes of the key for the message, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
 For an empty key, 0 must be specified.
-* `Key`: This is the message key.
+* `Key`: This is the message key defined by the
+[Kafka protocol](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)
+and further described in
+[this proposal](https://cwiki.apache.org/confluence/display/KAFKA/Keyed+Messages+Proposal)
 * `ValueSize`: This is the size in bytes of the value for the message, as
 described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
@@ -159,7 +169,10 @@ since the epoch (January 1 1970 12:00am UTC).
 * `KeySize`: This is the size in bytes of the key for the message, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).
 For an empty key, 0 must be specified.
-* `Key`: This is the message key.
+* `Key`: This is the message key defined by the
+[Kafka protocol](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)
+and further described in
+[this proposal](https://cwiki.apache.org/confluence/display/KAFKA/Keyed+Messages+Proposal)
 * `ValueSize`: This is the size in bytes of the value for the message, as
 described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-Messagesets).

@@ -6,7 +6,8 @@ complexity of direct interaction with the Kafka cluster.  Specifically, it
 handles the details of:
 
 * Routing messages to the proper brokers, and spreading the load evenly across
-  multiple partitions for a given topic
+  multiple partitions for a given topic.  Clients that know the cluster
+  topology may optionally direct messages to a specific partition.
 * Waiting for acknowledgements, and resending messages as necessary due to
   communication failures or Kafka-reported errors
 * Buffering messages to handle transient load spikes and Kafka-related problems
@@ -14,7 +15,8 @@ handles the details of:
   discard reporting and status monitoring interfaces
 * Batching and compressing messages in a configurable manner for improved
   performance
-* Optional rate limiting of messages on a per-topic basis.
+* Optional rate limiting of messages on a per-topic basis.  This guards against
+  buggy client code overwhelming the Kafka cluster with too many messages.
 
 Bruce runs on each individual host that communicates with Kafka, receiving
 messages from local clients over a UNIX domain datagram socket.  Clients write

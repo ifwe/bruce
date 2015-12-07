@@ -144,6 +144,13 @@ or
 ./pkg --debug --asan no rpm_noconfig
 ```
 
+Another thing to keep in mind about the address sanitizer's behavior is that it
+causes `operator new` to return `nullptr` on allocation failure in cases where
+the C++ standard dictates that `std::bad_alloc` should be thrown.  This can
+cause out of memory conditions to result in segmentation faults due to null
+pointer dereferences.  See [this issue]
+(https://github.com/google/sanitizers/issues/295) for details.
+
 Regardless of how you build bruce (via the `build` command, the `build_all`
 script, or the `pkg` script), the address sanitizer is *always* disabled in
 release builds, regardless of any command line options that disable or enable

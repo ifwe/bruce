@@ -59,13 +59,13 @@ level for syslog messages.
 * `--log_echo` Causes syslog messages to be echoed to standard error.
 
 Bruce's config file (`/etc/bruce/bruce_conf.xml` in the above example) is an
-XML document that specifies batching and configuration options, as well as the
-above-described list of initial brokers.  The example configuration specifies
-a uniform batching latency of 1000 ms, with a 256 kbyte upper bound on the
-total message data size in a single batch.  The maximum message data size for a
-single produce request is limited to 1024 kbytes.  These values are somewhat
-arbitrary, and may require tuning.  Snappy message compression is also
-configured for all topics.
+XML document that specifies batching, compression, and message rate limiting
+options, as well as the above-described list of initial brokers.  The example
+configuration specifies a uniform batching latency of 1000 ms, with a 256 kbyte
+upper bound on the total message data size in a single batch.  The maximum
+message data size for a single produce request is limited to 1024 kbytes.
+These values are somewhat arbitrary, and may require tuning.  Snappy message
+compression is also configured for all topics.
 
 Full details of Bruce's configuration options are provided
 [here](detailed_config.md).

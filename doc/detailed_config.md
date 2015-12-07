@@ -52,7 +52,7 @@ above-mentioned design section.
 
         <!-- Somewhat arbitrary upper bound on produce request size.  As above,
              a value such as "100k" is interpreted as (100 * 1024) bytes.  You
-             can also specify simple integer valuse such as "100000" directly.
+             can also specify simple integer values such as "100000" directly.
              Here, you can not specify "disable".  A nonnegative integer value
              must be specified.  This value applies to the actual message
              content (keys and values).  The total size of a produce request

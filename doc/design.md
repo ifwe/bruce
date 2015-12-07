@@ -1,14 +1,14 @@
 ## Design Overview
 
 Bruce's core implementation consists of an input thread, a router thread, and a
-message dispatcher that maintains a pair of threads for each Kafka broker: a
-send thread for sending produce requests and a receive thread for receiving
-produce responses.  There are also threads created by a third party HTTP server
-library that implements Bruce's status monitoring interface and a main thread
-that starts the input thread and waits for a shutdown signal.  The input thread
-creates Bruce's input socket and monitors it for messages from clients.  It
-also starts the router thread during system initialization.  The router thread
-starts and manages the dispatcher threads.
+message dispatcher that assigns a thread to each Kafka broker.  There is also a
+main thread that starts the input and router threads, and then waits for a
+shutdown signal.  A third party HTTP server library used for Bruce's status
+monitoring interface creates additional threads.  The input thread creates
+Bruce's input socket, monitors it for messages from clients, and passes the
+messages to the router thread.  The router thread starts and manages the
+dispatcher threads, receives messages from the input thread, and routes them to
+the dispatcher threads for delivery to the Kafka brokers.
 
 ### Input Thread
 
@@ -64,13 +64,13 @@ The Router thread shares responsibility for message batching with the
 dispatcher threads, as detailed below.
 
 Once the router thread has chosen a broker for a message or batch of messages,
-it queues the message(s) for receipt by the corresponding dispatcher send
-thread.  The router thread monitors the dispatcher for conditions referred to
-as *pause events*.  These occur due to socket-related errors and certain types
-of error ACKs which indicate that the metadata is likely no longer accurate.
-On detection of a pause event, the router thread waits for the dispatcher
-threads to shut down and extracts all messages from the dispatcher.  It then
-fetches new metadata, starts new dispatcher threads, and reroutes the extracted
+it queues the message(s) for receipt by the corresponding dispatcher thread.
+The router thread monitors the dispatcher for conditions referred to as
+*pause events*.  These occur due to socket-related errors and certain types of
+error ACKs which indicate that the metadata is no longer accurate.  On
+detection of a pause event, the router thread waits for the dispatcher threads
+to shut down and extracts all messages from the dispatcher.  It then fetches
+new metadata, starts new dispatcher threads, and reroutes the extracted
 messages based on the new metadata.  The router thread also periodically
 refreshes its metadata and responds to user-initiated metadata update requests.
 In these cases, it fetches new metadata, which it compares with the existing
@@ -81,21 +81,20 @@ and then proceeds in a manner similar to the handling of a pause event.
 
 The dispatcher opens a TCP connection to each Kafka broker that serves as
 leader for at least one currently available partition.  As described above,
-each connection is serviced by a send thread and a receive thread.  A pause
-event initiated by any dispatcher thread will alert the router thread and cause
-all of the dispatcher threads to shut down.  As detailed below, responsibility
-for message batching is divided between the dispatcher threads and the router
-thread, according to the type of message being sent and how batching is
-configured.  Compression is handled completely by the dispatcher send threads,
-which are also responsible for assembling message batches into produce requests
-and doing final partition selection as described in the section on batching
-below.
+each connection is serviced by a dedicated thread.  A pause event initiated by
+any dispatcher thread will alert the router thread and cause all of the
+dispatcher threads to shut down.  As detailed below, responsibility for message
+batching is divided between the dispatcher threads and the router thread,
+according to the type of message being sent and how batching is configured.
+Compression is handled completely by the dispatcher threads, which are also
+responsible for assembling message batches into produce requests and doing
+final partition selection as described in the section on batching below.
 
-An error ACK received from Kafka will cause the receive thread that got the ACK
-to respond in one of four ways:
+An error ACK in a produce response received from Kafka will cause the
+dispatcher thread that got the ACK to respond in one of four ways:
 
-1. *Resend*: Queue the corresponding message set to be resent to the same
-   broker by the send thread.
+1. *Resend*: Queue the corresponding message set to be immediately resent to
+   the same broker.
 2. *Discard*: Discard the corresponding message set and continue processing
    ACKs.
 3. *Discard and Pause*: Discard the corresponding message set and initiate a
@@ -130,11 +129,13 @@ Feedback from the Kafka community regarding these choices is welcomed.  If a
 different response for a given error code would be more appropriate, changes
 can easily be made.
 
-Additionally, socket-related errors cause a response of type 4.  When a
-response of type 4 occurs specifically due to an error ACK, a failed delivery
-attempt count is incremented for each message in the corresponding message set.
-Once a message's failed delivery attempt count exceeds a certain configurable
-threshold, the message is discarded.
+Additionally, socket-related errors cause a *Pause* response.  In other words,
+a pause is initiated and any messages that could not be sent or did not receive
+ACKs as a result will be reclaimed by the router thread and rerouted based on
+updated metadata.  When a *Pause* response occurs specifically due to an error
+ACK, a failed delivery attempt count is incremented for each message in the
+corresponding message set.  Once a message's failed delivery attempt count
+exceeds a configurable threshold, the message is discarded.
 
 ### Message Batching
 
@@ -156,11 +157,11 @@ to configurable limits of the same types that govern per-topic batching.  It is
 also possible to specify that batching for certain topics is completely
 disabled, although this is not recommended due to performance considerations.
 
-When a batch is completed, it is queued for transmission by the send thread
-connected to the destination broker.  While a send thread is busy sending a
-produce request, multiple batches may arrive in its queue.  When it finishes
-sending, it will then try to combine all queued batches into the next produce
-request, up to a configurable data size limit.
+When a batch is completed, it is queued for transmission by the dispatcher
+thread connected to the destination broker.  While a dispatcher thread is busy
+sending a produce request, multiple batches may arrive in its queue.  When it
+finishes sending, it will then try to combine all queued batches into the next
+produce request, up to a configurable data size limit.
 
 #### Batching of AnyPartition Messages
 
@@ -171,13 +172,13 @@ index in this array is chosen in a round-robin manner, and the broker that
 hosts the lead replica for that partition is chosen as the destination.
 However, at this point only the destination broker is determined, and the batch
 may ultimately be sent to a different partition hosted by the same broker.
-Final partition selection is done by the send thread for the destination broker
-as a produce request is being built.  In this manner, batches for a given topic
-are sent to brokers proportionally according to how many partitions for the
-topic each broker hosts.  For instance, suppose topic T has a total of 10
-partitions.  If 3 of the partitions are hosted by broker B1 and 7 are hosted by
-broker B2, then 30% of the batches for topic T will be sent to B1 and 70% will
-be sent to B2.
+Final partition selection is done by the dispatcher thread for the destination
+broker as a produce request is being built.  In this manner, batches for a
+given topic are sent to brokers proportionally according to how many partitions
+for the topic each broker hosts.  For instance, suppose topic T has a total of
+10 partitions.  If 3 of the partitions are hosted by broker B1 and 7 are hosted
+by broker B2, then 30% of the batches for topic T will be sent to B1 and 70%
+will be sent to B2.
 
 Combined topics batching (in which a single batch contains multiple topics) may
 be configured for topics that do not have per-topic batching configurations.
@@ -200,8 +201,8 @@ messages.
 
 #### Produce Request Creation and Final Partition Selection
 
-As mentioned above, the send thread for a broker may combine the contents of
-multiple batches (possibly a mixture of per-topic batches of AnyPartition
+As mentioned above, the dispatcher thread for a broker may combine the contents
+of multiple batches (possibly a mixture of per-topic batches of AnyPartition
 messages, per-topic batches of PartitionKey messages, and combined topics
 batches which may contain both types of messages) into a single produce
 request.  To prevent creation of arbitrarily large produce requests, a
@@ -211,7 +212,7 @@ subset of the contents of a particular batch being included in a produce
 request, with the remaining batch contents left for inclusion in the next
 produce request.
 
-Once the send thread has determined which messages to include in a produce
+Once a dispatcher thread has determined which messages to include in a produce
 request, it must assign partitions to AnyPartition messages and group the
 messages together by topic and partition.  First the messages are grouped by
 topic, so that if a produce request contains messages from multiple batches,
@@ -220,24 +221,24 @@ they came from.  Then partitions are assigned to AnyPartition messages, and
 messages within a topic are grouped by partition into message sets.
 
 For a given topic within a produce request, all AnyPartition messages are
-assigned to the same partition.  To facilitate choosing a partition, the send
-thread for a given broker has access to an array of available partitions for
-the topic such that the lead replica for each partition is located at the
-broker.  The send thread chooses a partition by cycling through this vector in
-a round-robin manner.  For instance, suppose that topic T has available
-partitions { P1, P2, P3, P4, P5 }.  Suppose that the lead replica for each of
-{ P1, P3, P4 } is hosted by broker B, while the lead replica for each of the
-other partitions is hosted on some other broker.  Then for a given produce
-request, the send thread for B will choose one of { P1, P3, P4 } as the
-assigned partition for all AnyPartition messages with topic T.  Let's assume
-that partition P3 is chosen.  Then P4 will be chosen for the next produce
-request containing AnyPartition messages for T, P1 will be chosen next, and the
-send thread will continue cycling through the array in a round-robin manner.
-For a given topic within a produce request, once a partition is chosen for all
-AnyPartition messages, the messages are grouped into a single message set along
-with all PartitionKey messages that map to the chosen partition.  PartitionKey
-messages for T that map to other partitions are grouped into additional message
-sets.
+assigned to the same partition.  To facilitate choosing a partition, the
+dispatcher thread for a given broker has access to an array of available
+partitions for the topic such that the lead replica for each partition is
+located at the broker.  The dispatcher thread chooses a partition by cycling
+through this vector in a round-robin manner.  For instance, suppose that topic
+T has available partitions { P1, P2, P3, P4, P5 }.  Suppose that the lead
+replica for each of { P1, P3, P4 } is hosted by broker B, while the lead
+replica for each of the other partitions is hosted on some other broker.  Then
+for a given produce request, the dispatcher thread for B will choose one of
+{ P1, P3, P4 } as the assigned partition for all AnyPartition messages with
+topic T.  Let's assume that partition P3 is chosen.  Then P4 will be chosen for
+the next produce request containing AnyPartition messages for T, P1 will be
+chosen next, and the dispatcher thread will continue cycling through the array
+in a round-robin manner.  For a given topic within a produce request, once a
+partition is chosen for all AnyPartition messages, the messages are grouped
+into a single message set along with all PartitionKey messages that map to the
+chosen partition.  PartitionKey messages for T that map to other partitions are
+grouped into additional message sets.
 
 ### Message Compression
 
@@ -278,7 +279,7 @@ message sets that are found to still exceed the limit after compression.
 
 Bruce provides optional message rate limiting on a per-topic basis.  The
 motivation is to deal with situations in which buggy client code sends an
-unreasonably large volume of messages to some topic T. Without rate limiting,
+unreasonably large volume of messages for some topic T. Without rate limiting,
 this might stress the Kafka cluster to the point where it can no longer keep up
 with the message volume. The result is likely to be slowness in message
 processing that affects many topics, causing Bruce to discard messages across
