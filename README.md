@@ -6,8 +6,10 @@ complexity of direct interaction with the Kafka cluster.  Specifically, it
 handles the details of:
 
 * Routing messages to the proper brokers, and spreading the load evenly across
-  multiple partitions for a given topic.  Clients that know the cluster
-  topology may optionally direct messages to a specific partition.
+  multiple partitions for a given topic.  Clients may optionally exercise
+  control over partition assignment, such as ensuring that a group of related
+  messages are all routed to the same partition, or even directly choosing a
+  partition if the client knows the cluster topology.
 * Waiting for acknowledgements, and resending messages as necessary due to
   communication failures or Kafka-reported errors
 * Buffering messages to handle transient load spikes and Kafka-related problems
