@@ -9,11 +9,10 @@ which may be installed as follows:
 ```
 yum groupinstall "Development tools"
 yum install scons
+yum install cmake
 yum install snappy-devel
 yum install boost-devel
 ```
-
-Additionally, the [Google Test Framework](gtest.md) is needed.
 
 ### Building and Installing gcc 4.8.2
 

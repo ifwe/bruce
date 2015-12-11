@@ -32,6 +32,7 @@
 # -----------------------------------------------------------------------------
 
 import functools
+import os
 import os.path
 import subprocess
 import sys
@@ -159,6 +160,16 @@ def get_dep_sources(main, dep_libs):
     return result
 
 
+def remove_self_dependency(target, source):
+    new_source = []
+
+    for s in source:
+        if s.get_abspath() != target.get_abspath():
+            new_source.append(s)
+
+    return new_source
+
+
 # Execute the test and check that the return code is 0.
 def run_test(target, source, env):
     for test in source:
@@ -185,17 +196,6 @@ def specify_generated_file(in_node, out_node, header_node, script_node,
     env['GENERATED_SOURCE_MAP'][header_node.get_path()] = out_node
 
 
-specify_generated_file(Dir('bruce').File('build_id.c.in'),
-        Dir('bruce').File('build_id.c'), Dir('bruce').File('build_id.h'),
-        Dir('bruce').Dir('scripts').File('gen_version'),
-        src.Dir('bruce').Dir('scripts').File('gen_version'))
-
-specify_generated_file(Dir('bruce').Dir('client').File('build_id.c.in'),
-        Dir('bruce').Dir('client').File('build_id.c'),
-        Dir('bruce').Dir('client').File('build_id.h'),
-        Dir('bruce').Dir('scripts').File('gen_version'),
-        src.Dir('bruce').Dir('scripts').File('gen_version'))
-
 # Input parameter 'headers' is a list of header files for a library 'lib' that
 # is built by our build system.  The effect we want to achieve here is as
 # follows.  If source file foo.cc #includes one of the headers for 'lib', then
@@ -205,18 +205,53 @@ def specify_lib_headers(lib, headers):
         env['LIB_HEADER_MAP'][h.get_path()] = lib
 
 
+def third_party_build_dir():
+    return Dir('#').Dir('out').Dir('third_party_build')
+
+
+def third_party_out_dir(dir_name):
+    return Dir(third_party_build_dir().get_path()).Dir(dir_name)
+
+
+def make_third_party_build_cmd(dir_name):
+    root = Dir('#')
+    dir_1 = third_party_build_dir()
+    dir_2 = root.Dir('src').Dir('third_party').Dir(dir_name)
+    dir_3 = third_party_out_dir('googletest')
+    script = dir_3.File('build_' + dir_name)
+    return 'mkdir -p ' + dir_1.get_path() + ' && cp -a ' + dir_2.get_path() + \
+            ' ' + dir_1.get_path() + ' && cd ' + dir_3.get_path() + \
+            ' && ' + script.get_path()
+
+
+def make_unique(a):
+    result = []
+
+    for x in a:
+        if x not in result:
+            result.append(x)
+
+    return result
+
+
+specify_generated_file(Dir('bruce').File('build_id.c.in'),
+        Dir('bruce').File('build_id.c'), Dir('bruce').File('build_id.h'),
+        Dir('bruce').Dir('scripts').File('gen_version'),
+        src.Dir('bruce').Dir('scripts').File('gen_version'))
+specify_generated_file(Dir('bruce').Dir('client').File('build_id.c.in'),
+        Dir('bruce').Dir('client').File('build_id.c'),
+        Dir('bruce').Dir('client').File('build_id.h'),
+        Dir('bruce').Dir('scripts').File('gen_version'),
+        src.Dir('bruce').Dir('scripts').File('gen_version'))
 specify_lib_headers(Dir('bruce').Dir('client').File('libbruce_client.a'),
     [Dir('bruce').Dir('client').File('bruce_client.h')])
-
-
-def remove_self_dependency(target, source):
-    new_source = []
-
-    for s in source:
-        if s.get_abspath() != target.get_abspath():
-            new_source.append(s)
-
-    return new_source
+googletest_lib_1 = third_party_out_dir('googletest').File('libgtest.a')
+googletest_lib_2 = third_party_out_dir('googletest').File('libgtest_main.a')
+env.Command(googletest_lib_1, "", make_third_party_build_cmd('googletest'))
+env.Command(googletest_lib_2, "", make_third_party_build_cmd('googletest'))
+common_prog_libs = env['PROG_LIBS']
+common_test_libs = make_unique(
+        [googletest_lib_1, googletest_lib_2, 'pthread'] + common_prog_libs)
 
 
 # For each given target path, try to build it.
@@ -271,15 +306,17 @@ for target_path in BUILD_TARGETS:
         if dep_path not in BUILD_TARGETS:
             BUILD_TARGETS.append(dep_path)
 
+    dep_lib_array = [lib for lib in dep_libs]
+    prog_libs = common_prog_libs + dep_lib_array
+    test_libs = common_test_libs + dep_lib_array
+
     # Choose the correct builder based on the target_path's extension.
-    {env['PROGSUFFIX'] : functools.partial(env.Program,
-             LIBS=env['PROG_LIBS'] + [lib for lib in dep_libs]),
+    {env['PROGSUFFIX'] : functools.partial(env.Program, LIBS=prog_libs),
      env['LIBSUFFIX']  : env.Library,
      env['SHLIBSUFFIX']: env.SharedLibrary,
      env['OBJSUFFIX']  : env.Object,
      env['SHOBJSUFFIX']: env.SharedObject,
-     env['TESTSUFFIX'] : functools.partial(env.Program,
-             LIBS=env['TEST_LIBS'] + [lib for lib in dep_libs])
+     env['TESTSUFFIX'] : functools.partial(env.Program, LIBS=test_libs)
     }[ext](target, source)
 
     # If target is a unit test, execute it.

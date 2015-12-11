@@ -88,6 +88,8 @@ root = Dir('#')
 src = root.Dir('src')
 third_party = src.Dir('third_party')
 tclap = third_party.Dir('tclap-1.2.0').Dir('include')
+gtestbasedir = third_party.Dir('googletest')
+gtestincdir = gtestbasedir.Dir('googletest-release-1.7.0').Dir('include')
 out_base = root.Dir('out')
 out = out_base.Dir(mode)
 
@@ -131,17 +133,15 @@ check_version_file(out.Dir('bruce').Dir('client').File('build_id.c').
 
 # Environment.
 prog_libs = {'pthread', 'dl', 'rt'}
-gtest_libs = {'gtest', 'gtest_main', 'pthread'}
 env = Environment(CFLAGS=['-Wwrite-strings'],
                   CCFLAGS=['-Wall', '-Wextra', '-Werror', '-Wformat=2',
                           '-Winit-self', '-Wunused-parameter', '-Wshadow',
                           '-Wpointer-arith', '-Wcast-align', '-Wlogical-op'],
                   CPPDEFINES=[('SRC_ROOT', '\'"' + src.abspath + '"\'')],
-                  CPPPATH=[src, tclap],
+                  CPPPATH=[src, tclap, gtestincdir],
                   CXXFLAGS=['-std=c++11', '-Wold-style-cast'],
                   DEP_SUFFIXES=['.cc', '.cpp', '.c', '.cxx', '.c++', '.C'],
                   PROG_LIBS=[lib for lib in prog_libs],
-                  TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
                   GENERATED_SOURCE_MAP={},
                   LIB_HEADER_MAP={})

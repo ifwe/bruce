@@ -5,6 +5,7 @@ Install software packages as follows:
 ```
 sudo apt-get install build-essential
 sudo apt-get install scons
+sudo apt-get install cmake
 sudo apt-get install libsnappy-dev
 sudo apt-get install libasan0
 sudo apt-get install libboost-all-dev
@@ -12,7 +13,7 @@ sudo apt-get install git
 sudo apt-get install g++
 ```
 
-Then set up the [Google Test Framework](gtest.md).  Now proceed to
+Now proceed to
 [build, install, and configure Bruce](../README.md#building-and-installing-bruce).
 
 -----

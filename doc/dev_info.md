@@ -36,8 +36,7 @@ standalone executables.  For instance, in the above example if we typed
 UNIX datagram input agent, which would then appear as executable file
 `out/debug/bruce/unix_dg_input_agent.test`.  If you type
 `build --test unix_dg_input_agent.test`, that will build the unit test and then
-immediately execute it.  Before building or running any unit tests, you must
-have the Google Test Framework installed, as documented [here](gtest.md).
+immediately execute it.
 
 If you type `build -c`, that will remove all build artifacts by deleting the
 `out` directory.  For `make` users, this is the equivalent of `make clean`.
@@ -48,15 +47,16 @@ section of code in the SConstruct file that looks roughly like this:
 ```Python
 # Environment.
 prog_libs = {'pthread', 'dl', 'rt'}
-gtest_libs = {'gtest', 'gtest_main', 'pthread'}
-env = Environment(CCFLAGS=['-Wall', '-Wextra', '-Werror'],
+env = Environment(CFLAGS=['-Wwrite-strings'],
+                  CCFLAGS=['-Wall', '-Wextra', '-Werror', '-Wformat=2',
+                          '-Winit-self', '-Wunused-parameter', '-Wshadow',
+                          '-Wpointer-arith', '-Wcast-align', '-Wlogical-op'],
                   CPPDEFINES=[('SRC_ROOT', '\'"' + src.abspath + '"\'')],
-                  CPPPATH=[src, tclap],
+                  CPPPATH=[src, tclap, gtestincdir],
                   CXXFLAGS=['-std=c++11', '-Wold-style-cast'],
                   DEP_SUFFIXES=['.cc', '.cpp', '.c', '.cxx', '.c++', '.C'],
-                  PROG_LIBS=[lib for lib in prog_libs],
-                  TEST_LIBS=[lib for lib in prog_libs | gtest_libs],
                   TESTSUFFIX='.test',
+                  PROG_LIBS=[lib for lib in prog_libs],
                   GENERATED_SOURCE_MAP={},
                   LIB_HEADER_MAP={})
 
@@ -68,12 +68,15 @@ def set_debug_options():
     # Note: If you specify -fsanitize=address, you must also specify
     # -fno-omit-frame-pointer and be sure libasan is installed (RPM package
     # libasan on RHEL, Fedora, and CentOS).
-    env.AppendUnique(CCFLAGS=['-g', '-fsanitize=address',
-                              '-fno-omit-frame-pointer',
+    env.AppendUnique(CCFLAGS=['-g', '-fno-omit-frame-pointer',
                               '-fvisibility=hidden'])
     env.AppendUnique(CXXFLAGS=['-D_GLIBCXX_DEBUG',
                                '-D_GLIBCXX_DEBUG_PEDANTIC'])
-    env.AppendUnique(LINKFLAGS=['-fsanitize=address', '-rdynamic'])
+    env.AppendUnique(LINKFLAGS=['-rdynamic'])
+
+    if GetOption('asan') == 'yes':
+        env.AppendUnique(CCFLAGS=['-fsanitize=address'])
+        env.AppendUnique(LINKFLAGS=['-fsanitize=address'])
 
 
 def set_release_options():
