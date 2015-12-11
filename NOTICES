@@ -15,8 +15,9 @@ It also includes the following software obtained from sources outside if(we):
       minor modifications made at if(we).  The code is available at
       <http://mongoose.googlecode.com/files/mongoose-3.0.tgz>.
 
-    - pugixml, version 1.2, an XML processing library written by Arseny
-      Kapoulkine.  See <http://pugixml.org/>.
+    - pugixml, version 1.7, an XML processing library written by Arseny
+      Kapoulkine.  See <http://pugixml.org/> and
+      <https://github.com/zeux/pugixml>.
 
     - TCLAP, a Templatized C++ Command Line Parser Library originally written
       by Michael E. Smoot, with contributions from others.  See

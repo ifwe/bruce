@@ -1,1 +1,28 @@
+# binary files
 *.jpg -text -diff
+*.jpeg -text -diff
+*.png -text -diff
+*.gif -text -diff
+*.ico -text -diff
+*.mp4 -text -diff
+*.mp3 -text -diff
+*.mov -text -diff
+*.flv -text -diff
+*.fla -text -diff
+*.swf -text -diff
+*.gz -text -diff
+*.zip -text -diff
+*.7z -text -diff
+*.ttf -text -diff
+
+# documents
+*.doc  diff=astextplain
+*.DOC  diff=astextplain
+*.docx diff=astextplain
+*.DOCX diff=astextplain
+*.dot  diff=astextplain
+*.DOT  diff=astextplain
+*.pdf  diff=astextplain
+*.PDF  diff=astextplain
+*.rtf  diff=astextplain
+*.RTF  diff=astextplain

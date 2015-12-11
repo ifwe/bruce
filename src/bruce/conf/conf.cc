@@ -31,7 +31,7 @@
 #include <base/no_default_case.h>
 #include <base/opt.h>
 #include <bruce/util/misc_util.h>
-#include <third_party/pugixml-1.2/src/pugixml.h>
+#include <third_party/pugixml-1.7/src/pugixml.hpp>
 
 using namespace Base;
 using namespace Bruce;
