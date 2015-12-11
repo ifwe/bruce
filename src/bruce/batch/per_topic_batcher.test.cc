@@ -135,7 +135,7 @@ namespace {
     complete_batches = SetProcessed(batcher.AddMsg(std::move(msg), 34));
     ASSERT_FALSE(!!msg);
     ASSERT_TRUE(batcher.SanityCheck());
-    ASSERT_EQ(complete_batches.size(), 2);
+    ASSERT_EQ(complete_batches.size(), 2U);
     opt_nct = batcher.GetNextCompleteTime();
     ASSERT_TRUE(opt_nct.IsKnown());
     ASSERT_EQ(*opt_nct, 40);
@@ -147,13 +147,13 @@ namespace {
       std::string topic = msg_list.front()->GetTopic();
 
       if (topic == "t1") {
-        ASSERT_EQ(msg_list.size(), 2);
+        ASSERT_EQ(msg_list.size(), 2U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 1"));
         msg_list.pop_front();
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 2"));
         got_t1 = true;
       } else if (topic == "t2") {
-        ASSERT_EQ(msg_list.size(), 1);
+        ASSERT_EQ(msg_list.size(), 1U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t2 msg 1"));
         got_t2 = true;
       } else {
@@ -229,13 +229,13 @@ namespace {
       std::string topic = msg_list.front()->GetTopic();
 
       if (topic == "t4") {
-        ASSERT_EQ(msg_list.size(), 2);
+        ASSERT_EQ(msg_list.size(), 2U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t4 msg 1"));
         msg_list.pop_front();
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t4 msg 2"));
         got_t4 = true;
       } else if (topic == "t5") {
-        ASSERT_EQ(msg_list.size(), 1);
+        ASSERT_EQ(msg_list.size(), 1U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t5 msg 1"));
         got_t5 = true;
       } else {
@@ -292,7 +292,7 @@ namespace {
     std::list<std::list<TMsg::TPtr>> all_batches =
         SetProcessed(batcher.GetAllBatches());
     ASSERT_TRUE(batcher.SanityCheck());
-    ASSERT_EQ(all_batches.size(), 2);
+    ASSERT_EQ(all_batches.size(), 2U);
     opt_nct = batcher.GetNextCompleteTime();
     ASSERT_FALSE(opt_nct.IsKnown());
     bool got_t1 = false;
@@ -303,13 +303,13 @@ namespace {
       std::string topic = msg_list.front()->GetTopic();
 
       if (topic == "t1") {
-        ASSERT_EQ(msg_list.size(), 2);
+        ASSERT_EQ(msg_list.size(), 2U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 1"));
         msg_list.pop_front();
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 2"));
         got_t1 = true;
       } else if (topic == "t2") {
-        ASSERT_EQ(msg_list.size(), 1);
+        ASSERT_EQ(msg_list.size(), 1U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t2 msg 1"));
         got_t2 = true;
       } else {

@@ -67,7 +67,7 @@ namespace {
     ASSERT_EQ(client_id_copy, client_id);
     ASSERT_EQ(reader.GetRequiredAcks(), 3);
     ASSERT_EQ(reader.GetReplicationTimeout(), 100);
-    ASSERT_EQ(reader.GetNumTopics(), 0);
+    ASSERT_EQ(reader.GetNumTopics(), 0U);
     ASSERT_EQ(reader.FirstTopic(), false);
   }
 

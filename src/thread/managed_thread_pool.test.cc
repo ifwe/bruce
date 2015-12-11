@@ -311,27 +311,27 @@ namespace {
       ASSERT_EQ(&w1.GetPool(), &pool);
       ASSERT_EQ(w1.GetWorkFn(), nullptr);
       stats = pool.GetStats();
-      ASSERT_EQ(stats.SetConfigCount, 0);
-      ASSERT_EQ(stats.ReconfigCount, 0);
-      ASSERT_EQ(stats.PruneOpCount, 0);
-      ASSERT_EQ(stats.PrunedThreadCount, 0);
-      ASSERT_EQ(stats.MinPrunedByOp, 0);
-      ASSERT_EQ(stats.MaxPrunedByOp, 0);
-      ASSERT_EQ(stats.PoolHitCount, 0);
-      ASSERT_EQ(stats.PoolMissCount, 1);
-      ASSERT_EQ(stats.CreateWorkerCount, 1);
-      ASSERT_EQ(stats.PutBackCount, 0);
-      ASSERT_EQ(stats.FinishWorkCount, 0);
-      ASSERT_EQ(stats.QueueErrorCount, 0);
-      ASSERT_EQ(stats.NotifyErrorCount, 0);
+      ASSERT_EQ(stats.SetConfigCount, 0U);
+      ASSERT_EQ(stats.ReconfigCount, 0U);
+      ASSERT_EQ(stats.PruneOpCount, 0U);
+      ASSERT_EQ(stats.PrunedThreadCount, 0U);
+      ASSERT_EQ(stats.MinPrunedByOp, 0U);
+      ASSERT_EQ(stats.MaxPrunedByOp, 0U);
+      ASSERT_EQ(stats.PoolHitCount, 0U);
+      ASSERT_EQ(stats.PoolMissCount, 1U);
+      ASSERT_EQ(stats.CreateWorkerCount, 1U);
+      ASSERT_EQ(stats.PutBackCount, 0U);
+      ASSERT_EQ(stats.FinishWorkCount, 0U);
+      ASSERT_EQ(stats.QueueErrorCount, 0U);
+      ASSERT_EQ(stats.NotifyErrorCount, 0U);
     }
 
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 0);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 1);
-    ASSERT_EQ(stats.PutBackCount, 1);
-    ASSERT_EQ(stats.FinishWorkCount, 0);
+    ASSERT_EQ(stats.PoolHitCount, 0U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 1U);
+    ASSERT_EQ(stats.PutBackCount, 1U);
+    ASSERT_EQ(stats.FinishWorkCount, 0U);
     pool.RequestShutdown();
     ASSERT_TRUE(pool.IsStarted());
     pool.WaitForShutdown();
@@ -372,11 +372,11 @@ namespace {
       ASSERT_TRUE(w2.IsLaunchable());
       ASSERT_TRUE(w2.IsNew());
       stats = pool.GetStats();
-      ASSERT_EQ(stats.PoolHitCount, 0);
-      ASSERT_EQ(stats.PoolMissCount, 1);
-      ASSERT_EQ(stats.CreateWorkerCount, 1);
-      ASSERT_EQ(stats.PutBackCount, 0);
-      ASSERT_EQ(stats.FinishWorkCount, 0);
+      ASSERT_EQ(stats.PoolHitCount, 0U);
+      ASSERT_EQ(stats.PoolMissCount, 1U);
+      ASSERT_EQ(stats.CreateWorkerCount, 1U);
+      ASSERT_EQ(stats.PutBackCount, 0U);
+      ASSERT_EQ(stats.FinishWorkCount, 0U);
       std::thread::id worker_id = w2.Launch();
       ASSERT_NE(worker_id, std::thread::id());
       ASSERT_FALSE(w2.IsLaunchable());
@@ -388,13 +388,13 @@ namespace {
       sleep(1);
     }
 
-    ASSERT_TRUE(counter.load() == 1);
+    ASSERT_TRUE(counter.load() == 1U);
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 0);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 1);
-    ASSERT_EQ(stats.PutBackCount, 0);
-    ASSERT_EQ(stats.FinishWorkCount, 1);
+    ASSERT_EQ(stats.PoolHitCount, 0U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 1U);
+    ASSERT_EQ(stats.PutBackCount, 0U);
+    ASSERT_EQ(stats.FinishWorkCount, 1U);
 
     {
       TManagedThreadStdFnPool::TReadyWorker w4 = pool.GetReadyWorker();
@@ -403,20 +403,20 @@ namespace {
       ASSERT_EQ(&w4.GetPool(), &pool);
       ASSERT_EQ(w4.GetWorkFn(), nullptr);
       stats = pool.GetStats();
-      ASSERT_EQ(stats.PoolHitCount, 1);
-      ASSERT_EQ(stats.PoolMissCount, 1);
-      ASSERT_EQ(stats.CreateWorkerCount, 1);
-      ASSERT_EQ(stats.PutBackCount, 0);
-      ASSERT_EQ(stats.FinishWorkCount, 1);
+      ASSERT_EQ(stats.PoolHitCount, 1U);
+      ASSERT_EQ(stats.PoolMissCount, 1U);
+      ASSERT_EQ(stats.CreateWorkerCount, 1U);
+      ASSERT_EQ(stats.PutBackCount, 0U);
+      ASSERT_EQ(stats.FinishWorkCount, 1U);
       w4.GetWorkFn() = work_fn;
     }
 
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 1);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 1);
-    ASSERT_EQ(stats.PutBackCount, 1);
-    ASSERT_EQ(stats.FinishWorkCount, 1);
+    ASSERT_EQ(stats.PoolHitCount, 1U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 1U);
+    ASSERT_EQ(stats.PutBackCount, 1U);
+    ASSERT_EQ(stats.FinishWorkCount, 1U);
 
     {
       TManagedThreadStdFnPool::TReadyWorker w5 = pool.GetReadyWorker();
@@ -425,11 +425,11 @@ namespace {
       ASSERT_EQ(&w5.GetPool(), &pool);
       ASSERT_EQ(w5.GetWorkFn(), nullptr);
       stats = pool.GetStats();
-      ASSERT_EQ(stats.PoolHitCount, 2);
-      ASSERT_EQ(stats.PoolMissCount, 1);
-      ASSERT_EQ(stats.CreateWorkerCount, 1);
-      ASSERT_EQ(stats.PutBackCount, 1);
-      ASSERT_EQ(stats.FinishWorkCount, 1);
+      ASSERT_EQ(stats.PoolHitCount, 2U);
+      ASSERT_EQ(stats.PoolMissCount, 1U);
+      ASSERT_EQ(stats.CreateWorkerCount, 1U);
+      ASSERT_EQ(stats.PutBackCount, 1U);
+      ASSERT_EQ(stats.FinishWorkCount, 1U);
       w5.GetWorkFn() = work_fn;
       std::thread::id worker_id = w5.Launch();
       ASSERT_NE(worker_id, std::thread::id());
@@ -442,13 +442,13 @@ namespace {
       sleep(1);
     }
 
-    ASSERT_TRUE(counter.load() == 2);
+    ASSERT_TRUE(counter.load() == 2U);
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 2);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 1);
-    ASSERT_EQ(stats.PutBackCount, 1);
-    ASSERT_EQ(stats.FinishWorkCount, 2);
+    ASSERT_EQ(stats.PoolHitCount, 2U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 1U);
+    ASSERT_EQ(stats.PutBackCount, 1U);
+    ASSERT_EQ(stats.FinishWorkCount, 2U);
     pool.RequestShutdown();
     ASSERT_TRUE(pool.IsStarted());
     pool.WaitForShutdown();
@@ -501,12 +501,12 @@ namespace {
     pool.WaitForShutdown();
 
     TManagedThreadPoolBase::TStats stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 1);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 1);
-    ASSERT_EQ(stats.QueueErrorCount, 0);
-    ASSERT_EQ(stats.NotifyErrorCount, 0);
-    ASSERT_EQ(stats.LiveWorkerCount, 0);
+    ASSERT_EQ(stats.PoolHitCount, 1U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 1U);
+    ASSERT_EQ(stats.QueueErrorCount, 0U);
+    ASSERT_EQ(stats.NotifyErrorCount, 0U);
+    ASSERT_EQ(stats.LiveWorkerCount, 0U);
     ASSERT_FALSE(pool.GetErrorPendingFd().IsReadable());
   }
 
@@ -536,7 +536,7 @@ namespace {
     std::list<TManagedThreadPoolBase::TWorkerError> error_list =
         pool.GetAllPendingErrors();
     ASSERT_FALSE(error_fd.IsReadable());
-    ASSERT_EQ(error_list.size(), 1);
+    ASSERT_EQ(error_list.size(), 1U);
     ASSERT_EQ(error_list.front().ErrorType,
         TManagedThreadPoolBase::TWorkerErrorType::ThrewStdException);
     ASSERT_EQ(error_list.front().StdExceptionWhat, TSimpleWorkFn::ErrorBlurb);
@@ -550,8 +550,8 @@ namespace {
       sleep(1);
     }
 
-    ASSERT_EQ(pool.GetStats().FinishWorkCount, 1);
-    ASSERT_EQ(counter.load(), 1);
+    ASSERT_EQ(pool.GetStats().FinishWorkCount, 1U);
+    ASSERT_EQ(counter.load(), 1U);
 
     w2.Launch();
     std::thread::id w3_id = w3.Launch();
@@ -564,27 +564,27 @@ namespace {
       sleep(1);
     }
 
-    ASSERT_EQ(pool.GetStats().FinishWorkCount, 3);
-    ASSERT_EQ(counter.load(), 3);
+    ASSERT_EQ(pool.GetStats().FinishWorkCount, 3U);
+    ASSERT_EQ(counter.load(), 3U);
     ASSERT_TRUE(error_fd.IsReadable());
     error_list = pool.GetAllPendingErrors();
     ASSERT_FALSE(error_fd.IsReadable());
-    ASSERT_EQ(error_list.size(), 1);
+    ASSERT_EQ(error_list.size(), 1U);
     ASSERT_EQ(error_list.front().ErrorType,
         TManagedThreadPoolBase::TWorkerErrorType::ThrewUnknownException);
     ASSERT_EQ(error_list.front().StdExceptionWhat, "");
     ASSERT_EQ(error_list.front().ThreadId, w3_id);
     error_list = pool.GetAllPendingErrors();
     ASSERT_TRUE(error_list.empty());
-    ASSERT_EQ(counter.load(), 3);
+    ASSERT_EQ(counter.load(), 3U);
 
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 2);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 3);
-    ASSERT_EQ(stats.QueueErrorCount, 2);
-    ASSERT_EQ(stats.NotifyErrorCount, 2);
-    ASSERT_EQ(stats.LiveWorkerCount, 3);
+    ASSERT_EQ(stats.PoolHitCount, 2U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 3U);
+    ASSERT_EQ(stats.QueueErrorCount, 2U);
+    ASSERT_EQ(stats.NotifyErrorCount, 2U);
+    ASSERT_EQ(stats.LiveWorkerCount, 3U);
 
     work_fn.SetThrowAction(TSimpleWorkFn::TThrowAction::ThrowNothing);
     w1 = pool.GetReadyWorker();
@@ -603,7 +603,7 @@ namespace {
       sleep(1);
     }
 
-    ASSERT_EQ(counter.load(), 6);
+    ASSERT_EQ(counter.load(), 6U);
     ASSERT_FALSE(error_fd.IsReadable());
     error_list = pool.GetAllPendingErrors();
     ASSERT_TRUE(error_list.empty());
@@ -612,12 +612,12 @@ namespace {
     pool.WaitForShutdown();
 
     stats = pool.GetStats();
-    ASSERT_EQ(stats.PoolHitCount, 5);
-    ASSERT_EQ(stats.PoolMissCount, 1);
-    ASSERT_EQ(stats.CreateWorkerCount, 3);
-    ASSERT_EQ(stats.QueueErrorCount, 2);
-    ASSERT_EQ(stats.NotifyErrorCount, 2);
-    ASSERT_EQ(stats.LiveWorkerCount, 0);
+    ASSERT_EQ(stats.PoolHitCount, 5U);
+    ASSERT_EQ(stats.PoolMissCount, 1U);
+    ASSERT_EQ(stats.CreateWorkerCount, 3U);
+    ASSERT_EQ(stats.QueueErrorCount, 2U);
+    ASSERT_EQ(stats.NotifyErrorCount, 2U);
+    ASSERT_EQ(stats.LiveWorkerCount, 0U);
   }
 
   TEST_F(TManagedThreadPoolTest, StressTest1) {
@@ -656,8 +656,8 @@ namespace {
     TManagedThreadPoolBase::TStats stats = pool.GetStats();
     ASSERT_EQ(stats.IdleWorkerCount, stats.LiveWorkerCount);
     ASSERT_EQ(stats.FinishWorkCount, counter.load());
-    ASSERT_EQ(stats.QueueErrorCount, 0);
-    ASSERT_EQ(stats.NotifyErrorCount, 0);
+    ASSERT_EQ(stats.QueueErrorCount, 0U);
+    ASSERT_EQ(stats.NotifyErrorCount, 0U);
     ASSERT_FALSE(pool.GetErrorPendingFd().IsReadable());
     std::cout << "final count: " << counter.load() << std::endl;
     PrintStats(stats);
@@ -704,8 +704,8 @@ namespace {
     TManagedThreadPoolBase::TStats stats = pool.GetStats();
     ASSERT_EQ(stats.IdleWorkerCount, stats.LiveWorkerCount);
     ASSERT_EQ(stats.FinishWorkCount, counter.load());
-    ASSERT_EQ(stats.QueueErrorCount, 0);
-    ASSERT_EQ(stats.NotifyErrorCount, 0);
+    ASSERT_EQ(stats.QueueErrorCount, 0U);
+    ASSERT_EQ(stats.NotifyErrorCount, 0U);
     ASSERT_FALSE(pool.GetErrorPendingFd().IsReadable());
     ASSERT_EQ(counter.load(), count_per_worker * initial_thread_count);
     PrintStats(stats);
@@ -744,8 +744,8 @@ namespace {
     stats = pool.GetStats();
     ASSERT_EQ(stats.IdleWorkerCount, stats.LiveWorkerCount);
     ASSERT_EQ(stats.FinishWorkCount, counter.load());
-    ASSERT_EQ(stats.QueueErrorCount, 0);
-    ASSERT_EQ(stats.NotifyErrorCount, 0);
+    ASSERT_EQ(stats.QueueErrorCount, 0U);
+    ASSERT_EQ(stats.NotifyErrorCount, 0U);
     ASSERT_FALSE(pool.GetErrorPendingFd().IsReadable());
     ASSERT_EQ(counter.load(), count_per_worker * initial_thread_count);
     PrintStats(stats);

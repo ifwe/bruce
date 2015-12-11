@@ -63,35 +63,35 @@ namespace {
     TSegmentedList<int> slist;
 
     ASSERT_TRUE(slist.Empty());
-    ASSERT_EQ(slist.Size(), 0);
-    ASSERT_EQ(slist.SegmentCount(), 1);
+    ASSERT_EQ(slist.Size(), 0U);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
     ASSERT_EQ(slist.CopyOutSegments(), EmptyResult());
     ASSERT_TRUE(slist.SanityCheck());
     
     slist.AddNew(1);
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_FALSE(slist.Empty());
-    ASSERT_EQ(slist.Size(), 1);
-    ASSERT_EQ(slist.SegmentCount(), 1);
+    ASSERT_EQ(slist.Size(), 1U);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
     ASSERT_EQ(slist.CopyOutSegments(), SingleItemResult(1));
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(1));
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(slist.CopyOutSegments(), EmptyResult());
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedNoItem());
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(slist.CopyOutSegments(), EmptyResult());
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.Size(), 0U);
 
     // only 1 segment, so should not change anything
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(slist.CopyOutSegments(), EmptyResult());
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     slist.AddNew(2);
     ASSERT_TRUE(slist.SanityCheck());
@@ -101,22 +101,22 @@ namespace {
     expected.push_back(std::list<int>({3, 2}));
     // should be ((3, 2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     // only 1 segment, so should not change anything
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(3));
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((2))
     ASSERT_EQ(slist.CopyOutSegments(), SingleItemResult(2));
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 1U);
 
     slist.AddNew(4);
     ASSERT_TRUE(slist.SanityCheck());
@@ -124,16 +124,16 @@ namespace {
     expected.push_back(std::list<int>({4, 2}));
     // should be ((4, 2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     slist.AddNewSegment();
     ASSERT_TRUE(slist.SanityCheck());
     expected.push_front(std::list<int>());
     // should be ((), (4, 2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 2);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 2U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     slist.AddNew(5);
     ASSERT_TRUE(slist.SanityCheck());
@@ -141,8 +141,8 @@ namespace {
     expected.push_front(std::list<int>({5}));
     // should be ((5), (4, 2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 2);
-    ASSERT_EQ(slist.Size(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 2U);
+    ASSERT_EQ(slist.Size(), 3U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(5));
     ASSERT_TRUE(slist.SanityCheck());
@@ -150,8 +150,8 @@ namespace {
     expected.push_front(std::list<int>());
     // should be ((), (4, 2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 2);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 2U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(4));
     ASSERT_TRUE(slist.SanityCheck());
@@ -159,70 +159,70 @@ namespace {
     // should be ((), (2))
     expected.push_back(std::list<int>({2}));
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 2);
-    ASSERT_EQ(slist.Size(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 2U);
+    ASSERT_EQ(slist.Size(), 1U);
 
     slist.AddNewSegment();
     ASSERT_TRUE(slist.SanityCheck());
     expected.push_front(std::list<int>());
     // should be ((), (), (2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 1U);
 
     slist.AddNew(6);
     ASSERT_TRUE(slist.SanityCheck());
     expected.front().push_front(6);
     // should be ((6), (), (2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     slist.AddNew(7);
     ASSERT_TRUE(slist.SanityCheck());
     expected.front().push_front(7);
     // should be ((7, 6), (), (2))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 3U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(7));
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((6), (), (2))
     expected.front().pop_front();
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 2);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 2U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(6));
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((), (), (2))
     expected.front().pop_front();
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 1U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(2));
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((), (), ())
     expected.back().pop_front();
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedNoItem());
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((), (), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     slist.ResetSegments();
     ASSERT_TRUE(slist.SanityCheck());
     // should be (())
     ASSERT_EQ(slist.CopyOutSegments(), EmptyResult());
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     slist.AddNew(8);
     ASSERT_TRUE(slist.SanityCheck());
@@ -270,8 +270,8 @@ namespace {
     expected.push_front(std::list<int>({17, 16}));
     // should be ((17, 16), (), (15, 14, 13), (12, 11), (), (10), (), (9, 8))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 10);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 10U);
 
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
@@ -281,8 +281,8 @@ namespace {
     expected.push_back(std::list<int>({9, 8}));
     // should be ((), (17, 16), (), (15, 14, 13), (12, 11), (), (10), (9, 8))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 10);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 10U);
 
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
@@ -292,16 +292,16 @@ namespace {
     // should be ((), (), (17, 16), (), (15, 14, 13), (12, 11), (), (10, 9, 8))
     expected.push_back(std::list<int>({10, 9, 8}));
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 10);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 10U);
 
     ASSERT_EQ(slist.RemoveOldest(1), RemovedItem(8));
     ASSERT_TRUE(slist.SanityCheck());
     expected.back().pop_back();
     // should be ((), (), (17, 16), (), (15, 14, 13), (12, 11), (), (10, 9))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 9);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 9U);
 
     std::list<int> items = slist.RemoveOldest(3);
     ASSERT_TRUE(slist.SanityCheck());
@@ -309,22 +309,22 @@ namespace {
     expected.back().clear();
     // should be ((), (), (17, 16), (), (15, 14, 13), (12, 11), (), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 7);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 7U);
 
     ASSERT_EQ(slist.RemoveOldest(1), RemovedNoItem());
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((), (), (17, 16), (), (15, 14, 13), (12, 11), (), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 7);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 7U);
 
     ASSERT_EQ(slist.EmptyOldest(), RemovedNoItem());
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((), (), (17, 16), (), (15, 14, 13), (12, 11), (), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 7);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 7U);
 
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
@@ -332,8 +332,8 @@ namespace {
     expected.push_front(std::list<int>());
     // should be ((), (), (), (17, 16), (), (15, 14, 13), (12, 11), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 7);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 7U);
 
     slist.RecycleOldestSegment();
     ASSERT_TRUE(slist.SanityCheck());
@@ -341,8 +341,8 @@ namespace {
     expected.push_front(std::list<int>());
     // should be ((), (), (), (), (17, 16), (), (15, 14, 13), (12, 11))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 7);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 7U);
 
     items = slist.EmptyOldest();
     ASSERT_TRUE(slist.SanityCheck());
@@ -350,16 +350,16 @@ namespace {
     expected.back().clear();
     // should be ((), (), (), (), (17, 16), (), (15, 14, 13), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 5);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 5U);
 
     slist.AddNew(18);
     ASSERT_TRUE(slist.SanityCheck());
     expected.front().push_front(18);
     // should be ((18), (), (), (), (17, 16), (), (15, 14, 13), ())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 8);
-    ASSERT_EQ(slist.Size(), 6);
+    ASSERT_EQ(slist.SegmentCount(), 8U);
+    ASSERT_EQ(slist.Size(), 6U);
 
     slist.ResetSegments();
     ASSERT_TRUE(slist.SanityCheck());
@@ -367,16 +367,16 @@ namespace {
     expected.push_back(std::list<int>({18, 17, 16, 15, 14, 13}));
     // should be ((18, 17, 16, 15, 14, 13))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 6);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 6U);
 
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedItem(18));
     ASSERT_TRUE(slist.SanityCheck());
     // should be ((17, 16, 15, 14, 13))
     expected.front().pop_front();
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 5);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 5U);
 
     items = slist.RemoveOldest(2);
     ASSERT_TRUE(slist.SanityCheck());
@@ -385,8 +385,8 @@ namespace {
     expected.back().pop_back();
     // should be ((17, 16, 15))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 3U);
 
     items = slist.RemoveOldest(3);
     ASSERT_TRUE(slist.SanityCheck());
@@ -395,8 +395,8 @@ namespace {
     expected.push_back(std::list<int>());
     // should be (())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     slist.AddNew(19);
     ASSERT_TRUE(slist.SanityCheck());
@@ -415,17 +415,17 @@ namespace {
     expected.front().push_front(21);
     // should be ((21), (), (20, 19))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 3U);
 
     items = slist.EmptyAll();
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(items, std::list<int>({21, 20, 19}));
     ASSERT_TRUE(slist.Empty());
-    ASSERT_EQ(slist.SegmentCount(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedNoItem());
     ASSERT_TRUE(slist.Empty());
-    ASSERT_EQ(slist.SegmentCount(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
 
     slist.ResetSegments();
     ASSERT_TRUE(slist.SanityCheck());
@@ -433,11 +433,11 @@ namespace {
     expected.push_back(std::list<int>());
     // should be (())
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedNoItem());
-    ASSERT_EQ(slist.SegmentCount(), 1);
-    ASSERT_EQ(slist.Size(), 0);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
+    ASSERT_EQ(slist.Size(), 0U);
 
     slist.AddNew(22);
     ASSERT_TRUE(slist.SanityCheck());
@@ -458,17 +458,17 @@ namespace {
     expected.front().push_front(24);
     // should be ((24), (), (23, 22))
     ASSERT_EQ(slist.CopyOutSegments(), expected);
-    ASSERT_EQ(slist.SegmentCount(), 3);
-    ASSERT_EQ(slist.Size(), 3);
+    ASSERT_EQ(slist.SegmentCount(), 3U);
+    ASSERT_EQ(slist.Size(), 3U);
 
     items = slist.EmptyAllAndResetSegments();
     ASSERT_TRUE(slist.SanityCheck());
     ASSERT_EQ(items, std::list<int>({24, 23, 22}));
     ASSERT_TRUE(slist.Empty());
-    ASSERT_EQ(slist.SegmentCount(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
     ASSERT_EQ(slist.RemoveOneNewest(), RemovedNoItem());
     ASSERT_TRUE(slist.Empty());
-    ASSERT_EQ(slist.SegmentCount(), 1);
+    ASSERT_EQ(slist.SegmentCount(), 1U);
   }
 
 }  // namespace

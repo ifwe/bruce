@@ -117,13 +117,13 @@ namespace {
       std::string topic = msg_list.front()->GetTopic();
 
       if (topic == "t1") {
-        ASSERT_EQ(msg_list.size(), 2);
+        ASSERT_EQ(msg_list.size(), 2U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 1"));
         msg_list.pop_front();
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t1 msg 2"));
         got_t1 = true;
       } else if (topic == "t2") {
-        ASSERT_EQ(msg_list.size(), 1);
+        ASSERT_EQ(msg_list.size(), 1U);
         ASSERT_TRUE(ValueEquals(msg_list.front(), "t2 msg 1"));
         got_t2 = true;
       } else {

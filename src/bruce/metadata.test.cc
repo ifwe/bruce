@@ -123,7 +123,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic1_ok_partitions.size());
-    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 5U);
+    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 5);
     ASSERT_EQ(topic1_ok_partitions[i].GetErrorCode(), 9);
 
     for (i = 0; i < topic1_ok_partitions.size(); ++i) {
@@ -133,7 +133,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic1_ok_partitions.size());
-    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 2U);
+    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 2);
     ASSERT_EQ(topic1_ok_partitions[i].GetErrorCode(), 0);
 
     for (i = 0; i < topic1_ok_partitions.size(); ++i) {
@@ -143,7 +143,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic1_ok_partitions.size());
-    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 5U);
+    ASSERT_EQ(brokers[topic1_ok_partitions[i].GetBrokerIndex()].GetId(), 5);
     ASSERT_EQ(topic1_ok_partitions[i].GetErrorCode(), 0);
 
     const std::vector<TMetadata::TPartition> &topic1_bad_partitions =
@@ -157,7 +157,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic1_bad_partitions.size());
-    ASSERT_EQ(brokers[topic1_bad_partitions[i].GetBrokerIndex()].GetId(), 2U);
+    ASSERT_EQ(brokers[topic1_bad_partitions[i].GetBrokerIndex()].GetId(), 2);
     ASSERT_EQ(topic1_bad_partitions[i].GetErrorCode(), 5);
 
     for (i = 0; i < topic1_bad_partitions.size(); ++i) {
@@ -167,17 +167,17 @@ namespace {
     }
 
     ASSERT_LT(i, topic1_bad_partitions.size());
-    ASSERT_EQ(brokers[topic1_bad_partitions[i].GetBrokerIndex()].GetId(), 7U);
+    ASSERT_EQ(brokers[topic1_bad_partitions[i].GetBrokerIndex()].GetId(), 7);
     ASSERT_EQ(topic1_bad_partitions[i].GetErrorCode(), 6);
 
     const std::vector<TMetadata::TPartition> &topic1_all_partitions =
         topic1.GetAllPartitions();
     ASSERT_EQ(topic1_all_partitions.size(), 5U);
-    ASSERT_EQ(topic1_all_partitions[0].GetId(), 1U);
-    ASSERT_EQ(topic1_all_partitions[1].GetId(), 3U);
-    ASSERT_EQ(topic1_all_partitions[2].GetId(), 4U);
-    ASSERT_EQ(topic1_all_partitions[3].GetId(), 6U);
-    ASSERT_EQ(topic1_all_partitions[4].GetId(), 7U);
+    ASSERT_EQ(topic1_all_partitions[0].GetId(), 1);
+    ASSERT_EQ(topic1_all_partitions[1].GetId(), 3);
+    ASSERT_EQ(topic1_all_partitions[2].GetId(), 4);
+    ASSERT_EQ(topic1_all_partitions[3].GetId(), 6);
+    ASSERT_EQ(topic1_all_partitions[4].GetId(), 7);
 
     int topic2_index = md->FindTopicIndex("topic2");
     ASSERT_GE(topic2_index, 0);
@@ -200,7 +200,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic3_ok_partitions.size());
-    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 3U);
+    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 3);
     ASSERT_EQ(topic3_ok_partitions[i].GetErrorCode(), 0);
 
     for (i = 0; i < topic3_ok_partitions.size(); ++i) {
@@ -210,7 +210,7 @@ namespace {
     }
 
     ASSERT_LT(i, topic3_ok_partitions.size());
-    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 5U);
+    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 5);
     ASSERT_EQ(topic3_ok_partitions[i].GetErrorCode(), 9);
 
     for (i = 0; i < topic3_ok_partitions.size(); ++i) {
@@ -220,15 +220,15 @@ namespace {
     }
 
     ASSERT_LT(i, topic3_ok_partitions.size());
-    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 3U);
+    ASSERT_EQ(brokers[topic3_ok_partitions[i].GetBrokerIndex()].GetId(), 3);
     ASSERT_EQ(topic3_ok_partitions[i].GetErrorCode(), 0);
 
     const std::vector<TMetadata::TPartition> &topic3_all_partitions =
         topic3.GetAllPartitions();
     ASSERT_EQ(topic3_all_partitions.size(), 3U);
-    ASSERT_EQ(topic3_all_partitions[0].GetId(), 3U);
-    ASSERT_EQ(topic3_all_partitions[1].GetId(), 6U);
-    ASSERT_EQ(topic3_all_partitions[2].GetId(), 8U);
+    ASSERT_EQ(topic3_all_partitions[0].GetId(), 3);
+    ASSERT_EQ(topic3_all_partitions[1].GetId(), 6);
+    ASSERT_EQ(topic3_all_partitions[2].GetId(), 8);
 
     int index = FindBrokerIndex(brokers, 3);
     ASSERT_GE(index, 0);
