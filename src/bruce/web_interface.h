@@ -62,11 +62,11 @@ namespace Bruce {
       StopHttpServer();
     }
 
-    void StartHttpServer() {
+    void StartHttpServer(bool loopback_only = false) {
       assert(this);
 
       if (!HttpServerStarted) {
-        DoStartHttpServer();
+        DoStartHttpServer(loopback_only);
         HttpServerStarted = true;
       }
     }
@@ -106,7 +106,7 @@ namespace Bruce {
 
     static const char *ToErrorBlurb(TRequestType request_type);
 
-    void DoStartHttpServer();
+    void DoStartHttpServer(bool loopback_only);
 
     void WriteFrontPage(std::ostream &os);
 

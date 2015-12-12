@@ -50,6 +50,8 @@ namespace Bruce {
 
     in_port_t StatusPort;
 
+    bool StatusLoopbackOnly;
+
     size_t MsgBufferMax;
 
     size_t MaxInputMsgSize;

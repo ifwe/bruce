@@ -126,6 +126,9 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
     ValueArg<decltype(config.StatusPort)> arg_status_port("", "status_port",
         "HTTP Status monitoring port.", false, config.StatusPort, "PORT");
     cmd.add(arg_status_port);
+    SwitchArg arg_status_loopback_only("", "status_loopback_only",
+        "Make web interface available only on loopback interface.", cmd,
+        config.StatusLoopbackOnly);
     ValueArg<decltype(config.MsgBufferMax)> arg_msg_buffer_max("",
         "msg_buffer_max", "Maximum amount of memory in Kb to use for "
         "buffering messages.", true, config.MsgBufferMax, "MAX_KB");
@@ -310,6 +313,7 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
 
     config.ProtocolVersion = arg_protocol_version.getValue();
     config.StatusPort = arg_status_port.getValue();
+    config.StatusLoopbackOnly = arg_status_loopback_only.getValue();
     config.MsgBufferMax = arg_msg_buffer_max.getValue();
     config.MaxInputMsgSize = arg_max_input_msg_size.getValue();
     config.AllowLargeUnixDatagrams = arg_allow_large_unix_datagrams.getValue();
@@ -357,6 +361,7 @@ TConfig::TConfig(int argc, char *argv[])
       LogEcho(false),
       ProtocolVersion(0),
       StatusPort(9090),
+      StatusLoopbackOnly(false),
       MsgBufferMax(256 * 1024),
       MaxInputMsgSize(64 * 1024),
       AllowLargeUnixDatagrams(false),
@@ -408,6 +413,8 @@ void Bruce::LogConfig(const TConfig &config) {
          static_cast<unsigned long>(config.ProtocolVersion));
   syslog(LOG_NOTICE, "Listening on status port %u",
          static_cast<unsigned>(config.StatusPort));
+  syslog(LOG_NOTICE, "Web interface loopback only: %s",
+         config.StatusLoopbackOnly ? "true" : "false");
   syslog(LOG_NOTICE, "Buffered message limit %lu kbytes",
          static_cast<unsigned long>(config.MsgBufferMax));
   syslog(LOG_NOTICE, "Max input message size %lu bytes",

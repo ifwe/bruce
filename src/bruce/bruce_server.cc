@@ -199,8 +199,9 @@ TBruceServer::~TBruceServer() noexcept {
 
 void TBruceServer::BindStatusSocket(bool bind_ephemeral) {
   assert(this);
-  TAddress status_address(TAddress::IPv4Any,
-                          bind_ephemeral ? 0 : Config->StatusPort);
+  TAddress status_address(
+      Config->StatusLoopbackOnly ? TAddress::IPv4Loopback : TAddress::IPv4Any,
+      bind_ephemeral ? 0 : Config->StatusPort);
   TmpStatusSocket = IfLt0(socket(status_address.GetFamily(), SOCK_STREAM, 0));
   int flag = true;
   IfLt0(setsockopt(TmpStatusSocket, SOL_SOCKET, SO_REUSEADDR, &flag,
@@ -289,7 +290,7 @@ int TBruceServer::Run() {
   if (MsgHandlingInitWait()) {
     /* Input thread initialization succeeded.  Start the Mongoose HTTP server,
        which provides Bruce's web interface.  It runs in separate threads. */
-    web_interface.StartHttpServer();
+    web_interface.StartHttpServer(Config->StatusLoopbackOnly);
 
     /* We can close this now, since Mongoose has the port claimed. */
     TmpStatusSocket.Reset();

@@ -350,9 +350,14 @@ void TWebInterface::HandleHttpRequest(mg_connection *conn,
   mg_write(conn, response.data(), response.size());
 }
 
-void TWebInterface::DoStartHttpServer() {
+void TWebInterface::DoStartHttpServer(bool loopback_only) {
   assert(this);
   std::ostringstream oss;
+
+  if (loopback_only) {
+    oss << "127.0.0.1:";
+  }
+
   oss << Port;
   std::string port_str(oss.str());
 
