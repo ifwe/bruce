@@ -68,19 +68,31 @@ static void FillTimeBuf(time_t seconds_since_epoch, char time_buf[]) {
   }
 }
 
+static time_t GetServerStartTime() {
+  /* Since we don't allow clients to reset the counters, the last counter reset
+     time indicates when Bruce started.  This is kind of a hack, but ok for now
+     I guess. */
+  return TCounter::GetResetTime();
+}
+
 void TWebRequestHandler::HandleGetServerInfoRequestPlain(std::ostream &os) {
   assert(this);
   uint64_t now = GetEpochSeconds();
-  char time_buf[TIME_BUF_SIZE];
-  FillTimeBuf(now, time_buf);
+  char now_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(now, now_time_buf);
+  time_t start_time = GetServerStartTime();
+  char start_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(start_time, start_time_buf);
   os << "pid: " << getpid() << std::endl
-      << "now: " << now << " " << time_buf << std::endl
-      << "version: " << bruce_build_id << std::endl;
+      << "version: " << bruce_build_id << std::endl
+      << "since: " << start_time << " " << start_time_buf << std::endl
+      << "now: " << now << " " << now_time_buf << std::endl;
 }
 
 void TWebRequestHandler::HandleGetServerInfoRequestJson(std::ostream &os) {
   assert(this);
   uint64_t now = GetEpochSeconds();
+  time_t start_time = GetServerStartTime();
   std::string indent_str;
   TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
   os << ind0 << "{" << std::endl;
@@ -88,8 +100,9 @@ void TWebRequestHandler::HandleGetServerInfoRequestJson(std::ostream &os) {
   {
     TIndent ind1(ind0);
     os << ind1 << "\"pid\": " << getpid() << "," << std::endl
-        << ind1 << "\"now\": " << now << "," << std::endl
-        << ind1 << "\"version\": \"" << bruce_build_id << "\"" << std::endl;
+        << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
+        << ind1 << "\"since\": " << start_time << "," << std::endl
+        << ind1 << "\"now\": " << now << std::endl;
   }
 
   os << ind0 << "}" << std::endl;
@@ -99,14 +112,14 @@ void TWebRequestHandler::HandleGetCountersRequestPlain(std::ostream &os) {
   assert(this);
   TCounter::Sample();
   time_t sample_time = TCounter::GetSampleTime();
-  time_t reset_time = TCounter::GetResetTime();
-  char sample_time_buf[TIME_BUF_SIZE], reset_time_buf[TIME_BUF_SIZE];
+  time_t start_time = GetServerStartTime();
+  char sample_time_buf[TIME_BUF_SIZE], start_time_buf[TIME_BUF_SIZE];
   FillTimeBuf(sample_time, sample_time_buf);
-  FillTimeBuf(reset_time, reset_time_buf);
-  os << "now=" << sample_time << " " << sample_time_buf << std::endl
-      << "since=" << reset_time << " " << reset_time_buf << std::endl
-      << "pid=" << getpid() << std::endl
-      << "version=" << bruce_build_id << std::endl
+  FillTimeBuf(start_time, start_time_buf);
+  os << "pid: " << getpid() << std::endl
+      << "version: " << bruce_build_id << std::endl
+      << "since: " << start_time << " " << start_time_buf << std::endl
+      << "now: " << sample_time << " " << sample_time_buf << std::endl
       << std::endl;
 
   for (const TCounter *counter = TCounter::GetFirstCounter();
@@ -121,17 +134,17 @@ void TWebRequestHandler::HandleGetCountersRequestJson(std::ostream &os) {
   assert(this);
   TCounter::Sample();
   time_t sample_time = TCounter::GetSampleTime();
-  time_t reset_time = TCounter::GetResetTime();
+  time_t start_time = GetServerStartTime();
   std::string indent_str;
   TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
   os << ind0 << "{" << std::endl;
 
   {
     TIndent ind1(ind0);
-    os << ind1 << "\"now\": " << sample_time << "," << std::endl
-        << ind1 << "\"since\": " << reset_time << "," << std::endl
-        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+    os << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
+        << ind1 << "\"since\": " << start_time << "," << std::endl
+        << ind1 << "\"now\": " << sample_time << "," << std::endl
         << ind1 << "\"counters\": [" << std::endl;
 
     {
@@ -167,14 +180,18 @@ void TWebRequestHandler::HandleGetDiscardsRequestPlain(std::ostream &os,
     const TAnomalyTracker &tracker) {
   assert(this);
   uint64_t now = GetEpochSeconds();
-  char time_buf[TIME_BUF_SIZE];
-  FillTimeBuf(now, time_buf);
+  char now_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(now, now_time_buf);
+  time_t start_time = GetServerStartTime();
+  char start_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(start_time, start_time_buf);
   TAnomalyTracker::TInfo current_unfinished;
   std::shared_ptr<const TAnomalyTracker::TInfo> latest_finished =
       tracker.GetInfo(current_unfinished);
   os << "pid: " << getpid() << std::endl
-      << "now: " << now << " " << time_buf << std::endl
       << "version: " << bruce_build_id << std::endl
+      << "since: " << start_time << " " << start_time_buf << std::endl
+      << "now: " << now << " " << now_time_buf << std::endl
       << "report interval in seconds: " << tracker.GetReportInterval()
       << std::endl << std::endl
       << "current (unfinished) reporting period:" << std::endl;
@@ -190,6 +207,7 @@ void TWebRequestHandler::HandleGetDiscardsRequestJson(std::ostream &os,
     const TAnomalyTracker &tracker) {
   assert(this);
   uint64_t now = GetEpochSeconds();
+  time_t start_time = GetServerStartTime();
   TAnomalyTracker::TInfo current_unfinished;
   std::shared_ptr<const TAnomalyTracker::TInfo> latest_finished =
       tracker.GetInfo(current_unfinished);
@@ -199,9 +217,10 @@ void TWebRequestHandler::HandleGetDiscardsRequestJson(std::ostream &os,
 
   {
     TIndent ind1(ind0);
-    os << ind1 << "\"now\": " << now << "," << std::endl
-        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+    os << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
+        << ind1 << "\"since\": " << start_time << "," << std::endl
+        << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"interval\": " << tracker.GetReportInterval() << ","
         << std::endl
         << ind1 << "\"unfinished_report\": {" << std::endl;
@@ -237,13 +256,17 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestPlain(std::ostream &os,
   uint64_t last_update_time = 0, last_modified_time = 0;
   metadata_timestamp.GetTimes(last_update_time, last_modified_time);
   uint64_t now = GetEpochMilliseconds();
+  time_t start_time = GetServerStartTime();
   char last_update_time_buf[TIME_BUF_SIZE],
-      last_modified_time_buf[TIME_BUF_SIZE], now_time_buf[TIME_BUF_SIZE];
+      last_modified_time_buf[TIME_BUF_SIZE], now_time_buf[TIME_BUF_SIZE],
+      start_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(start_time, start_time_buf);
   FillTimeBuf(last_update_time / 1000, last_update_time_buf);
   FillTimeBuf(last_modified_time / 1000, last_modified_time_buf);
   FillTimeBuf(now / 1000, now_time_buf);
   os << "pid: " << getpid() << std::endl
       << "version: " << bruce_build_id << std::endl
+      << "since: " << start_time << " " << start_time_buf << std::endl
       << "now (milliseconds since epoch): " << now << " " << now_time_buf
       << std::endl
       << "metadata last updated at (milliseconds since epoch): "
@@ -258,6 +281,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestJson(std::ostream &os,
   uint64_t last_update_time = 0, last_modified_time = 0;
   metadata_timestamp.GetTimes(last_update_time, last_modified_time);
   uint64_t now = GetEpochMilliseconds();
+  time_t start_time = GetServerStartTime();
   std::string indent_str;
   TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
   os << ind0 << "{" << std::endl;
@@ -266,6 +290,7 @@ void TWebRequestHandler::HandleMetadataFetchTimeRequestJson(std::ostream &os,
     TIndent ind1(ind0);
     os << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
+        << ind1 << "\"since\": " << start_time << "," << std::endl
         << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"last_updated\": " << last_update_time << "," << std::endl
         << ind1 << "\"last_modified\": " << last_modified_time << ","
@@ -282,11 +307,15 @@ void TWebRequestHandler::HandleQueueStatsRequestPlain(std::ostream &os,
   long new_count = 0;
   tracker.GetStats(topic_stats, new_count);
   uint64_t now = GetEpochSeconds();
-  char time_buf[TIME_BUF_SIZE];
-  FillTimeBuf(now, time_buf);
+  char now_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(now, now_time_buf);
+  time_t start_time = GetServerStartTime();
+  char start_time_buf[TIME_BUF_SIZE];
+  FillTimeBuf(start_time, start_time_buf);
   os << "pid: " << getpid() << std::endl
-      << "now: " << now << " " << time_buf << std::endl
-      << "version: " << bruce_build_id << std::endl << std::endl;
+      << "version: " << bruce_build_id << std::endl
+      << "since: " << start_time << " " << start_time_buf << std::endl
+      << "now: " << now << " " << now_time_buf << std::endl << std::endl;
   long total_batch = 0;
   long total_send_wait = 0;
   long total_ack_wait = 0;
@@ -322,15 +351,17 @@ void TWebRequestHandler::HandleQueueStatsRequestJson(std::ostream &os,
   long new_count = 0;
   tracker.GetStats(topic_stats, new_count);
   uint64_t now = GetEpochSeconds();
+  time_t start_time = GetServerStartTime();
   std::string indent_str;
   TIndent ind0(indent_str, TIndent::StartAt::Zero, 4);
   os << ind0 << "{" << std::endl;
 
   {
     TIndent ind1(ind0);
-    os << ind1 << "\"now\": " << now << "," << std::endl
-        << ind1 << "\"pid\": " << getpid() << "," << std::endl
+    os << ind1 << "\"pid\": " << getpid() << "," << std::endl
         << ind1 << "\"version\": \"" << bruce_build_id << "\"," << std::endl
+        << ind1 << "\"since\": " << start_time << "," << std::endl
+        << ind1 << "\"now\": " << now << "," << std::endl
         << ind1 << "\"sending\": [";
 
     {
