@@ -1,43 +1,41 @@
+/* ----------------------------------------------------------------------------
+   Copyright 2015 Ben Diamant @ PerimeterX <ben@perimeterx.com>
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   ----------------------------------------------------------------------------
+
+   This is an example NodeJS Client that sends messages to Bruce.  It requires
+   the unix-dgram module, as shown here:
+
+       https://github.com/bnoordhuis/node-unix-dgram
+       https://www.npmjs.com/package/unix-dgram
+
+   To install unix-dgram, you need to be running at least version 0.10.38 of
+   Node.js.  One way to install a recent enough version of Node.js is by using
+   nvm (see https://github.com/creationix/nvm) as described here:
+
+       https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-a-centos-7-server
+
+   Then you can install unix-dgram as follows:
+
+       npm install unix-dgram
+
+   and run this client script as follows:
+
+       node send_to_bruce.js
+ */
+
 "use strict";
-
-/*-----------------------------------------------------------------------------
-/* Copyright 2015 Ben Diamant @ PerimeterX <ben@perimeterx.com>
-
-/* Licensed under the Apache License, Version 2.0 (the "License");
-/* you may not use this file except in compliance with the License.
-/* You may obtain a copy of the License at
-
-/*  http://www.apache.org/licenses/LICENSE-2.0
-
-/* Unless required by applicable law or agreed to in writing, software
-/* distributed under the License is distributed on an "AS IS" BASIS,
-/* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-/* See the License for the specific language governing permissions and
-/* limitations under the License.
-/*-----------------------------------------------------------------------------
-
-This is an example NodeJS Client that sends messages to Bruce.  It requires the
-unix-dgram module, as shown here:
-
-    https://github.com/bnoordhuis/node-unix-dgram
-    https://www.npmjs.com/package/unix-dgram
-
-To install unix-dgram, you need to be running at least version 0.10.38 of
-Node.js.  One way to install a recent enough version of Node.js is by using nvm
-(see https://github.com/creationix/nvm) as described here:
-
-    https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-a-centos-7-server
-
-Then you can install unix-dgram as follows:
-
-    npm install unix-dgram
-
-and run this client script as follows:
-
-    node send_to_bruce.js
-
-*/
-
 
 var unix = require('unix-dgram');
 
@@ -46,7 +44,7 @@ function GetEpochMilliseconds() {
 }
 
 /* Return the low 32 bits of 'n'.  This is a workaround for Javascript's
- limited support for large integers. */
+   limited support for large integers. */
 function Low32Bits(n) {
     var result = n & 0x7fffffff;
 
@@ -58,8 +56,8 @@ function Low32Bits(n) {
 }
 
 /* Return a two-item array.  The second item is the low 32 bits of 'n', and the
- first item is the high bits.  This is a workaround for Javascript's limited
- support for large integers. */
+   first item is the high bits.  This is a workaround for Javascript's limited
+   support for large integers. */
 function BreakInt(n) {
     var low_32_bits = Low32Bits(n);
     var hi_bits = (n - low_32_bits) / (256 * 256 * 256 * 256);
@@ -110,16 +108,16 @@ function BruceMsgCreator() {
 }
 
 BruceMsgCreator.getMaxTopicSize = function () {
-    // This is the maximum topic size allowed by Kafka.
+    /* This is the maximum topic size allowed by Kafka. */
     return 0x7fff;
 }
 
 BruceMsgCreator.getMaxMsgSize = function () {
     /* This is an extremely loose upper bound, based on the maximum value that
-     can be stored in a 32-bit signed integer field.  The actual maximum is a
-     much smaller value: the maximum UNIX domain datagram size supported by
-     the operating system, which has been observed to be 212959 bytes on a
-     CentOS 7 x86_64 system. */
+       can be stored in a 32-bit signed integer field.  The actual maximum is a
+       much smaller value: the maximum UNIX domain datagram size supported by
+       the operating system, which has been observed to be 212959 bytes on a
+       CentOS 7 x86_64 system. */
     return 0x7fffffff;
 }
 
@@ -215,11 +213,11 @@ var msg_key = '';
 var msg_value = 'hello world';
 var partition_key = 12345;
 
-//Create AnyPartition message
+/* Create AnyPartition message */
 var anyPartitionMessage = Bruce.createAnyPartitionMsg(topic, Date.now(),
         msg_key, msg_value);
 
-//Create PartitionKey message
+/* Create PartitionKey message */
 var partitionKeyMessage = Bruce.createPartitionKeyMsg(partition_key, topic,
         Date.now(), msg_key, msg_value);
 
