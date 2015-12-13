@@ -32,7 +32,7 @@ namespace Bruce {
 
     /* Buffer of items waiting to be sent, where T gives the type of items in
        the buffer.  T must be a POD type, and is typically expected to be a
-       built-in integer type such as char. */
+       built-in integer type such as char.  Data is consumed from the left. */
     template <typename T>
     class TSendBuf final {
       public:
