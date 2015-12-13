@@ -247,7 +247,7 @@ separate options: a metadata protocol version and a producer protocol version,
 since Kafka versions these parts of the protocol separately.  Some minor
 refactoring needs to be done to make Bruce behave in this manner.
 * `--status_loopback_only`: This specifies that Bruce's web interface should
-only be available on the loopback interface
+only be available on the loopback interface.
 * `--status_port PORT`: This specifies the port Bruce uses for its web
 interface.  The default value is 9090.
 * `--max_input_msg_size N`: This specifies the maximum input message size in
