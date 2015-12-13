@@ -125,11 +125,9 @@ namespace Bruce {
         assert(this);
         assert(DataOffset <= Buf.size());
         assert(ItemCount <= (Buf.size() - DataOffset));
-        size_t added_by_move = DataOffset;
-        MoveDataToFront();
 
-        if (added_by_move < min_to_add) {
-          Buf.resize(Buf.size() + min_to_add - added_by_move);
+        if (min_to_add) {
+          DoAddSpace(min_to_add);
         }
       }
 
@@ -143,7 +141,7 @@ namespace Bruce {
         size_t actual = SpaceSize();
 
         if (actual < min_size) {
-          AddSpace(min_size - actual);
+          DoAddSpace(min_size - actual);
         }
       }
 
@@ -158,7 +156,7 @@ namespace Bruce {
         size_t actual = Buf.size() - DataOffset;
 
         if (actual < min_size) {
-          AddSpace(min_size - actual);
+          DoAddSpace(min_size - actual);
         }
       }
 
@@ -194,6 +192,19 @@ namespace Bruce {
       }
 
       private:
+      void DoAddSpace(size_t min_to_add) {
+        assert(this);
+        assert(min_to_add);
+        assert(DataOffset <= Buf.size());
+        assert(ItemCount <= (Buf.size() - DataOffset));
+        size_t added_by_move = DataOffset;
+        MoveDataToFront();
+
+        if (added_by_move < min_to_add) {
+          Buf.resize(Buf.size() + min_to_add - added_by_move);
+        }
+      }
+
       /* Storage for buffer.  Items are added to the right and consumed from
          the left.  Items may be moved to left end of buffer to make space for
          more to be added. */
