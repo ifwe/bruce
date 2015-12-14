@@ -32,7 +32,7 @@ information, it is recommended to query Bruce's discard reporting interface at
 intervals somewhat shorter that Bruce's discard reporting interval.
 
 It is also useful to look in
-[src/bruce/scripts/check_bruce_counters.py](../src/bruce/scripts/check_bruce_counters.py)
+[status_monitoring/check_bruce_counters.py](../status_monitoring/check_bruce_counters.py)
 to see which counters the script monitors and how it responds to incremented
 values.
 

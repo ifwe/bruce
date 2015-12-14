@@ -67,8 +67,8 @@ mkdir -p %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/bruce_client_socket.h %{buildroot}/%{_includedir}/bruce/client
 cp src/bruce/client/status_codes.h %{buildroot}/%{_includedir}/bruce/client
-cp src/bruce/scripts/check_bruce_counters.py %{buildroot}/%{_bindir}
-cp src/bruce/scripts/check_bruce_discards.py %{buildroot}/%{_bindir}
+cp status_monitoring/check_bruce_counters.py %{buildroot}/%{_bindir}
+cp status_monitoring/check_bruce_discards.py %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig
 cp config/bruce.sysconfig %{buildroot}/%{_sysconfdir}/sysconfig/bruce
 mkdir -p %{buildroot}/%{_sysconfdir}/bruce
