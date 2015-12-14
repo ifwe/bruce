@@ -408,8 +408,8 @@ bool TConnector::TrySendProduceRequest() {
   assert(this);
 
   try {
-    SendBuf.MarkConsumed(IfLt0(send(Sock, SendBuf.Data(), SendBuf.DataSize(),
-        MSG_NOSIGNAL)));
+    SendBuf.MarkDataConsumed(IfLt0(
+        send(Sock, SendBuf.Data(), SendBuf.DataSize(), MSG_NOSIGNAL)));
   } catch (const std::system_error &x) {
     if (LostTcpConnection(x)) {
       syslog(LOG_ERR, "Connector thread %d (index %lu broker %ld) starting "
@@ -437,7 +437,7 @@ bool TConnector::HandleSockWriteReady() {
   /* See whether we are starting a new produce request, or continuing a
      partially sent one. */
   if (!SendInProgress()) {
-    std::vector<uint8_t> buf(SendBuf.GetBuf());
+    std::vector<uint8_t> buf(SendBuf.TakeStorage());
     CurrentRequest = RequestFactory.BuildRequest(buf);
 
     if (CurrentRequest.IsUnknown()) {
@@ -447,8 +447,8 @@ bool TConnector::HandleSockWriteReady() {
       return true;
     }
 
-    SendBuf.PutBuf(std::move(buf));
-    assert(!SendBuf.IsEmpty());
+    SendBuf = std::move(buf);
+    assert(!SendBuf.DataIsEmpty());
   }
 
   if (!TrySendProduceRequest()) {

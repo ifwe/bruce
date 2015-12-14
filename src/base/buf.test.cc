@@ -1,4 +1,4 @@
-/* <bruce/util/receive_buf.test.cc>
+/* <base/buf.test.cc>
 
    ----------------------------------------------------------------------------
    Copyright 2015 Dave Peterson <dave@dspeterson.com>
@@ -16,28 +16,28 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Unit test for <bruce/util/receive_buf.h>.
+   Unit test for <base/buf.h>.
  */
 
-#include <bruce/util/receive_buf.h>
+#include <base/buf.h>
 
 #include <cstring>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-using namespace Bruce;
-using namespace Bruce::Util;
+using namespace Base;
 
 namespace {
 
-  /* The fixture for testing class TReceiveBuf. */
-  class TReceiveBufTest : public ::testing::Test {
+  /* The fixture for testing class TBuf. */
+  class TBufTest : public ::testing::Test {
     protected:
-    TReceiveBufTest() {
+    TBufTest() {
     }
 
-    virtual ~TReceiveBufTest() {
+    virtual ~TBufTest() {
     }
 
     virtual void SetUp() {
@@ -45,10 +45,177 @@ namespace {
 
     virtual void TearDown() {
     }
-  };  // TReceiveBufTest
+  };  // TBufTest
 
-  TEST_F(TReceiveBufTest, Test1) {
-    TReceiveBuf<char> buf;
+  TEST_F(TBufTest, Test1) {
+    std::vector<char> items;
+    items.push_back('a');
+    items.push_back('b');
+    items.push_back('c');
+    items.push_back('d');
+    char *storage = &items[0];
+    TBuf<char> buf_1(items);
+    ASSERT_EQ(items.size(), 4U);
+    ASSERT_EQ(buf_1.DataSize(), items.size());
+    ASSERT_EQ(buf_1.SpaceSize(), 0U);
+    ASSERT_EQ(std::memcmp(buf_1.Data(), &items[0], items.size()), 0);
+
+    TBuf<char> buf_2(std::move(items));
+    ASSERT_TRUE(items.empty());
+    ASSERT_EQ(buf_2.DataSize(), 4U);
+    ASSERT_EQ(buf_2.SpaceSize(), 0U);
+    ASSERT_TRUE(buf_2.Data() == storage);
+    buf_2.AddSpace(2);
+    storage = buf_2.Data();
+    ASSERT_EQ(buf_2.DataSize(), 4U);
+    ASSERT_EQ(buf_2.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_2.Data(), "abcd", 4), 0);
+    buf_2.MarkDataConsumed(1);
+    ASSERT_EQ(buf_2.DataSize(), 3U);
+    ASSERT_EQ(buf_2.SpaceSize(), 2U);
+
+    TBuf<char> buf_3(std::move(buf_2));
+    ASSERT_TRUE(buf_3.Data() == (storage + 1));
+    ASSERT_EQ(buf_3.DataSize(), 3U);
+    ASSERT_EQ(buf_3.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_3.Data(), "bcd", 3), 0);
+    ASSERT_EQ(buf_2.DataSize(), 0U);
+    ASSERT_EQ(buf_2.SpaceSize(), 0U);
+
+    buf_2 = std::move(buf_3);
+    ASSERT_TRUE(buf_2.Data() == (storage + 1));
+    ASSERT_EQ(buf_2.DataSize(), 3U);
+    ASSERT_EQ(buf_2.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_2.Data(), "bcd", 3), 0);
+    ASSERT_EQ(buf_3.DataSize(), 0U);
+    ASSERT_EQ(buf_3.SpaceSize(), 0U);
+
+    buf_3.Swap(buf_2);
+    ASSERT_TRUE(buf_3.Data() == (storage + 1));
+    ASSERT_EQ(buf_3.DataSize(), 3U);
+    ASSERT_EQ(buf_3.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_3.Data(), "bcd", 3), 0);
+    ASSERT_EQ(buf_2.DataSize(), 0U);
+    ASSERT_EQ(buf_2.SpaceSize(), 0U);
+
+    TBuf<char> buf_4(buf_3);
+    ASSERT_EQ(buf_4.DataSize(), 3U);
+    ASSERT_EQ(buf_4.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_4.Data(), "bcd", 3), 0);
+    ASSERT_EQ(buf_3.DataSize(), 3U);
+    ASSERT_EQ(buf_3.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_3.Data(), "bcd", 3), 0);
+
+    buf_3.Clear();
+    ASSERT_TRUE(buf_3.Space() == storage);
+    ASSERT_EQ(buf_3.DataSize(), 0U);
+    ASSERT_EQ(buf_3.SpaceSize(), 6U);
+
+    buf_3 = buf_4;
+    ASSERT_EQ(buf_3.DataSize(), 3U);
+    ASSERT_EQ(buf_3.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_3.Data(), "bcd", 3), 0);
+    ASSERT_EQ(buf_4.DataSize(), 3U);
+    ASSERT_EQ(buf_4.SpaceSize(), 2U);
+    ASSERT_EQ(std::memcmp(buf_4.Data(), "bcd", 3), 0);
+
+    buf_3.Clear();
+    ASSERT_EQ(buf_3.SpaceSize(), 6);
+    storage = buf_3.Space();
+    items = buf_3.TakeStorage();
+    ASSERT_EQ(buf_3.DataSize(), 0U);
+    ASSERT_EQ(buf_3.SpaceSize(), 0U);
+    ASSERT_EQ(items.size(), 6U);
+    ASSERT_TRUE(&items[0] == storage);
+
+    const char *data = "efghij";
+    std::memcpy(&items[0], data, std::strlen(data));
+    buf_3 = std::move(items);
+    ASSERT_TRUE(items.empty());
+    ASSERT_EQ(buf_3.DataSize(), 6U);
+    ASSERT_EQ(buf_3.SpaceSize(), 0U);
+    ASSERT_TRUE(buf_3.Data() == storage);
+    ASSERT_EQ(std::memcmp(buf_3.Data(), data, std::strlen(data)), 0);
+  }
+
+  TEST_F(TBufTest, Test2) {
+    TBuf<int> buf;
+    ASSERT_EQ(buf.SpaceSize(), 0U);
+    ASSERT_TRUE(buf.SpaceIsEmpty());
+    ASSERT_EQ(buf.DataSize(), 0U);
+    ASSERT_TRUE(buf.DataIsEmpty());
+
+    buf.AddSpace(10);
+    ASSERT_EQ(buf.SpaceSize(), 10U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+    ASSERT_EQ(buf.DataSize(), 0U);
+    ASSERT_TRUE(buf.DataIsEmpty());
+    buf.EnsureSpace(9);
+    ASSERT_EQ(buf.SpaceSize(), 10U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+    buf.EnsureSpace(11);
+    ASSERT_EQ(buf.SpaceSize(), 11U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+    buf.EnsureDataPlusSpace(12);
+    ASSERT_EQ(buf.SpaceSize(), 12U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+
+    int *storage = buf.Space();
+    std::vector<int> v(5);
+    v[0] = 5;
+    v[1] = 10;
+    v[2] = 15;
+    v[3] = 20;
+    v[4] = 25;
+    std::memcpy(storage, &v[0], v.size() * sizeof(decltype(v)::value_type));
+    buf.MarkSpaceConsumed(v.size());
+    ASSERT_EQ(buf.SpaceSize(), 7U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+    ASSERT_EQ(buf.DataSize(), 5U);
+    ASSERT_FALSE(buf.DataIsEmpty());
+    ASSERT_TRUE(buf.Data() == storage);
+    ASSERT_TRUE(buf.Space() == (storage + 5U));
+    ASSERT_EQ(std::memcmp(buf.Data(), &v[0],
+        v.size() * sizeof(decltype(v)::value_type)), 0);
+
+    buf.MarkDataConsumed(3);
+    v.resize(2);
+    v[0] = 20;
+    v[1] = 25;
+    ASSERT_EQ(buf.SpaceSize(), 7U);
+    ASSERT_FALSE(buf.SpaceIsEmpty());
+    ASSERT_EQ(buf.DataSize(), 2U);
+    ASSERT_FALSE(buf.DataIsEmpty());
+    ASSERT_TRUE(buf.Data() == (storage + 3U));
+    ASSERT_TRUE(buf.Space() == (storage + 5U));
+    ASSERT_EQ(std::memcmp(buf.Data(), &v[0], v.size()), 0);
+    buf.EnsureSpace(7);
+    ASSERT_EQ(buf.SpaceSize(), 7U);
+    ASSERT_EQ(buf.DataSize(), 2U);
+    ASSERT_TRUE(buf.Data() == (storage + 3U));
+    ASSERT_TRUE(buf.Space() == (storage + 5U));
+    buf.EnsureDataPlusSpace(9);
+    ASSERT_EQ(buf.SpaceSize(), 7U);
+    ASSERT_EQ(buf.DataSize(), 2U);
+    ASSERT_TRUE(buf.Data() == (storage + 3U));
+    ASSERT_TRUE(buf.Space() == (storage + 5U));
+    buf.AddSpace(0);
+    ASSERT_EQ(buf.SpaceSize(), 7U);
+    ASSERT_EQ(buf.DataSize(), 2U);
+    ASSERT_TRUE(buf.Data() == (storage + 3U));
+    ASSERT_TRUE(buf.Space() == (storage + 5U));
+
+    buf.EnsureSpace(8);
+    ASSERT_EQ(buf.SpaceSize(), 10U);
+    ASSERT_EQ(buf.DataSize(), 2U);
+    ASSERT_TRUE(buf.Data() == storage);
+    ASSERT_TRUE(buf.Space() == (storage + 2U));
+    ASSERT_EQ(std::memcmp(buf.Data(), &v[0],
+        v.size() * sizeof(decltype(v)::value_type)), 0);
+  }
+
+  TEST_F(TBufTest, Test3) {
+    TBuf<char> buf;
     ASSERT_EQ(buf.SpaceSize(), 0U);
     ASSERT_TRUE(buf.SpaceIsEmpty());
     ASSERT_EQ(buf.DataSize(), 0U);

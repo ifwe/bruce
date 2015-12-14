@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 
+#include <base/buf.h>
 #include <base/event_semaphore.h>
 #include <base/fd.h>
 #include <base/no_copy_semantics.h>
@@ -46,8 +47,6 @@
 #include <bruce/msg_dispatch/dispatcher_shared_state.h>
 #include <bruce/msg_dispatch/produce_request_factory.h>
 #include <bruce/util/poll_array.h>
-#include <bruce/util/receive_buf.h>
-#include <bruce/util/send_buf.h>
 #include <thread/fd_managed_thread.h>
 
 namespace Bruce {
@@ -125,7 +124,7 @@ namespace Bruce {
 
       bool SendInProgress() const {
         assert(this);
-        return !SendBuf.IsEmpty();
+        return !SendBuf.DataIsEmpty();
       }
 
       bool DoConnect();
@@ -236,7 +235,7 @@ namespace Bruce {
       /* Produce requests are serialized into this buffer immediately before
          being written to the socket.  Buffer never contains more than one
          request at a time. */
-      Util::TSendBuf<uint8_t> SendBuf;
+      Base::TBuf<uint8_t> SendBuf;
 
       /* A true value indicates that a pause is in progress and this thread is
          gracefully shutting down.  A connector thread triggers a pause when it
@@ -292,7 +291,7 @@ namespace Bruce {
          eficiency, we attempt to do large reads.  Therefore at any given
          instant, the buffer may contain data belonging to multiple produce
          responses. */
-      Util::TReceiveBuf<uint8_t> ReceiveBuf;
+      Base::TBuf<uint8_t> ReceiveBuf;
 
       /* FIFO queue of sent produce requests waiting for responses. */
       std::list<TProduceRequest> AckWaitQueue;
