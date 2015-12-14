@@ -120,7 +120,7 @@ namespace {
     ASSERT_EQ(std::memcmp(buf_4.Data(), "bcd", 3), 0);
 
     buf_3.Clear();
-    ASSERT_EQ(buf_3.SpaceSize(), 6);
+    ASSERT_EQ(buf_3.SpaceSize(), 6U);
     storage = buf_3.Space();
     items = buf_3.TakeStorage();
     ASSERT_EQ(buf_3.DataSize(), 0U);
