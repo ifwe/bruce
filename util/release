@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+
+# -----------------------------------------------------------------------------
+# Copyright 2015 Dave Peterson <dave@dspeterson.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# -----------------------------------------------------------------------------
+#
+# Convenience script for dealing with release tags.
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+
+def die(msg):
+    sys.stderr.write(msg + '\n')
+    sys.exit(1)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-h', '--help',
+            help='Show this help message and exit.', action='store_true')
+    parser.add_argument('-t', '--tag', help='Tag a release.',
+            action='store', dest='create_tag')
+    parser.add_argument('-p', '--push', help='Push a release tag.',
+            action='store', dest='push_tag')
+    parser.add_argument('-s', '--show', help='Show a release tag.',
+            action='store', dest='show_tag')
+    parser.add_argument('-l', '--list_all', help='List all release tags.',
+            action='store_true')
+    parser.add_argument('-u', '--unpushed', help='List all unpushed tags.',
+            action='store_true')
+    args = parser.parse_args()
+
+    if args.help:
+        parser.print_help()
+        sys.exit(0)
+
+    opt_count = 0
+
+    if args.create_tag is not None:
+        opt_count += 1
+
+    if args.push_tag is not None:
+        opt_count += 1
+
+    if args.show_tag is not None:
+        opt_count += 1
+
+    if args.list_all:
+        opt_count += 1
+
+    if args.unpushed:
+        opt_count += 1
+
+    if opt_count != 1:
+        die('Exactly one of {-t, -p, -s, -l, -u} must be specified.')
+
+    return args
+
+
+def tag_piece_ok(num):
+    match = re.match(r'^(0|[1-9][0-9]*)$', num)
+    return match is not None
+
+
+def check_tag(tag):
+    ok = False
+    match = re.match(r'^([0-9]+)\.([0-9]+)\.([0-9]+)$', tag)
+
+    if match and \
+            tag_piece_ok(match.group(1)) and \
+            tag_piece_ok(match.group(2)) and \
+            tag_piece_ok(match.group(3)):
+        ok = True
+
+    if not ok:
+        die('Invalid tag')
+
+
+args = parse_args()
+
+if not os.path.isfile('SConstruct') or not os.path.isdir('src'):
+    die('This script must be executed from the root of the tree (where the ' +
+            'SConstruct file is).')
+
+if args.create_tag:
+    check_tag(args.create_tag)
+    msg = 'version ' + args.create_tag
+
+    try:
+        exit_code = subprocess.call(
+                ['git', 'tag', '-a', args.create_tag, '-m', msg])
+    except OSError as e:
+        die('Failed to execute "git" command: ' + e.strerror)
+
+    if (exit_code != 0):
+        die('Got nonzero exit code from "git" command')
+
+    print 'Created tag [' + args.create_tag + '].  Remember to push.'
+elif args.push_tag:
+    check_tag(args.push_tag)
+
+    try:
+        exit_code = subprocess.call(['git', 'push', 'origin', args.push_tag])
+    except OSError as e:
+        die('Failed to execute "git" command: ' + e.strerror)
+
+    if (exit_code != 0):
+        die('Got nonzero exit code from "git" command')
+elif args.show_tag:
+    try:
+        exit_code = subprocess.call(['git', 'show', args.show_tag])
+    except OSError as e:
+        die('Failed to execute "git" command: ' + e.strerror)
+
+    if (exit_code != 0):
+        die('Got nonzero exit code from "git" command')
+elif args.list_all:
+    try:
+        git = subprocess.Popen(['git', 'tag'], stdout=subprocess.PIPE)
+        sort = subprocess.call(['sort', '-V'], stdin=git.stdout)
+        git.communicate()
+    except OSError as e:
+        die('Failed to execute command: ' + e.strerror)
+
+    if git.returncode != 0:
+        die('Got nonzero exit code from "git" command')
+
+    if sort != 0:
+        die('Got nonzero exit code from "sort" command')
+elif args.unpushed:
+    print 'Unpushed tags:'
+    print
+
+    try:
+        exit_code = subprocess.call(['git', 'push', '--tags', '--dry-run'])
+    except OSError as e:
+        die('Failed to execute "git" command: ' + e.strerror)
+
+    if (exit_code != 0):
+        die('Got nonzero exit code from "git" command')
+else:
+    sys.stderr.write('Internal error\n')
+    sys.exit(1)
