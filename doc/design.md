@@ -133,10 +133,10 @@ for a given error code would be more appropriate, changes can easily be made.
 Additionally, socket-related errors cause a *Pause* response.  In other words,
 a pause is initiated and any messages that could not be sent or did not receive
 ACKs as a result will be reclaimed by the router thread and rerouted based on
-updated metadata.  When a *Pause* response occurs specifically due to an error
-ACK, a failed delivery attempt count is incremented for each message in the
-corresponding message set.  Once a message's failed delivery attempt count
-exceeds a configurable threshold, the message is discarded.
+updated metadata.  When a *Pause* or *Resend* response occurs specifically due
+to an error ACK, a failed delivery attempt count is incremented for each
+message in the corresponding message set.  Once a message's failed delivery
+attempt count exceeds a configurable threshold, the message is discarded.
 
 ### Message Batching
 

@@ -259,11 +259,11 @@ max_input_msg_size that a client sending a UNIX domain datagram of the maximum
 allowed size will need to increase its SO_SNDBUF socket option above the
 default value.
 * `--max_failed_delivery_attempts N`: Each time Bruce receives an error ACK
-causing it to initiate a "pause without discard" action as documented
-[here](design.md#dispatcher), Bruce increments the failed delivery attempt
-account for each message in the message set that the ACK applies to.  Once a
-message's failed delivery attempt count exceeds this value, the message is
-discarded.  The default vaule is 5.
+causing it to initiate a "pause without discard" or "resend" action as
+documented [here](design.md#dispatcher), Bruce increments the failed delivery
+attempt account for each message in the message set that the ACK applies to.
+Once a message's failed delivery attempt count exceeds this value, the message
+is discarded.  The default vaule is 5.
 * `--daemon`: Causes Bruce to run as a daemon.
 * `--client_id ID`: This specifies the client ID string to send in produce
 requests, as documented
