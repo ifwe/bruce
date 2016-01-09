@@ -138,25 +138,8 @@ void TProduceResponseProcessor::ReportShortResponseTopicList() const {
   ProduceResponseShortTopicList.Increment();
 }
 
-void TProduceResponseProcessor::ProcessImmediateResendMsgSet(
-    std::list<TMsg::TPtr> &&msg_set, const std::string &topic) {
-  assert(this);
-  assert(!msg_set.empty());
-  ConnectorQueueImmediateResendMsgSet.Increment();
-  static TLogRateLimiter lim(std::chrono::seconds(30));
-
-  if (lim.Test()) {
-    syslog(LOG_ERR, "Connector thread %d (index %lu broker %ld) queueing msg "
-        "set (topic: [%s]) for immediate resend", static_cast<int>(Gettid()),
-        MyBrokerIndex, MyBrokerId, topic.c_str());
-  }
-
-  Ds.MsgStateTracker.MsgEnterSendWait(msg_set);
-  ImmediateResendAckMsgs.push_back(std::move(msg_set));
-}
-
-void TProduceResponseProcessor::ProcessPauseAndResendMsgSet(
-    std::list<TMsg::TPtr> &&msg_set, const std::string &topic) {
+void TProduceResponseProcessor::CountFailedDeliveryAttempt(
+    std::list<TMsg::TPtr> &msg_set, const std::string &topic) {
   assert(this);
 
   for (auto iter = msg_set.begin(), next = iter;
@@ -184,6 +167,35 @@ void TProduceResponseProcessor::ProcessPauseAndResendMsgSet(
       msg_set.erase(iter);
     }
   }
+}
+
+void TProduceResponseProcessor::ProcessImmediateResendMsgSet(
+    std::list<TMsg::TPtr> &&msg_set, const std::string &topic) {
+  assert(this);
+  assert(!msg_set.empty());
+  CountFailedDeliveryAttempt(msg_set, topic);
+
+  if (!msg_set.empty()) {
+    ConnectorQueueImmediateResendMsgSet.Increment();
+    static TLogRateLimiter lim(std::chrono::seconds(30));
+
+    if (lim.Test()) {
+      syslog(LOG_ERR, "Connector thread %d (index %lu broker %ld) queueing "
+          "msg set (topic: [%s]) for immediate resend",
+          static_cast<int>(Gettid()), MyBrokerIndex, MyBrokerId,
+          topic.c_str());
+    }
+
+    Ds.MsgStateTracker.MsgEnterSendWait(msg_set);
+    ImmediateResendAckMsgs.push_back(std::move(msg_set));
+  }
+}
+
+void TProduceResponseProcessor::ProcessPauseAndResendMsgSet(
+    std::list<TMsg::TPtr> &&msg_set, const std::string &topic) {
+  assert(this);
+  assert(!msg_set.empty());
+  CountFailedDeliveryAttempt(msg_set, topic);
 
   if (!msg_set.empty()) {
     ConnectorQueuePauseAndResendMsgSet.Increment();
@@ -246,7 +258,8 @@ bool TProduceResponseProcessor::ProcessOneAck(std::list<TMsg::TPtr> &&msg_set,
       }
 
       /* These messages can be immediately resent without pausing and rerouting
-         based on new metadata. */
+         based on new metadata, although some may be discarded here due to the
+         failed delivery attempt limit. */
       ProcessImmediateResendMsgSet(std::move(msg_set), topic);
       break;
     }

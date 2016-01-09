@@ -127,6 +127,9 @@ namespace Bruce {
 
       void ReportShortResponseTopicList() const;
 
+      void CountFailedDeliveryAttempt(std::list<TMsg::TPtr> &msg_set,
+          const std::string &topic);
+
       void ProcessImmediateResendMsgSet(std::list<TMsg::TPtr> &&msg_set,
           const std::string &topic);
 
