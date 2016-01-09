@@ -108,22 +108,40 @@ The Kafka error ACK values are documented
 The following table summarizes which response Bruce implements for each type of
 error ACK:
 
-| Error                      | Code | Response from Bruce |
-|:---------------------------|-----:|:--------------------|
-| Unknown                    |   -1 | Discard             |
-| OffsetOutOfRange           |    1 | Discard             |
-| InvalidMessage             |    2 | Resend              |
-| UnknownTopicOrPartition    |    3 | Pause               |
-| InvalidMessageSize         |    4 | Discard             |
-| LeaderNotAvailable         |    5 | Pause               |
-| NotLeaderForPartition      |    6 | Pause               |
-| RequestTimedOut            |    7 | Pause               |
-| BrokerNotAvailable         |    8 | Pause               |
-| ReplicaNotAvailable        |    9 | Pause               |
-| MessageSizeTooLarge        |   10 | Discard             |
-| StaleControllerEpochCode   |   11 | Discard             |
-| OffsetMetadataTooLargeCode |   12 | Discard             |
-| (all other values)         |    ? | Discard             |
+| Error                            | Code | Response from Bruce |
+|:---------------------------------|-----:|:--------------------|
+| Unknown                          |   -1 | Discard             |
+| OffsetOutOfRange                 |    1 | Discard             |
+| InvalidMessage                   |    2 | Resend              |
+| UnknownTopicOrPartition          |    3 | Pause               |
+| InvalidMessageSize               |    4 | Discard             |
+| LeaderNotAvailable               |    5 | Pause               |
+| NotLeaderForPartition            |    6 | Pause               |
+| RequestTimedOut                  |    7 | Pause               |
+| BrokerNotAvailable               |    8 | Discard             |
+| ReplicaNotAvailable              |    9 | Discard             |
+| MessageSizeTooLarge              |   10 | Discard             |
+| StaleControllerEpochCode         |   11 | Discard             |
+| OffsetMetadataTooLargeCode       |   12 | Discard             |
+| GroupLoadInProgressCode          |   14 | Discard             |
+| GroupCoordinatorNotAvailableCode |   15 | Discard             |
+| NotCoordinatorForGroupCode       |   16 | Discard             |
+| InvalidTopicCode                 |   17 | Discard             |
+| RecordListTooLargeCode           |   18 | Discard             |
+| NotEnoughReplicasCode            |   19 | Discard             |
+| NotEnoughReplicasAfterAppendCode |   20 | Discard             |
+| InvalidRequiredAcksCode          |   21 | Discard             |
+| IllegalGenerationCode            |   22 | Discard             |
+| InconsistentGroupProtocolCode    |   23 | Discard             |
+| InvalidGroupIdCode               |   24 | Discard             |
+| UnknownMemberIdCode              |   25 | Discard             |
+| InvalidSessionTimeoutCode        |   26 | Discard             |
+| RebalanceInProgressCode          |   27 | Discard             |
+| InvalidCommitOffsetSizeCode      |   28 | Discard             |
+| TopicAuthorizationFailedCode     |   29 | Discard             |
+| GroupAuthorizationFailedCode     |   30 | Discard             |
+| ClusterAuthorizationFailedCode   |   31 | Discard             |
+| (all other values)               |    ? | Discard             |
 
 In the case of *UnknownTopicOrPartition*, the router thread will discard the
 message set during rerouting if the topic no longer exists.  Feedback from the

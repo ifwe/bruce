@@ -101,7 +101,25 @@ namespace Bruce {
           ReplicaNotAvailable = 9,
           MessageSizeTooLarge = 10,
           StaleControllerEpochCode = 11,
-          OffsetMetadataTooLargeCode = 12
+          OffsetMetadataTooLargeCode = 12,
+          GroupLoadInProgressCode = 14,
+          GroupCoordinatorNotAvailableCode = 15,
+          NotCoordinatorForGroupCode = 16,
+          InvalidTopicCode = 17,
+          RecordListTooLargeCode = 18,
+          NotEnoughReplicasCode = 19,
+          NotEnoughReplicasAfterAppendCode = 20,
+          InvalidRequiredAcksCode = 21,
+          IllegalGenerationCode = 22,
+          InconsistentGroupProtocolCode = 23,
+          InvalidGroupIdCode = 24,
+          UnknownMemberIdCode = 25,
+          InvalidSessionTimeoutCode = 26,
+          RebalanceInProgressCode = 27,
+          InvalidCommitOffsetSizeCode = 28,
+          TopicAuthorizationFailedCode = 29,
+          GroupAuthorizationFailedCode = 30,
+          ClusterAuthorizationFailedCode = 31
         };
 
         static TConstants ComputeConstants();

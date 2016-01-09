@@ -47,18 +47,36 @@ using namespace Bruce::KafkaProto::V0;
 using namespace Bruce::Util;
 
 SERVER_COUNTER(AckErrorBrokerNotAvailable);
+SERVER_COUNTER(AckErrorClusterAuthorizationFailedCode);
+SERVER_COUNTER(AckErrorGroupAuthorizationFailedCode);
+SERVER_COUNTER(AckErrorGroupCoordinatorNotAvailableCode);
+SERVER_COUNTER(AckErrorGroupLoadInProgressCode);
+SERVER_COUNTER(AckErrorIllegalGenerationCode);
+SERVER_COUNTER(AckErrorInconsistentGroupProtocolCode);
+SERVER_COUNTER(AckErrorInvalidCommitOffsetSizeCode);
+SERVER_COUNTER(AckErrorInvalidGroupIdCode);
 SERVER_COUNTER(AckErrorInvalidMessage);
 SERVER_COUNTER(AckErrorInvalidMessageSize);
+SERVER_COUNTER(AckErrorInvalidRequiredAcksCode);
+SERVER_COUNTER(AckErrorInvalidSessionTimeoutCode);
+SERVER_COUNTER(AckErrorInvalidTopicCode);
 SERVER_COUNTER(AckErrorLeaderNotAvailable);
 SERVER_COUNTER(AckErrorMessageSizeTooLarge);
+SERVER_COUNTER(AckErrorNotCoordinatorForGroupCode);
+SERVER_COUNTER(AckErrorNotEnoughReplicasAfterAppendCode);
+SERVER_COUNTER(AckErrorNotEnoughReplicasCode);
 SERVER_COUNTER(AckErrorNotLeaderForPartition);
 SERVER_COUNTER(AckErrorOffsetMetadataTooLargeCode);
 SERVER_COUNTER(AckErrorOffsetOutOfRange);
+SERVER_COUNTER(AckErrorRebalanceInProgressCode);
+SERVER_COUNTER(AckErrorRecordListTooLargeCode);
 SERVER_COUNTER(AckErrorReplicaNotAvailable);
 SERVER_COUNTER(AckErrorRequestTimedOut);
 SERVER_COUNTER(AckErrorStaleControllerEpochCode);
+SERVER_COUNTER(AckErrorTopicAuthorizationFailedCode);
 SERVER_COUNTER(AckErrorUndocumented);
 SERVER_COUNTER(AckErrorUnknown);
+SERVER_COUNTER(AckErrorUnknownMemberIdCode);
 SERVER_COUNTER(AckErrorUnknownTopicOrPartition);
 SERVER_COUNTER(AckOk);
 SERVER_COUNTER(TopicAutocreateGotErrorResponse);
@@ -100,7 +118,8 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned unexpected server error");
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: Unknown (unexpected server error)");
       }
 
       return TAckResultAction::Discard;
@@ -114,7 +133,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned offset out of range error");
+        syslog(LOG_ERR, "Kafka ACK returned error: OffsetOutOfRange");
       }
 
       return TAckResultAction::Discard;
@@ -124,7 +143,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned bad CRC error");
+        syslog(LOG_ERR, "Kafka ACK returned error: InvalidMessage (bad CRC)");
       }
 
       return TAckResultAction::Resend;
@@ -134,7 +153,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned unknown topic or partition error: "
+        syslog(LOG_ERR, "Kafka ACK returned error: UnknownTopicOrPartition "
             "topic [%s] partition %d", topic.c_str(),
             static_cast<int>(partition));
       }
@@ -152,7 +171,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned negative message size error");
+        syslog(LOG_ERR, "Kafka ACK returned error: InvalidMessageSize");
       }
 
       return TAckResultAction::Discard;
@@ -162,8 +181,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned leader not available error "
-            "(leadership election in progress)");
+        syslog(LOG_ERR, "Kafka ACK returned error: LeaderNotAvailable");
       }
 
       return TAckResultAction::Pause;
@@ -173,7 +191,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned not leader for partition error");
+        syslog(LOG_ERR, "Kafka ACK returned error: NotLeaderForPartition");
       }
 
       return TAckResultAction::Pause;
@@ -183,7 +201,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned request timed out error");
+        syslog(LOG_ERR, "Kafka ACK returned error: RequestTimedOut");
       }
 
       return TAckResultAction::Pause;
@@ -193,28 +211,27 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned broker not available error (used "
-               "only internally by Kafka)");
+        syslog(LOG_ERR, "Kafka ACK returned error: BrokerNotAvailable");
       }
 
-      return TAckResultAction::Pause;
+      return TAckResultAction::Discard;
     }
     case TErrorCode::ReplicaNotAvailable: {
       AckErrorReplicaNotAvailable.Increment();
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned replica not available error");
+        syslog(LOG_ERR, "Kafka ACK returned error: ReplicaNotAvailable");
       }
 
-      return TAckResultAction::Pause;
+      return TAckResultAction::Discard;
     }
     case TErrorCode::MessageSizeTooLarge: {
       AckErrorMessageSizeTooLarge.Increment();
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned message size too large error");
+        syslog(LOG_ERR, "Kafka ACK returned error: MessageSizeTooLarge");
       }
 
       return TAckResultAction::Discard;
@@ -224,8 +241,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR,
-            "Kafka ACK returned state controller epoch code error");
+        syslog(LOG_ERR, "Kafka ACK returned error: StaleControllerEpochCode");
       }
 
       return TAckResultAction::Discard;
@@ -235,7 +251,199 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       static TLogRateLimiter lim(std::chrono::seconds(30));
 
       if (lim.Test()) {
-        syslog(LOG_ERR, "Kafka ACK returned offset metadata too large error");
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: OffsetMetadataTooLargeCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::GroupLoadInProgressCode: {
+      AckErrorGroupLoadInProgressCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: GroupLoadInProgressCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::GroupCoordinatorNotAvailableCode: {
+      AckErrorGroupCoordinatorNotAvailableCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: GroupCoordinatorNotAvailableCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::NotCoordinatorForGroupCode: {
+      AckErrorNotCoordinatorForGroupCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: NotCoordinatorForGroupCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InvalidTopicCode: {
+      AckErrorInvalidTopicCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: InvalidTopicCode topic [%s]",
+            topic.c_str());
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::RecordListTooLargeCode: {
+      AckErrorRecordListTooLargeCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: RecordListTooLargeCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::NotEnoughReplicasCode: {
+      AckErrorNotEnoughReplicasCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: NotEnoughReplicasCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::NotEnoughReplicasAfterAppendCode: {
+      AckErrorNotEnoughReplicasAfterAppendCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: NotEnoughReplicasAfterAppendCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InvalidRequiredAcksCode: {
+      AckErrorInvalidRequiredAcksCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: InvalidRequiredAcksCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::IllegalGenerationCode: {
+      AckErrorIllegalGenerationCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: IllegalGenerationCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InconsistentGroupProtocolCode: {
+      AckErrorInconsistentGroupProtocolCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: InconsistentGroupProtocolCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InvalidGroupIdCode: {
+      AckErrorInvalidGroupIdCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: InvalidGroupIdCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::UnknownMemberIdCode: {
+      AckErrorUnknownMemberIdCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: UnknownMemberIdCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InvalidSessionTimeoutCode: {
+      AckErrorInvalidSessionTimeoutCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: InvalidSessionTimeoutCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::RebalanceInProgressCode: {
+      AckErrorRebalanceInProgressCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned error: RebalanceInProgressCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::InvalidCommitOffsetSizeCode: {
+      AckErrorInvalidCommitOffsetSizeCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: InvalidCommitOffsetSizeCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::TopicAuthorizationFailedCode: {
+      AckErrorTopicAuthorizationFailedCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: TopicAuthorizationFailedCode topic "
+            "[%s]", topic.c_str());
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::GroupAuthorizationFailedCode: {
+      AckErrorGroupAuthorizationFailedCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: GroupAuthorizationFailedCode");
+      }
+
+      return TAckResultAction::Discard;
+    }
+    case TErrorCode::ClusterAuthorizationFailedCode: {
+      AckErrorClusterAuthorizationFailedCode.Increment();
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned error: ClusterAuthorizationFailedCode");
       }
 
       return TAckResultAction::Discard;
