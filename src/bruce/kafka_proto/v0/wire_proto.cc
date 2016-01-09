@@ -51,7 +51,6 @@ SERVER_COUNTER(AckErrorInvalidMessage);
 SERVER_COUNTER(AckErrorInvalidMessageSize);
 SERVER_COUNTER(AckErrorLeaderNotAvailable);
 SERVER_COUNTER(AckErrorMessageSizeTooLarge);
-SERVER_COUNTER(AckErrorNone);
 SERVER_COUNTER(AckErrorNotLeaderForPartition);
 SERVER_COUNTER(AckErrorOffsetMetadataTooLargeCode);
 SERVER_COUNTER(AckErrorOffsetOutOfRange);
@@ -61,6 +60,7 @@ SERVER_COUNTER(AckErrorStaleControllerEpochCode);
 SERVER_COUNTER(AckErrorUndocumented);
 SERVER_COUNTER(AckErrorUnknown);
 SERVER_COUNTER(AckErrorUnknownTopicOrPartition);
+SERVER_COUNTER(AckOk);
 SERVER_COUNTER(TopicAutocreateGotErrorResponse);
 SERVER_COUNTER(TopicAutocreateNoTopicInResponse);
 SERVER_COUNTER(TopicAutocreateSuccess);
@@ -106,7 +106,7 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
       return TAckResultAction::Discard;
     }
     case TErrorCode::NoError: {
-      AckErrorNone.Increment();
+      AckOk.Increment();
       break;  // successful ACK
     }
     case TErrorCode::OffsetOutOfRange: {

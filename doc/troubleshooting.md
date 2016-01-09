@@ -16,9 +16,10 @@ has marked it as processed.  If this occurs for any reason other than Bruce
 exiting on a fatal error, then there is a bug in Bruce.  On occurrence of this
 type of event, Bruce will write a syslog message containing a stack trace,
 which will help track down problems.
-* `AckErrorXxx`: `AckErrorNone` indicates a successful ACK from Kafka.  All
-other counters of this type indicate various types of error ACKs received from
-Kafka, as documented
+* `AckOk`: This is incremented each time Bruce receives a successful ACK from
+Kafka.
+* `AckErrorXxx`: These counters indicate various types of error ACKs received
+from Kafka, as documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes).
 * `XxxInputAgentDiscardXxx` and `DiscardXxx`: These counters are incremented
 when Bruce discards messages for various reasons.
