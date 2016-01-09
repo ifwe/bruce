@@ -112,6 +112,10 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
     int32_t partition) const {
   assert(this);
 
+  /* The errors reported below are documented here:
+
+         https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes
+   */
   switch (static_cast<TErrorCode>(ack_value)) {
     case TErrorCode::Unknown: {
       AckErrorUnknown.Increment();
