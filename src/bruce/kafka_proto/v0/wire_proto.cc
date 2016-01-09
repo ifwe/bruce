@@ -97,7 +97,12 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
   switch (static_cast<TErrorCode>(ack_value)) {
     case TErrorCode::Unknown: {
       AckErrorUnknown.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned unexpected server error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned unexpected server error");
+      }
+
       return TAckResultAction::Discard;
     }
     case TErrorCode::NoError: {
@@ -106,19 +111,33 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
     }
     case TErrorCode::OffsetOutOfRange: {
       AckErrorOffsetOutOfRange.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned offset out of range error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned offset out of range error");
+      }
+
       return TAckResultAction::Discard;
     }
     case TErrorCode::InvalidMessage: {
       AckErrorInvalidMessage.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned bad CRC error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned bad CRC error");
+      }
+
       return TAckResultAction::Resend;
     }
     case TErrorCode::UnknownTopicOrPartition: {
       AckErrorUnknownTopicOrPartition.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned unknown topic or partition error: "
-             "topic [%s] partition %d", topic.c_str(),
-             static_cast<int>(partition));
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned unknown topic or partition error: "
+            "topic [%s] partition %d", topic.c_str(),
+            static_cast<int>(partition));
+      }
 
       /* This error may occur in cases where a reconfiguration of the Kafka
          cluster is being performed that involves moving partitions from one
@@ -130,56 +149,108 @@ TWireProto::ProcessAck(int16_t ack_value, const std::string &topic,
     }
     case TErrorCode::InvalidMessageSize: {
       AckErrorInvalidMessageSize.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned negative message size error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned negative message size error");
+      }
+
       return TAckResultAction::Discard;
     }
     case TErrorCode::LeaderNotAvailable: {
       AckErrorLeaderNotAvailable.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned leader not available error "
-                      "(leadership election in progress)");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned leader not available error "
+            "(leadership election in progress)");
+      }
+
       return TAckResultAction::Pause;
     }
     case TErrorCode::NotLeaderForPartition: {
       AckErrorNotLeaderForPartition.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned not leader for partition error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned not leader for partition error");
+      }
+
       return TAckResultAction::Pause;
     }
     case TErrorCode::RequestTimedOut: {
       AckErrorRequestTimedOut.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned request timed out error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned request timed out error");
+      }
+
       return TAckResultAction::Pause;
     }
     case TErrorCode::BrokerNotAvailable: {
       AckErrorBrokerNotAvailable.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned broker not available error (used "
-             "only internally by Kafka)");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned broker not available error (used "
+               "only internally by Kafka)");
+      }
+
       return TAckResultAction::Pause;
     }
     case TErrorCode::ReplicaNotAvailable: {
       AckErrorReplicaNotAvailable.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned replica not available error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned replica not available error");
+      }
+
       return TAckResultAction::Pause;
     }
     case TErrorCode::MessageSizeTooLarge: {
       AckErrorMessageSizeTooLarge.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned message size too large error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned message size too large error");
+      }
+
       return TAckResultAction::Discard;
     }
     case TErrorCode::StaleControllerEpochCode: {
       AckErrorStaleControllerEpochCode.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned state controller epoch code error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR,
+            "Kafka ACK returned state controller epoch code error");
+      }
+
       return TAckResultAction::Discard;
     }
     case TErrorCode::OffsetMetadataTooLargeCode: {
       AckErrorOffsetMetadataTooLargeCode.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned offset metadata too large error");
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned offset metadata too large error");
+      }
+
       return TAckResultAction::Discard;
     }
-    default:
+    default: {
       AckErrorUndocumented.Increment();
-      syslog(LOG_ERR, "Kafka ACK returned undocumented error code: %d",
-             static_cast<int>(ack_value));
+      static TLogRateLimiter lim(std::chrono::seconds(30));
+
+      if (lim.Test()) {
+        syslog(LOG_ERR, "Kafka ACK returned undocumented error code: %d",
+            static_cast<int>(ack_value));
+      }
+
       return TAckResultAction::Discard;
+    }
   }
 
   return TAckResultAction::Ok;
