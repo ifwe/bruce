@@ -140,7 +140,7 @@ namespace Bruce {
 
       class TConfigFileParseError final : public TErrorBase {
         public:
-        explicit TConfigFileParseError(size_t line_num, const char *details)
+        TConfigFileParseError(size_t line_num, const char *details)
             : TErrorBase(CreateMsg(line_num, details)) {
         }
 

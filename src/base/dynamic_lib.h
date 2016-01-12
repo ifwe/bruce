@@ -68,7 +68,7 @@ namespace Base {
     /* Thrown when dlsym() fails. */
     class TSymLoadError : public TErrorBase {
       public:
-      explicit TSymLoadError(const char *libname, const char *symname)
+      TSymLoadError(const char *libname, const char *symname)
           : TErrorBase(CreateMsg(libname, symname)) {
       }
 

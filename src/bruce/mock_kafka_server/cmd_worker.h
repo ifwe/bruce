@@ -40,7 +40,7 @@ namespace Bruce {
       NO_COPY_SEMANTICS(TCmdWorker);
 
       public:
-      explicit TCmdWorker(TSharedState &ss, Base::TFd &&client_socket)
+      TCmdWorker(TSharedState &ss, Base::TFd &&client_socket)
           : TMockKafkaWorker(std::move(client_socket)),  // connected FD
             Ss(ss) {
       }

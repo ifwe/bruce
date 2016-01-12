@@ -200,7 +200,7 @@ namespace Bruce {
 
     /* A value of 0 for 'report_interval' disables interval reporting (useful
        for unit tests). */
-    explicit TAnomalyTracker(TDiscardFileLogger &discard_file_logger,
+    TAnomalyTracker(TDiscardFileLogger &discard_file_logger,
         size_t report_interval, size_t max_msg_prefix_len,
         TClockFn clock_fn = &Base::GetEpochSeconds)
         : DiscardFileLogger(discard_file_logger),
