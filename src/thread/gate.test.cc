@@ -100,9 +100,9 @@ namespace {
     ASSERT_TRUE(s.empty());
     ASSERT_TRUE(fd.IsReadable());
     list_2 = g.Get();
-    ASSERT_TRUE(fd.IsReadable());
+    ASSERT_FALSE(fd.IsReadable());
     ASSERT_TRUE(list_2 == list_1);
-    list_2 = g.Get();
+    list_2 = g.NonblockingGet();
     ASSERT_TRUE(list_2.empty());
   }
 

@@ -62,13 +62,17 @@ namespace Thread {
 
     virtual void Put(TMsgType &&put_item) override {
       assert(this);
+      bool was_empty = false;
 
       {
         std::lock_guard<std::mutex> lock(Mutex);
+        was_empty = MsgList.empty();
         MsgList.push_back(std::move(put_item));
       }
 
-      Sem.Push();
+      if (was_empty) {
+        Sem.Push();
+      }
     }
 
     virtual std::list<TMsgType> Get() override {
