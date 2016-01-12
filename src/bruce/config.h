@@ -64,6 +64,8 @@ namespace Bruce {
 
     std::string ClientId;
 
+    bool ClientIdWasEmpty;
+
     int16_t RequiredAcks;
 
     size_t ReplicationTimeout;

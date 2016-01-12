@@ -221,6 +221,8 @@ namespace {
     args.push_back(msg_buffer_max_str.c_str());
     args.push_back("--receive_socket_name");
     args.push_back(UnixSocketName);
+    args.push_back("--client_id");
+    args.push_back("bruce");
     args.push_back("--status_loopback_only");
     args.push_back("--log_level");
     args.push_back("LOG_INFO");

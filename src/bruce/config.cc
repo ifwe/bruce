@@ -321,6 +321,14 @@ static void ParseArgs(int argc, char *argv[], TConfig &config) {
         arg_max_failed_delivery_attempts.getValue();
     config.Daemon = arg_daemon.getValue();
     config.ClientId = arg_client_id.getValue();
+    config.ClientIdWasEmpty = config.ClientId.empty();
+
+    if (config.ClientIdWasEmpty) {
+      /* Workaround for bug in Kafka 0.9.0.0.  See
+         https://issues.apache.org/jira/browse/KAFKA-3088 for details. */
+      config.ClientId = "bruce";
+    }
+
     config.RequiredAcks = arg_required_acks.getValue();
     config.ReplicationTimeout = arg_replication_timeout.getValue();
     config.ShutdownMaxDelay = arg_shutdown_max_delay.getValue();
@@ -367,6 +375,7 @@ TConfig::TConfig(int argc, char *argv[])
       AllowLargeUnixDatagrams(false),
       MaxFailedDeliveryAttempts(5),
       Daemon(false),
+      ClientIdWasEmpty(true),
       RequiredAcks(-1),
       ReplicationTimeout(10000),
       ShutdownMaxDelay(30000),
@@ -394,6 +403,14 @@ TConfig::TConfig(int argc, char *argv[])
 }
 
 void Bruce::LogConfig(const TConfig &config) {
+  if (config.ClientIdWasEmpty) {
+    syslog(LOG_WARNING, "Using \"bruce\" for client ID since none was "
+        "specified with --client_id option.  This is a workaround for a bug "
+        "in Kafka 0.9.0.0 that causes broker to crash on receipt of produce "
+        "request with empty client ID.  See "
+        "https://issues.apache.org/jira/browse/KAFKA-3088 for details.");
+  }
+
   syslog(LOG_NOTICE, "Version: [%s]", bruce_build_id);
   syslog(LOG_NOTICE, "Config file: [%s]", config.ConfigPath.c_str());
   syslog(LOG_NOTICE, "UNIX domain datagram input socket [%s]",
