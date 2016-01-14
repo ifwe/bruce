@@ -285,16 +285,16 @@ way to shut down Bruce is to stop all clients and let Bruce empty its queues
 *before* sending Bruce a shutdown signal.  The default value is 30000.
 * `--dispatcher_restart_max_delay N`: This specifies the maximum allowed delay
 in milliseconds for dispatcher shutdown during a pause or metadata update
-event.  During this time period, each send thread will attempt to finish
-sending any message currently being sent and then shut down.  Each receive
-thread will attempt to drain its queue of sent produce requests waiting for
-responses from Kafka.  Any unsent messages in remaining in a send thread's
-queue after it shuts down will be sent after the dispatcher is restarted with
-new metadata.  The messages contained in any remaining sent produce requests in
-a receive thread's "ACK waiting" queue on dispatcher shutdown will be resent
-after the dispatcher is restarted with new metadata.  These messages will be
-reported as possible duplicates in Bruce's discard reporting interface.  The
-default value is 5000.
+event.  During this time period, each dispatcher thread will attempt to finish
+sending any message currently being sent before shutting down.  Each dispatcher
+thread will also attempt to drain its queue of sent produce requests waiting
+for responses from Kafka.  Any unsent messages in remaining in a dispatcher
+thread's queue after it shuts down will be sent after the dispatcher is
+restarted with new metadata.  The messages contained in any remaining sent
+produce requests in a dispatcher thread's "ACK waiting" queue on dispatcher
+shutdown will be resent after the dispatcher is restarted with new metadata.
+These messages will be reported as possible duplicates in Bruce's discard
+reporting interface.  The default value is 5000.
 * `--metadata_refresh_interval N`: This specifies Bruce's metadata refresh
 interval in minutes.  The actual interval will vary somewhat due to added
 randomness.  This will spread out the metadata requests of multiple Bruce

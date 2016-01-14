@@ -16,8 +16,8 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   Object responsible for serializing produce requests.  Each send thread owns
-   one of these.
+   Object responsible for serializing produce requests.  Each connector thread
+   owns one of these.
  */
 
 #pragma once

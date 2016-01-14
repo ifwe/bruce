@@ -509,13 +509,13 @@ size_t TRouterThread::ChooseAnyPartitionBrokerIndex(const std::string &topic) {
   /* Choose a broker by round-robin selection based on partitions.  Then the
      frequency of choosing a given broker will be proportional to the fraction
      of the topic's total partition count that is assigned to the broker.  We
-     don't do partition selection here.  That is deferred until the send thread
-     for the chosen broker is preparing a produce request to be sent.  The
-     partition chosen by the send thread may differ from the one chosen here.
-     The send thread chooses a partition from all available partitions assigned
-     to its broker that match the message topic.  This approach allows the send
-     thread to decide how frequently it rotates through the partitions for a
-     topic assigned to its broker. */
+     don't do partition selection here.  That is deferred until the connector
+     thread for the chosen broker is preparing a produce request to be sent.
+     The partition chosen by the connector thread may differ from the one
+     chosen here.  The connector thread chooses a partition from all available
+     partitions assigned to its broker that match the message topic.  This
+     approach allows the connector thread to decide how frequently it rotates
+     through the partitions for a topic assigned to its broker. */
   assert(RouteCounters.size() == topic_vec.size());
   const TMetadata::TPartition &partition =
       partition_vec[++RouteCounters[topic_index] % partition_vec.size()];
@@ -569,7 +569,8 @@ size_t TRouterThread::AssignBroker(TMsg::TPtr &msg) {
   RouteSingleAnyPartitionMsg.Increment();
 
   /* Don't set the partition here.  For AnyPartition messages, partition
-     selection is done by the send thread, right before sending to Kafka. */
+     selection is done by the connector thread, right before sending to Kafka.
+   */
   return ChooseAnyPartitionBrokerIndex(topic);
 }
 

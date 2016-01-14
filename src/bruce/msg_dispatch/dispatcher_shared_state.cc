@@ -103,7 +103,7 @@ void TDispatcherSharedState::MarkThreadFinished() {
   assert(this);
 
   if (--RunningThreadCount == 0) {
-    syslog(LOG_NOTICE, "All send and receive threads finished shutting down");
+    syslog(LOG_NOTICE, "All connector threads finished shutting down");
     LastDispatcherThreadFinished.Increment();
     ShutdownFinished.Push();
   }

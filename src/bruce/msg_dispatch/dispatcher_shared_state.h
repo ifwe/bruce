@@ -101,14 +101,14 @@ namespace Bruce {
 
       void MarkAllThreadsRunning(size_t in_service_broker_count);
 
-      /* Called by send and receive threads when finished shutting down. */
+      /* Called by connector threads when finished shutting down. */
       void MarkThreadFinished();
 
       void ResetThreadFinishedState();
 
       private:
-      /* This is the total number of send and receive threads that have been
-         started and have not yet called MarkShutdownFinished(); */
+      /* This is the total number of connector threads that have been started
+         and have not yet called MarkShutdownFinished(); */
       std::atomic<size_t> RunningThreadCount;
 
       Base::TEventSemaphore ShutdownFinished;

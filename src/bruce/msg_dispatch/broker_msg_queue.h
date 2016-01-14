@@ -16,7 +16,7 @@
    limitations under the License.
    ----------------------------------------------------------------------------
 
-   A queue of messages waiting to be sent to a broker.  Each send thread
+   A queue of messages waiting to be sent to a broker.  Each connector thread
    maintains one of these.  Broker-level batching is done here.
  */
 
@@ -74,7 +74,8 @@ namespace Bruce {
 
              2.  The ready list was previously empty and now is nonempty.
 
-         In either case, the queue needs attention from its send thread. */
+         In either case, the queue needs attention from its connector thread.
+       */
       void Put(TMsg::TTimestamp now, TMsg::TPtr &&msg);
 
       /* Same as above, but 'msg' bypasses broker-level batching. */
@@ -115,8 +116,9 @@ namespace Bruce {
       std::list<std::list<TMsg::TPtr>> GetAllOnShutdown();
 
       /* Reset the queue to its initial state and return all messages it
-         formerly contained.  Intended to be called _after_ the send thread has
-         been shut down, and therefore does _not_ acquire 'Mutex'. */
+         formerly contained.  Intended to be called _after_ the connector
+         thread has been shut down, and therefore does _not_ acquire 'Mutex'.
+       */
       std::list<std::list<TMsg::TPtr>> Reset();
 
       private:
@@ -153,13 +155,13 @@ namespace Bruce {
 
       std::list<std::list<TMsg::TPtr>> GetAllMsgs();
 
-      /* Becomes readable to notify the kafka dispatcher send thread that the
-         queue needs attention. */
+      /* Becomes readable to notify the Kafka dispatcher connector thread that
+         the queue needs attention. */
       Base::TEventSemaphore SenderNotify;
 
       /* Protects 'PerTopicBatcher', 'CombinedTopicsBatcher', and 'ReadyList'
-         from concurrent access by router thread and kafka dispatcher send and
-         receive threads. */
+         from concurrent access by router thread and kafka dispatcher connector
+         threads. */
       std::mutex Mutex;
 
       /* Per-topic batching for PartitionKey messages is done here.  Per-topic
