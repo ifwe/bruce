@@ -46,6 +46,9 @@ TTmpDir::~TTmpDir() {
   if (DeleteOnDestroy) {
     std::string cmd("/bin/rm -fr ");
     cmd += &Name[0];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
     std::system(cmd.c_str());
+#pragma GCC diagnostic pop
   }
 }
