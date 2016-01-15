@@ -169,6 +169,11 @@ def set_release_options():
     env.AppendUnique(CCFLAGS=['-O2', '-DNDEBUG', '-Wno-unused',
                               '-Wno-unused-parameter', '-flto',
                               '-fvisibility=hidden'])
+
+    # Unfortunately this is needed to prevent spurious build errors on Ubuntu
+    # 14.  :-(
+    env.AppendUnique(CPPFLAGS=['-U_FORTIFY_SOURCE'])
+
     env.AppendUnique(LINKFLAGS=['-flto', '-rdynamic'])
 
 
