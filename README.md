@@ -52,8 +52,9 @@ on CentOS versions 7 and 6.5, and Ubuntu versions 15.04 LTS, 14.04.1 LTS, and
 
 To get Bruce working, you need to set up a build environment.  Currently,
 instructions are available for [CentOS 7](doc/centos_7_env.md),
-[CentOS 6.5](doc/centos_6_5_env.md), and
-[Ubuntu (15.04 LTS, 14.04.1 LTS, and 13.10)](doc/ubuntu_13-15_env.md).
+[CentOS 6.5](doc/centos_6_5_env.md),
+[Ubuntu (15.04 LTS, 14.04.1 LTS, and 13.10)](doc/ubuntu_13-15_env.md), and
+[Debian 8](doc/debian_8_env.md).
 
 ## Building and Installing Bruce
 
