@@ -439,6 +439,8 @@ void TManagedThreadPoolBase::TWorkerBase::DoPutBack(TWorkerBase *worker) {
     p->Join();
   }
 
+  assert(w_ptr.empty() || !worker->IsStarted());
+
   if (shutdown_notify) {
     pool.AllWorkersFinished.Push();
   }
