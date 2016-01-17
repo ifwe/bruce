@@ -494,9 +494,6 @@ namespace Thread {
        called by the same thread that invokes the pool's destructor. */
     void WaitForShutdown();
 
-    protected:
-    class TWorkerBase;
-
     private:
     using TWorkerBasePtr = std::unique_ptr<TWorkerBase>;
 
@@ -630,8 +627,6 @@ namespace Thread {
          that its 'WorkerThread' member has been assigned before the worker
          places itself on the idle list, thus avoiding a race condition. */
       bool WaitAfterDoWork;
-
-      /* Worker waits here until Activate() or Terminate() is called. */
 
       /* This serves two purposes:
 
