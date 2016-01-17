@@ -262,6 +262,31 @@ namespace {
     ASSERT_TRUE(msg_list.empty());
   }
 
+  TEST_F(TSingleTopicBatcherTest, Test6) {
+    TTestMsgCreator mc;  // create this first since it contains buffer pool
+
+    /* Configure a size limit of 2 bytes, with no time or message count limits.
+       Then batch two empty messages.  The size of an empty message is counted
+       as 1 byte to prevent batching an infinite number of empty messages.
+       Therefore the batcher should accept the first message, and then return
+       both messages when we batch the second one. */
+    TBatchConfig config(0, 0, 2);
+    TSingleTopicBatcher batcher(config);
+    ASSERT_TRUE(batcher.BatchingIsEnabled());
+    ASSERT_TRUE(batcher.IsEmpty());
+    TMsg::TPtr msg = mc.NewMsg("Bugs Bunny ", "", 0);
+    std::list<TMsg::TPtr> msg_list =
+        SetProcessed(batcher.AddMsg(std::move(msg), 0));
+    ASSERT_FALSE(!!msg);
+    ASSERT_TRUE(msg_list.empty());
+    ASSERT_FALSE(batcher.IsEmpty());
+    msg = mc.NewMsg("Bugs Bunny", "", 0);
+    msg_list = SetProcessed(batcher.AddMsg(std::move(msg), 0));
+    ASSERT_FALSE(!!msg);
+    ASSERT_EQ(msg_list.size(), 2U);
+    ASSERT_TRUE(batcher.IsEmpty());
+  }
+
 }  // namespace
 
 int main(int argc, char **argv) {

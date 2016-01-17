@@ -60,7 +60,11 @@ TBatcherCore::ProcessNewMsg(TMsg::TTimestamp now, const TMsg::TPtr &msg) {
   }
 
   TMsg::TTimestamp timestamp = msg->GetTimestamp();
-  size_t body_size = msg->GetKeyAndValue().Size();
+
+  /* If a message is empty, count its body size as 1 byte.  This prevents us
+     from batching an infinite number of empty messages if only the size limit
+     is enabled. */
+  size_t body_size = std::max(size_t(1), msg->GetKeyAndValue().Size());
 
   if (ByteCountLimitIsEnabled(Config) && (body_size >= Config.ByteCount)) {
     ClearState();

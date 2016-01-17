@@ -66,6 +66,10 @@ namespace {
     config.MsgCount = 5;
     config.ByteCount = 0;
     builder.AddTopic("t3", &config);
+    config.TimeLimit = 0;
+    config.MsgCount = 0;
+    config.ByteCount = 2;
+    builder.AddTopic("empty msg test topic", &config);
     config.TimeLimit = 40;
     config.MsgCount = 3;
     config.ByteCount = 0;
@@ -319,6 +323,37 @@ namespace {
 
     ASSERT_TRUE(got_t1);
     ASSERT_TRUE(got_t2);
+  }
+
+  TEST_F(TPerTopicBatcherTest, Test4) {
+    TTestMsgCreator mc;  // create this first since it contains buffer pool
+
+    /* For topic "empty msg test topic", there is a size limit of 2 bytes, with
+       no time or message count limits.  Batch two empty messages for this
+       topic.  The size of an empty message is counted as 1 byte to prevent
+       batching an infinite number of empty messages.  Therefore the batcher
+       should accept the first message, and then return both messages when we
+       batch the second one. */
+    static const char topic[] = "empty msg test topic";
+    TPerTopicBatcher batcher(MakeTopicBatchConfig());
+    TOpt<TMsg::TTimestamp> opt_nct = batcher.GetNextCompleteTime();
+    ASSERT_FALSE(opt_nct.IsKnown());
+    TMsg::TPtr msg = mc.NewMsg(topic, "", 0);
+    std::list<std::list<TMsg::TPtr>> complete_batches =
+        SetProcessed(batcher.AddMsg(std::move(msg), 0));
+    ASSERT_TRUE(batcher.SanityCheck());
+    opt_nct = batcher.GetNextCompleteTime();
+    ASSERT_FALSE(opt_nct.IsKnown());
+    ASSERT_FALSE(!!msg);
+    ASSERT_TRUE(complete_batches.empty());
+    msg = mc.NewMsg(topic, "", 0);
+    complete_batches = SetProcessed(batcher.AddMsg(std::move(msg), 0));
+    ASSERT_TRUE(batcher.SanityCheck());
+    ASSERT_FALSE(!!msg);
+    ASSERT_EQ(complete_batches.size(), 1U);
+    ASSERT_EQ(complete_batches.front().size(), 2U);
+    opt_nct = batcher.GetNextCompleteTime();
+    ASSERT_FALSE(opt_nct.IsKnown());
   }
 
 }  // namespace
