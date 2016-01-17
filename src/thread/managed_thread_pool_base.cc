@@ -323,22 +323,52 @@ void TManagedThreadPoolBase::TWorkerBase::Activate() {
   assert(this);
 
   if (WorkerThread.joinable()) {
-    /* The thread was obtained from the pool.  Start it working. */
+    /* The thread was obtained from the idle list, and has been placed on the
+       busy list but not yet awakened.  When we release 'WakeupWait' below, it
+       will awaken and interpret the value we set here as indication that it
+       has work to do.  It would interpret the opposite value as a request to
+       terminate from the manager pruning the idle list. */
     TerminateRequested = false;
-    WakeupWait.unlock();
   } else {
-    /* The pool had no available threads, so we are creating a new one (and
-       adding it to the pool).  Create the thread, and start it running in the
-       busy state. */
+    /* The pool had no available threads, so we are creating a new one.  Create
+       the thread, and start it running in the busy state.  At this point its
+       TWorkerBase object (whose Activate() method we are now executing) has
+       already been added to the busy list. */
     WorkerThread = std::thread(std::bind(&TWorkerBase::BusyRun, this));
   }
 
   assert(WorkerThread.joinable());
+
+  /* If the thread was obtained from the idle list, this starts it working.
+
+     If we created the thread above, it may finish its work before we finish
+     the above move-assignment to 'WorkerThread'.  In this case, it sleeps
+     until we wake it up here, _after_ we have finished the move-assignment.
+     Thus the lock prevents the following race condition:
+
+         1.  The thread quickly finishes its work, before we assign to
+             'WorkerThread' above.  It then returns itself (i.e. the
+             TWorkerBase object whose Activate() method we are now executing)
+             to the idle list.
+
+         2.  The TWorkerBase object is then allocated from the idle list to
+             satisfy some other client request.
+
+         3.  Bad things happen when we try to assign to 'WorkerThread' while
+             the other client thinks it owns our TWorkerBase object.
+
+     An alternative way to prevent the above problem is to acquire 'PoolLock'
+     before creating the thread.  Instead, we do things this way to avoid
+     performing a potentially time-consuming thread creation operation while
+     holding 'PoolLock'.  In the typical case, the thread avoids sleeping
+     because it acquires the lock long after we release it here. */
+  WakeupWait.unlock();
 }
 
 TManagedThreadPoolBase::TWorkerBase::TWorkerBase(
     TManagedThreadPoolBase &my_pool, bool start)
     : MyPool(my_pool),
+      WaitAfterDoWork(false),
       BusyListPos(my_pool.BusyList.end()),
       TerminateRequested(false) {
   /* Lock this _before_ starting the worker, so it blocks when attempting to
@@ -484,6 +514,17 @@ void TManagedThreadPoolBase::TWorkerBase::DoBusyRun() {
 
     bool error_notify = false;
 
+    if (WaitAfterDoWork) {
+      /* This prevents a race condition, which could otherwise occur if we
+         finished our work quickly, before the client that launched us assigns
+         our std::thread object to 'WorkerThread'.  In that case, we sleep here
+         to avoid returning to the idle list before 'WorkerThread' has been
+         assigned.  In most cases we avoid sleeping because the lock will
+         already be available when we get here. */
+      WaitAfterDoWork = false;
+      WakeupWait.lock();
+    }
+
     {
       std::lock_guard<std::mutex> lock(MyPool.PoolLock);
       ++MyPool.Stats.FinishWorkCount;
@@ -613,7 +654,13 @@ TManagedThreadPoolBase::GetAvailableWorker() {
      initially contains no thread.  The thread is created and immediately
      enters the busy state when the client launches the worker. */
   std::list<TWorkerBasePtr> new_worker(1);
-  new_worker.front().reset(CreateWorker(false));
+  TWorkerBasePtr &wp = new_worker.front();
+  wp.reset(CreateWorker(false));
+
+  /* When the worker finishes working, this ensures that its 'WorkerThread'
+     member has been assigned before the worker places itself on the idle list,
+     thus avoiding a race condition. */
+  wp->SetWaitAfterDoWork();
 
   /* Even though the worker doesn't yet contain a thread, we still count it as
      "live" and add it to the busy list.  In the case where the pool starts

@@ -528,6 +528,15 @@ namespace Thread {
         return WorkerThread.joinable();
       }
 
+      /* When a worker is created due to the idle list being empty, calling
+         this method ensures that its 'WorkerThread' member has been assigned
+         before it returns to the idle list after finishing its work, thus
+         preventing a race condition. */
+      void SetWaitAfterDoWork() {
+        assert(this);
+        WaitAfterDoWork = true;
+      }
+
       /* Returns the thread ID.  It is assumed that the thread has been started
          (i.e. IsStarted() returns true). */
       std::thread::id GetId() const noexcept {
@@ -616,12 +625,36 @@ namespace Thread {
       /* pool that thread belongs to */
       TManagedThreadPoolBase &MyPool;
 
+      /* This gets set to true when a new worker is being created because the
+         idle list was empty.  When the worker finishes working, this ensures
+         that its 'WorkerThread' member has been assigned before the worker
+         places itself on the idle list, thus avoiding a race condition. */
+      bool WaitAfterDoWork;
+
       /* Worker waits here until Activate() or Terminate() is called. */
+
+      /* This serves two purposes:
+
+             1.  When idle, the worker sleeps here until it is given work to do
+                 or chosen by the manager for pruning.
+
+             2.  When the worker is created to satisfy a client request because
+                 the idle list was empty, it may (rarely) sleep here after
+                 finishing work, to avoid placing itself on the idle list
+                 before its 'WorkerThread' member has been assigned, thus
+                 avoiding a race condition.
+       */
       std::mutex WakeupWait;
 
       /* The worker thread.  This is initially empty when a new thread is being
-         created because the idle list was empty.  In this case, calling
-         Activate() creates the thread and starts it working. */
+         created to satisfy a client request when the idle list was empty.  In
+         this case, calling Activate() creates the thread, starts it working,
+         and stores its std::thread object here.
+
+         Note: This member may be unassigned while the thread is executing for
+         the first time in the above-mentioned scenario.  After finishing its
+         work, the thread will not place itself on the idle list until the
+         assignment has completed. */
       std::thread WorkerThread;
 
       /* When the worker is on the busy list, this indicates the position.
