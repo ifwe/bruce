@@ -29,7 +29,11 @@
                      simple integer value such as "10000" can also be
                      specified.  This value applies to the actual message
                      content (keys and values).  The total size of a batch will
-                     be a bit larger due to header overhead. -->
+                     be a bit larger due to header overhead.   The size of an
+                     empty message is counted as 1 byte.  This prevents
+                     batching an unbounded number of empty messages in the case
+                     where no limit is placed on batching delay or message
+                     count. -->
                 <bytes value="256k" />
             </config>
 

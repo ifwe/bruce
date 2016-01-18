@@ -167,7 +167,10 @@ triggered when the age of the oldest message
 [timestamp](sending_messages.md#message-formats) in the batch is at least the
 specified value.
 - Maximum combined message data size, specified in bytes.  This includes only
-the sizes of the [keys and values](sending_messages.md#message-formats).
+the sizes of the [keys and values](sending_messages.md#message-formats).  The
+size of an empty message is counted as 1 byte.  This prevents batching an
+unbounded number of empty messages in the case where no limit is placed on
+batching delay or message count.
 - Maximum message count.
 
 Batching may also be configured so that topics without individual batching
