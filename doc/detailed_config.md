@@ -276,7 +276,7 @@ If unspecified, the client ID will be empty.
 * `--required_acks N`: This specifies the requires ACKs value to send in
 produce requests, as documented
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol).
-The default value -s -1.
+The default value is -1.
 * `--replication_timeout N`: specifies the time in milliseconds the broker will
 wait for successful replication to occur, as described
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ProduceRequest),
