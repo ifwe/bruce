@@ -653,6 +653,17 @@ namespace {
       sleep(1);
     }
 
+    for (size_t i = 0; (i < 60); ++i) {
+      TManagedThreadPoolBase::TStats stats = pool.GetStats();
+
+      if ((stats.IdleWorkerCount == stats.LiveWorkerCount) &&
+          (stats.FinishWorkCount == counter.load())) {
+        break;
+      }
+
+      sleep(1);
+    }
+
     TManagedThreadPoolBase::TStats stats = pool.GetStats();
     ASSERT_EQ(stats.IdleWorkerCount, stats.LiveWorkerCount);
     ASSERT_EQ(stats.FinishWorkCount, counter.load());
@@ -701,6 +712,17 @@ namespace {
       sleep(1);
     }
 
+    for (size_t i = 0; (i < 60); ++i) {
+      TManagedThreadPoolBase::TStats stats = pool.GetStats();
+
+      if ((stats.IdleWorkerCount == stats.LiveWorkerCount) &&
+          (stats.FinishWorkCount == counter.load())) {
+        break;
+      }
+
+      sleep(1);
+    }
+
     TManagedThreadPoolBase::TStats stats = pool.GetStats();
     ASSERT_EQ(stats.IdleWorkerCount, stats.LiveWorkerCount);
     ASSERT_EQ(stats.FinishWorkCount, counter.load());
@@ -738,6 +760,17 @@ namespace {
     /* Hopefully 600 seconds will be long enough for the test to finish, even
        on a slow machine. */
     for (size_t i = 0; (i < 600) && working_count.load(); ++i) {
+      sleep(1);
+    }
+
+    for (size_t i = 0; (i < 60); ++i) {
+      stats = pool.GetStats();
+
+      if ((stats.IdleWorkerCount == stats.LiveWorkerCount) &&
+          (stats.FinishWorkCount == counter.load())) {
+        break;
+      }
+
       sleep(1);
     }
 
