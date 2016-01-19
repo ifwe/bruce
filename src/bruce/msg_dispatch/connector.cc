@@ -58,6 +58,7 @@ using namespace Bruce::KafkaProto;
 using namespace Bruce::MsgDispatch;
 using namespace Bruce::Util;
 
+SERVER_COUNTER(AckNotRequired);
 SERVER_COUNTER(BadProduceResponse);
 SERVER_COUNTER(BadProduceResponseSize);
 SERVER_COUNTER(BugProduceRequestEmpty);
@@ -460,21 +461,32 @@ bool TConnector::HandleSockWriteReady() {
   }
 
   if (!SendInProgress()) {
-    /* We finished sending the request.  Now expect a response from Kafka. */
+    /* We finished sending the request.  Now expect a response from Kafka,
+       unless RequiredAcks is 0. */
 
     SendProduceRequestOk.Increment();
     TAllTopics &all_topics = CurrentRequest->second;
+    bool ack_expected = (Ds.Config.RequiredAcks != 0);
 
     for (auto &topic_elem : all_topics) {
       TMultiPartitionGroup &group = topic_elem.second;
 
       for (auto &msg_set_elem : group) {
-        Ds.MsgStateTracker.MsgEnterAckWait(msg_set_elem.second.Contents);
+        if (ack_expected) {
+          Ds.MsgStateTracker.MsgEnterAckWait(msg_set_elem.second.Contents);
+        } else {
+          AckNotRequired.Increment();
+          Ds.MsgStateTracker.MsgEnterProcessed(msg_set_elem.second.Contents);
+        }
+
         DebugLoggerSend.LogMsgList(msg_set_elem.second.Contents);
       }
     }
 
-    AckWaitQueue.emplace_back(std::move(*CurrentRequest));
+    if (ack_expected) {
+      AckWaitQueue.emplace_back(std::move(*CurrentRequest));
+    }
+
     CurrentRequest.Reset();
   }
 

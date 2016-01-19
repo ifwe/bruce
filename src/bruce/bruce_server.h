@@ -61,7 +61,7 @@ namespace Bruce {
                  "supported.  Kafka versions below 0.8 are not supported.");
 
     DEFINE_ERROR(TBadRequiredAcks, std::runtime_error,
-                 "required_acks value must be -1 or > 0");
+                 "required_acks value must be >= -1");
 
     DEFINE_ERROR(TBadReplicationTimeout, std::runtime_error,
                  "replication_timeout value out of range");

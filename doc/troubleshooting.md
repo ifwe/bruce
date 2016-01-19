@@ -20,6 +20,11 @@ which will help track down problems.
 Kafka.
 * `AckErrorXxx`: These counters indicate various types of error ACKs received
 from Kafka, as documented
+* `AckNotRequired`: When Bruce finishes sending a produce request with a
+`RequiredAcks` value of 0 (see `--required_acks`
+[command line option](detailed_config.md#command-line-arguments)), this is
+incremented once for each message set in the produce request, indicating that
+no ACK is expected from Kafka for the given message set.
 [here](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-ErrorCodes).
 * `XxxInputAgentDiscardXxx` and `DiscardXxx`: These counters are incremented
 when Bruce discards messages for various reasons.

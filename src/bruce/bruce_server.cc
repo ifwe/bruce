@@ -91,7 +91,7 @@ TBruceServer::CreateConfig(int argc, char **argv, bool &large_sendbuf_required,
     THROW_ERROR(TBadDiscardReportInterval);
   }
 
-  if ((cfg->RequiredAcks != -1) && (cfg->RequiredAcks <= 0)) {
+  if (cfg->RequiredAcks < -1) {
     THROW_ERROR(TBadRequiredAcks);
   }
 
