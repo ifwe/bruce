@@ -604,8 +604,7 @@ def CheckSocketErrorDeltas(deltas, old_nagios_code):
                       'MetadataResponseRead2UnexpectedEnd',
                       'ReadMetadataResponse2Fail',
                       'SendMetadataRequestFail',
-                      'SendMetadataRequestLostTcpConnection',
-                      'SendMetadataRequestTimedOut'
+                      'SendMetadataRequestLostTcpConnection'
                     ]
     nonzero_counter_names = []
     sum = 0

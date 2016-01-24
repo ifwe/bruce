@@ -414,9 +414,9 @@ bool TConnector::TrySendProduceRequest() {
   } catch (const std::system_error &x) {
     if (LostTcpConnection(x)) {
       syslog(LOG_ERR, "Connector thread %d (index %lu broker %ld) starting "
-          "pause and finishing due to lost TCP connection during send",
+          "pause and finishing due to lost TCP connection during send: %s",
           static_cast<int>(Gettid()),
-          static_cast<unsigned long>(MyBrokerIndex), MyBrokerId());
+          static_cast<unsigned long>(MyBrokerIndex), MyBrokerId(), x.what());
       ConnectorSocketError.Increment();
       Ds.PauseButton.Push();
       return false;
@@ -505,9 +505,9 @@ bool TConnector::DoSockRead(size_t min_size) {
   } catch (const std::system_error &x) {
     if (LostTcpConnection(x)) {
       syslog(LOG_ERR, "Connector thread %d (index %lu broker %ld) starting "
-          "pause due to lost TCP connection on attempted read",
+          "pause due to lost TCP connection on attempted read: %s",
           static_cast<int>(Gettid()),
-          static_cast<unsigned long>(MyBrokerIndex), MyBrokerId());
+          static_cast<unsigned long>(MyBrokerIndex), MyBrokerId(), x.what());
       ConnectorSocketError.Increment();
       Ds.PauseButton.Push();
       return false;

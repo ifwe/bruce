@@ -55,7 +55,6 @@ SERVER_COUNTER(ReadMetadataResponse2Fail);
 SERVER_COUNTER(SendMetadataRequestFail);
 SERVER_COUNTER(SendMetadataRequestLostTcpConnection);
 SERVER_COUNTER(SendMetadataRequestSuccess);
-SERVER_COUNTER(SendMetadataRequestTimedOut);
 SERVER_COUNTER(SendMetadataRequestUnexpectedEnd);
 SERVER_COUNTER(StartSendMetadataRequest);
 
@@ -190,12 +189,6 @@ bool TMetadataFetcher::SendRequest(const std::vector<uint8_t> &request,
       return false;
     }
 
-    if (TimedOut(x)) {
-      SendMetadataRequestTimedOut.Increment();
-      syslog(LOG_ERR, "Socket timeout while trying to send metadata request");
-      return false;
-    }
-
     throw;  // anything else is fatal
   } catch (const TUnexpectedEnd &) {
     SendMetadataRequestUnexpectedEnd.Increment();
@@ -223,12 +216,6 @@ bool TMetadataFetcher::ReadResponse(int timeout_ms) {
       MetadataResponseRead1LostTcpConnection.Increment();
       syslog(LOG_ERR, "Lost TCP connection to broker while trying to read "
              "metadata response: %s", x.what());
-      return false;
-    }
-
-    if (TimedOut(x)) {
-      MetadataResponseRead1TimedOut.Increment();
-      syslog(LOG_ERR, "Socket timeout while trying to read metadata response");
       return false;
     }
 
@@ -265,13 +252,6 @@ bool TMetadataFetcher::ReadResponse(int timeout_ms) {
         MetadataResponseRead2LostTcpConnection.Increment();
         syslog(LOG_ERR, "Lost TCP connection to broker while trying to read "
                "metadata response: %s", x.what());
-        return false;
-      }
-
-      if (TimedOut(x)) {
-        MetadataResponseRead2TimedOut.Increment();
-        syslog(LOG_ERR, "Socket timeout while trying to read metadata "
-               "response");
         return false;
       }
 

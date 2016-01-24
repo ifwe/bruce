@@ -31,19 +31,11 @@ namespace Bruce {
     static inline bool LostTcpConnection(int errno_value) {
       return (errno_value == ECONNRESET) || (errno_value == EPIPE) ||
              (errno_value == EIO) || (errno_value == EHOSTUNREACH) ||
-             (errno_value == EHOSTDOWN);
+             (errno_value == EHOSTDOWN) || (errno_value == ETIMEDOUT);
     }
 
     static inline bool LostTcpConnection(const std::system_error &x) {
       return LostTcpConnection(x.code().value());
-    }
-
-    static inline bool TimedOut(int errno_value) {
-      return (errno_value == ETIMEDOUT);
-    }
-
-    static inline bool TimedOut(const std::system_error &x) {
-      return TimedOut(x.code().value());
     }
 
   }  // Util
